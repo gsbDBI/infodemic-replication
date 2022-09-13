@@ -187,3 +187,85 @@ attr(df_treat$post_false_timeline_prop, "shortDescription") <- "Post-treatment f
 attr(df_treat$post_false_send_prop, "shortDescription") <- "Post-treatment false stimuli response proportion (message): record the proportion of post-treatment false stimuli the respondent wants to share via facebook message among all the post-treatment false stimuli they've seen (post_true_timeline/post_true_seen); float between 0 and 1."
 ```
 
+
+---
+newly added:
+
+```{r}
+unique((
+df %>% 
+  mutate(true_any = post_true_any + pre_true_any) %>% 
+  
+  mutate(share_TB1 = coalesce(share_TB1, 0)) %>% 
+  mutate(share_TB2 = coalesce(share_TB2, 0)) %>% 
+  mutate(share_TB3 = coalesce(share_TB3, 0)) %>% 
+  mutate(share_TB4 = coalesce(share_TB4, 0)) %>% 
+  mutate(share_TB5 = coalesce(share_TB5, 0)) %>% 
+  
+  mutate(share_TK1 = coalesce(share_TK1, 0)) %>% 
+  mutate(share_TK2 = coalesce(share_TK2, 0)) %>% 
+  mutate(share_TK3 = coalesce(share_TK3, 0)) %>% 
+  mutate(share_TK4 = coalesce(share_TK4, 0)) %>% 
+  mutate(share_TK5 = coalesce(share_TK5, 0)) %>% 
+  mutate(share_TK6 = coalesce(share_TK6, 0)) %>% 
+  
+  mutate(share_TN1 = coalesce(share_TN1, 0)) %>% 
+  mutate(share_TN2 = coalesce(share_TN2, 0)) %>% 
+  mutate(share_TN3 = coalesce(share_TN3, 0)) %>% 
+  mutate(share_TN4 = coalesce(share_TN4, 0)) %>% 
+  mutate(share_TN6 = coalesce(share_TN6, 0)) %>% 
+
+  mutate(true_shared = share_TB1 + share_TB2 + share_TB3 + share_TB4 + share_TB5 +
+                       share_TK1 + share_TK2 + share_TK3 + share_TK4 + share_TK5 + share_TK6 +
+                       share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) %>% 
+  
+  mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) %>% 
+  
+  
+  # should this be the denominator?
+  mutate(false_any = post_false_any + pre_false_any) %>% 
+  
+  mutate(link_FK2 = coalesce(link_FK2, 0)) %>% 
+  mutate(link_FK3 = coalesce(link_FK3, 0)) %>% 
+  mutate(link_FK4 = coalesce(link_FK4, 0)) %>% 
+  mutate(link_FK5 = coalesce(link_FK5, 0)) %>% 
+  mutate(link_FK6 = coalesce(link_FK6, 0)) %>% 
+  mutate(link_FK7 = coalesce(link_FK7, 0)) %>% 
+  mutate(link_FK8 = coalesce(link_FK8, 0)) %>% 
+  mutate(link_FK9 = coalesce(link_FK9, 0)) %>% 
+  mutate(link_FK10 = coalesce(link_FK10, 0)) %>% 
+  mutate(link_FK11 = coalesce(link_FK11, 0)) %>% 
+  mutate(link_FK12 = coalesce(link_FK12, 0)) %>% 
+  mutate(link_FK13 = coalesce(link_FK13, 0)) %>% 
+  
+  mutate(link_FN1 = coalesce(link_FN1, 0)) %>% 
+  mutate(link_FN2 = coalesce(link_FN2, 0)) %>% 
+  mutate(link_FN3 = coalesce(link_FN3, 0)) %>% 
+  mutate(link_FN4 = coalesce(link_FN4, 0)) %>% 
+  mutate(link_FN5 = coalesce(link_FN5, 0)) %>% 
+  mutate(link_FN6 = coalesce(link_FN6, 0)) %>% 
+  mutate(link_FN7 = coalesce(link_FN7, 0)) %>% 
+  mutate(link_FN8 = coalesce(link_FN8, 0)) %>% 
+  mutate(link_FN9 = coalesce(link_FN9, 0)) %>% 
+  mutate(link_FN10 = coalesce(link_FN10, 0)) %>% 
+  mutate(link_FN11 = coalesce(link_FN11, 0)) %>% 
+  mutate(link_FN12 = coalesce(link_FN12, 0)) %>% 
+  mutate(link_FN13 = coalesce(link_FN13, 0)) %>% 
+  mutate(link_FN14 = coalesce(link_FN14, 0)) %>% 
+  mutate(link_FN15 = coalesce(link_FN15, 0)) %>% 
+  mutate(link_FN16 = coalesce(link_FN16, 0)) %>% 
+  
+  mutate(false_clicked = link_FK2 + link_FK3 + link_FK4 + link_FK5 + link_FK6 + link_FK7 +
+                       link_FK8 + link_FK9 + link_FK10 + link_FK11 + link_FK12 + link_FK13 +
+                       link_FN1 + link_FN2 + link_FN3 + link_FN4 + link_FN5 + link_FN6 +
+                       link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
+                       link_FN13 + link_FN14 + link_FN15 + link_FN16) %>% 
+  
+  mutate(false_click_through_rate = coalesce(false_clicked / false_any, 0))
+
+)$false_click_through_rate)
+```
+
+
+
+
