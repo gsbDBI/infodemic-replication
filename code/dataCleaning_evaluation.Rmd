@@ -657,8 +657,6 @@ cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
 
 context_cols <- cols[!cols %in% c('Y', 'W', 'user_id', 'time_stamp')]
 transformed_cols <- c('post_false', 'post_true',
-                      'dv_1', 'dv_2', 'dv_3', 'dv_4',
-                      'dv_5', 'dv_6', 'dv_7', 'dv_8',
                       'post_true_any', 'post_false_any', 
                       'post_timeline_true',
                       'post_timeline_false', 'post_send_true', 'post_send_false',
@@ -668,9 +666,7 @@ transformed_cols <- c('post_false', 'post_true',
                       'post_true_seen', 'post_false_seen',
                       'post_true_prop', 'post_false_prop',
                       'post_true_timeline_prop', 'post_true_send_prop',
-                      'post_false_timeline_prop', 'post_false_send_prop',
-                      'dv_stimulus_pre1', 'dv_stimulus_pre2', 'dv_stimulus_pre3', 'dv_stimulus_pre4',
-                      'dv_stimulus_post5', 'dv_stimulus_post6', 'dv_stimulus_post7', 'dv_stimulus_post8')
+                      'post_false_timeline_prop', 'post_false_send_prop')
 
 df_treat <- df %>% filter(!is.na(treatment_r)) %>% filter(!is.na(Y))
 df_treat['W'] <- sapply(1:nrow(df_treat), 
