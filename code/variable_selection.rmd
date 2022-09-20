@@ -79,6 +79,9 @@ cols <- c(
           'post_false_prop',
           'post_false_timeline_prop',
           'post_false_send_prop',
+          # newly defined
+          'true_click_through_rate',
+          'false_click_through_rate',
           
           # exclude these
           #'dv_timeline_pre1', 'dv_timeline_pre2', 'dv_timeline_pre3', 'dv_timeline_pre4',
@@ -185,6 +188,12 @@ attr(df_treat$post_false_prop, "shortDescription") <- "Post-treatment false stim
 attr(df_treat$post_false_timeline_prop, "shortDescription") <- "Post-treatment false stimuli response proportion (timeline): record the proportion of post-treatment false stimuli the respondent wants to share in facebook timeline among all the post-treatment false stimuli they've seen (post_false_timeline/post_false_seen); float between 0 and 1."
 
 attr(df_treat$post_false_send_prop, "shortDescription") <- "Post-treatment false stimuli response proportion (message): record the proportion of post-treatment false stimuli the respondent wants to share via facebook message among all the post-treatment false stimuli they've seen (post_true_timeline/post_true_seen); float between 0 and 1."
+
+attr(df_treat$true_click_through_rate, "shortDescription") <- "Click through rate of the sharing button for true stimuli: record the proportion of the true stimuli that the subject actually shares among the true stimuli that the subject wanted to share; float between 0 and 1."
+
+attr(df_treat$false_click_through_rate, "shortDescription") <- "Click through rate of the sharing button for false stimuli: record the proportion of the links that correct the misinformation in the false stimuli that the subject shares among all the false stimuli that the subject saw (i.e. the denominator is 4); float between 0 and 1."
+
+
 ```
 
 
@@ -261,7 +270,7 @@ df %>%
                        link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
                        link_FN13 + link_FN14 + link_FN15 + link_FN16) %>% 
   
-  mutate(false_click_through_rate = coalesce(false_clicked / false_any, 0))
+  mutate(false_click_through_rate = coalesce(false_clicked / 4, 0))
 
 )$false_click_through_rate)
 ```

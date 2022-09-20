@@ -1,0 +1,3 @@
+Issues and errors
+
+1. No “share_TN5” - in the raw dataset, there is no column named "share_TN5," which supposedly should store whether each subject in Nigeria clicked the share button for the true stimuli 5. We checked the set up of the survey but didn't find the clue of what exaactly went wrong. For now, we believe it's due a glitch of the survey platform.

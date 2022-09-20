@@ -1,17 +1,4 @@
----
-title: 'Facebook Misinformation Study, Data Cleaning'
-output:
-  html_document:
-    toc: true
-    toc_float: true
-    df_print: paged
-    code_folding: hide
----
-
-# Data reading and cleaning
-## Packages
-
-```{r packages, message = FALSE}
+## ----packages, message = FALSE----------------------------------------------------------------------------
 library(dataMaid) # write codebook
 library(dplyr) # data manipulation
 library(grf) # model prediction
@@ -24,12 +11,9 @@ source('utils.R')
 
 dir.create(file.path('..', 'tables'), showWarnings = FALSE)
 dir.create(file.path('..', 'figures'), showWarnings = FALSE)
-```
 
-## Data loading
 
-Load most recent download of data
-```{r data}
+## ----data-------------------------------------------------------------------------------------------------
 files <- list.files('../data', 
                     pattern = '^misinformation-data.*.csv$', 
                     full.names = TRUE)
@@ -37,11 +21,9 @@ files <- list.files('../data',
 (INPUT_FILENAME <- files[which.max(file.info(files)$mtime)])
 
 df <- suppressWarnings(read_csv(INPUT_FILENAME))
-```
 
-## Variable encoding
 
-```{r variables}
+## ----variables--------------------------------------------------------------------------------------------
 df <- df %>% 
   mutate_if(is.character, tolower)
 
@@ -515,9 +497,9 @@ df <- within(df, {
                                    TRUE ~ 0)
 }
 )
-```
 
-```{r click_through_rates}
+
+## ----click_through_rates----------------------------------------------------------------------------------
 df <- 
   df %>% 
   # true click through rate
@@ -587,12 +569,9 @@ df <-
   
   mutate(false_click_through_rate = coalesce(false_clicked / 4, 0))
 
-```
 
 
-## Select treatment data 
-
-```{r treatment_data}
+## ----treatment_data---------------------------------------------------------------------------------------
 
 cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
           
@@ -687,11 +666,9 @@ W_levels <- c('H_control_R_control',
 df_treat$W <- factor(df_treat$W, levels = W_levels)
 df_treat$W <- relevel(df_treat$W, ref = 'H_control_R_control')
 
-```
 
-## Get optimal assignment
 
-```{r factor_levels}
+## ----factor_levels----------------------------------------------------------------------------------------
 W_levels <- levels(df_treat$W)
 # Decompose treatment levels into separate factors
 WH_levels <- unique(sub('_R_.*', '', W_levels))
@@ -704,9 +681,9 @@ df_treat['treatment_r'] <- relevel(as.factor(df_treat[['treatment_r']]),
                                    ref = 'control')
 df_treat['treatment_h'] <- relevel(as.factor(df_treat[['treatment_h']]), 
                                    ref = 'control')
-```
 
-```{r factor_scores}
+
+## ----factor_scores----------------------------------------------------------------------------------------
 predict_cols <- c('male', 
                   'age', 
                   'age_flag',
@@ -750,10 +727,9 @@ xs_h_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )),
 h1 <- which(df_treat$batch <5)
 h2 <- which(df_treat$batch == 5)
 
-```
 
-**filter out infeasible response data**
-```{r predictions}
+
+## ----predictions------------------------------------------------------------------------------------------
 
 W_forest <- readRDS('objects/policy_objects/W_forest.rds')
 multi_forest <- readRDS('objects/policy_objects/multi_forest.rds')
@@ -806,15 +782,9 @@ after_nrow <- nrow(df_treat)
 
 paste0('There are ', prev_nrow - after_nrow, ' infeasible observations.')
 paste0('Percentage of infeasible observations is ', round((prev_nrow - after_nrow)/prev_nrow, 4), '%.')
-```
 
 
-Our response variable should take values between -4 and 2, and the `post_true` and `post_false` variable should both take values between 0 and 4.
-
-
-# Description of Covariates
-
-```{r desc}
+## ----desc-------------------------------------------------------------------------------------------------
 attr(df_treat$male, 'shortDescription') <- "Pre-treatment covariate: 'What is your gender?'; binary coded as 1 if male, 0 for any other response."
 attr(df_treat$age, 'shortDescription') <- "Pre-treatment covariate: 'What is your age?'; continuous variable."
 attr(df_treat$age_check, 'shortDescription') <- "Pre-treatment covariate: binary coded as 1 if age >= 120 (i.e. abnormal age), 0 for any other age between 18 and 120."
@@ -958,13 +928,9 @@ attr(df_treat$true_click_through_rate, "shortDescription") <- "Click through rat
 
 attr(df_treat$false_click_through_rate, "shortDescription") <- "Click through rate of the sharing button for false stimuli: record the proportion of the links that correct the misinformation in the false stimuli that the subject shares among all the false stimuli that the subject saw (i.e. the denominator is 4); float between 0 and 1."
 
-```
 
 
-
-## Attrition
-
-```{r attrition}
+## ----attrition--------------------------------------------------------------------------------------------
 df_treat <- df_treat %>% 
   mutate(last_response = case_when(!(is.na(dv_send_post8) & is.na(dv_timeline_post8)) ~ 8,
                                    !(is.na(dv_send_post7) & is.na(dv_timeline_post7)) ~ 7,
@@ -979,11 +945,9 @@ df_treat <- df_treat %>%
 prop.table(table(df_treat$last_response))
 
 
-```
 
-## Secondary Variables
 
-```{r secondary, warning=FALSE, results='hide',message=FALSE}
+## ----secondary, warning=FALSE, results='hide',message=FALSE-----------------------------------------------
 
 ## NEWS COV FALSE
 df$news_cov_false[df$news_cov_false == '1'] <-
@@ -1222,11 +1186,9 @@ df_treat$news_other_cov[!df_treat$news_other_cov %in% highfreq_lst] <- 'other'
 
 # news_other_trust ##
 df_treat$news_other_trust[!df_treat$news_other_trust %in% trust_lst] <- 'other'
-```
 
-# Save data
 
-```{r save}
+## ----save-------------------------------------------------------------------------------------------------
 text_vars <- c('region', 'cv_denom', 'cv_ethnic', 
                'questions_comments', 'cov_vaccine_no', 'open_input1', 'deliberation', 'open_input2', 
                'reason_true', 'reason_false', 'open_input3','cov_masks_no_other', 'input4', 
@@ -1248,21 +1210,17 @@ write_csv(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39
 write_rds(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39), transformed_cols)], df_treat[,secondary_vars_interest]), 
           paste0('../data/', CLEANED_FILENAME,'.rds'))
 
-```
 
-```{r codebook, cache = TRUE}
+
+## ----codebook, cache = TRUE-------------------------------------------------------------------------------
 # Codebook: only need to do this once per cleaned dataset
 makeCodebook(df_treat[, c('Y', 'W', context_cols)], replace = TRUE, 
              reportTitle = 'Cleaned Data Codebook',
              file = '../data/codebook_df_treat_cleaned_main_evaluation.Rmd')
-```
 
-# Extraneous
-Save R script and check packages to ensure extraneous packages aren't loaded.
-```{r check_packages, eval = FALSE}
-library(NCmisc)
-knitr::purl('dataCleaning_evaluation.Rmd')
-list.functions.in.file('dataCleaning_evaluation.R')
-```
 
+## ----check_packages, eval = FALSE-------------------------------------------------------------------------
+## library(NCmisc)
+## knitr::purl('dataCleaning_evaluation.Rmd')
+## list.functions.in.file('dataCleaning_evaluation.R')
 
