@@ -1238,10 +1238,10 @@ secondary_vars_interest <- colnames(df_treat)[!colnames(df_treat) %in% c(text_va
 CLEANED_FILENAME <- paste0('cleaned-data_', 
                            Sys.Date())
 
-write_csv(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39), transformed_cols)], df_treat[,secondary_vars_interest]), 
+write_csv(cbind(df_treat[, c('Y', 'W', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.csv'))
 
-write_rds(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39), transformed_cols)], df_treat[,secondary_vars_interest]), 
+write_rds(cbind(df_treat[, c('Y', 'W', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.rds'))
 
 ```
