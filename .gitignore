@@ -42,3 +42,4 @@ vignettes/*.pdf
 data/seed.txt
 data/*.rds
 data/*.csv
+.DS_Store
