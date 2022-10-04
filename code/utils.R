@@ -10,6 +10,11 @@ library(lmtest)
 library(modelsummary)
 library(stringr)
 library(xtable)
+library(dataMaid) # write codebook
+library(dplyr) # data manipulation
+library(grf) # model prediction
+library(readr) # read in files
+library(stringr) # data cleaning
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
                "#D55E00", "#CC79A7")
