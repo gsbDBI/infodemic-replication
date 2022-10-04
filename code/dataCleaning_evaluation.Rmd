@@ -12,13 +12,6 @@ output:
 ## Packages
 
 ```{r packages, message = FALSE}
-library(dataMaid) # write codebook
-library(dplyr) # data manipulation
-library(grf) # model prediction
-library(readr) # read in files
-library(stringr) # data cleaning
-
-
 set.seed(94305)
 source('utils.R')
 
