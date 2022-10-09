@@ -160,3 +160,150 @@ $$
 $$
 \xi^{IPW}_w(X_i) = \frac{ 1 }{\Pr[W_i = w|X_i = x]}
 $$
+    
+        
+## Main Analysis
+
+* Notes on analysis:
+    + Outcomes:
+      1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+      2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+      3. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
+      4. ) Rates of clicking on *true* stories, combined pre- and post-treatment, i.e., the percent of true stimuli that the respondent said they wanted to share during the survey for which they later click the button to share on Facebook (described in pre-analysis plan section 3.4.2)
+      5. ) Rates of clicking on debriefs about *false* stories, combined pre- and post-treatment, i.e., the percent of false stimuli that the respondent was debriefed on for which they later click the button to learn more about on (described in pre-analysis plan section 3.4.2)
+    + Use the last batch of data only
+    + Reported results are also weighted by the inverse probability of appearing in the last batch, as predicted by a regression forest 
+    + For respondents who attrit after collection of pre-test responses and before collection of post-test responses, the post-test interest in sharing response function will be coded as identical to the individual pre-test value; for behavioral sharing outcomes, we impute zeros for click-through-rates.
+* Hypotheses
+    +	Uniform policy:
+        - The best uniform headline-level policy improves response over the control policy.
+        - The best uniform respondent-level policy improves response over the control policy.
+    + Contextual policy (primary): 
+        -  The best contextual policy achieves higher value than the control treatment
+        -  The best contextual policy achieves higher value than the best uniform headline-level treatment
+        -  The best contextual policy achieves higher value than the best uniform respondent-level treatment
+  
+
+## Secondary analysis
+*	### Variation based on scientific views, cognitive reflection test
+    +	Notes on analysis:
+        + Outcomes:
+          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+        - Use learning data
+        - Replicate Figure 4
+![image](https://user-images.githubusercontent.com/77539474/193426695-a7503a06-1024-4b34-bfb2-5e24fab2a7d1.png)
+![image](https://user-images.githubusercontent.com/77539474/193426702-45428e07-0c7d-4fcd-aecb-56b166206660.png)
+
+  
+    + Hypothesis: 
+        -  Facebook tips or AfricaCheck tips > Accuracy for respondents with high DLI, high CRT, high Science 
+        
+
+* ### Industry Practice
+    + Notes on analysis:
+        + Outcomes:
+          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+        - Use learning data
+        - Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+        - Treatments
+            - Factcheck (headline)
+            - More information (headline)
+            - Related articles (headline)
+            - Facebook tips (respondent)
+            - AfricaCheck tips (respondent) 
+        - Covariates
+            - Age
+            - Male
+            - Education
+    + Hypotheses:
+        -  The effect of Factcheck, more information, related articles: more educated users, older people, and women > less educated, younger and male 
+        -  The effect (reduce sharing of misinformation) of Facebook tips, AfricaCheck tips: less-educated > those with more education
+
+
+* ### Social Science Theory
+    + Notes on analysis
+        + Outcomes:
+          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+        - Use learning data
+        - Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+        - Covariates:
+            - CRT
+            - Facebook usage
+            - Religiosity
+        - Treatments:
+            - Accuracy nudge (respondent)
+            - Deliberation nudge (respondent)
+            - Pledge (respondent)
+    + Hypotheses
+        -  Compare responses under accuracy nudge and deliberation nudge between low CRT and high CRT respondents
+        -  Pledge respondent-level treatment: frequent user of Facebook, more religious, and high CRT > less frequent user of Facebook, less religious, and low CRT
+        
+        
+* ### Best respondent and headline-level treatments
+    + Notes on analysis
+        + Outcomes:
+          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+        - Use evaluation data
+    + Hypotheses
+        -  How locus of control and age interact with the best uniform respondent-level treatment
+        -  How CRT and education interact with the best uniform headline-level treatment
+        
+        
+* ### Baseline level
+    + Notes on analysis
+        + Outcomes:
+          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+        - Compare response under the following covariates to indicator = 1 or ≥ median to indicator = 0 or < median
+        - Use evaluation data
+    + Hypotheses
+        - Certain types of people are simply more likely to share false information:
+            -  Young
+            -  Male
+            -  Less educated
+            -  Low CRT
+            -  More religious
+            
+            
+## Additional
+* ### Follow up on bonus stimuli [not coded yet]
+    + Notes on analysis
+        + Outcomes:
+          1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
+        + Use evaluation data
+    + Hypotheses
+        -  [ ] Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli; compare for each factor level separately
+
+* ### Follow up questions 1-3 days after
+    + Notes on analysis
+        + Outcomes:
+           1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+           3. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+           4. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
+        + Respondents should only see 1 true and 1 false stimuli
+        + Following Broockman et al. (2017), we will analyze duration effects adjusting for differential response rate to the follow-up survey and the number of days since the respondent completed the survey
+        + Use evaluation data
+    + Hypotheses
+        -  Estimate mean response under each factor level separately
+
+* ### Open response question for deliberation question [not coded yet]
+    + Notes on analysis
+        + Outcomes:
+          1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
+        + Use evaluation data
+    + Hypotheses
+        -  Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli
+
+  &nbsp;
+  
+  &nbsp;
+  
+ - We will analyze how our sample compares to both the Facebook population and the general population in Kenya and Nigeria using Facebook’s advertising API data and nationally representative Afrobarometer surveys conducted in both countries.
+     - Conduct separately for learning and evaluation 
+ - Aggregate number of times the associated Facebook post for each stimuli was shared (need to check Facebook timeline)
+
+
