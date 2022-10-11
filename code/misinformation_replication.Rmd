@@ -1,0 +1,164 @@
+---
+title: 'Facebook Misinformation Study, pre-analysis replication script'
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_folding: hide
+    number_sections: true
+---
+
+
+
+# Data reading
+```{r paths, message = FALSE}
+set.seed(60637)
+source('utils.R')
+
+dir.create(file.path('..', 'tables'), showWarnings = FALSE)
+dir.create(file.path('..', 'figures'), showWarnings = FALSE)
+dir.create(file.path('objects'), showWarnings = FALSE)
+```
+
+
+
+
+## Load Data
+Load most recent download of data; the file name indicates the download date. 
+```{r data, cache = FALSE}
+files <- list.files('../data', 
+                    pattern = '^cleaned-data.*rds$', 
+                    full.names = TRUE)
+
+(INPUT_FILENAME <- files[which.max(file.info(files)$mtime)])
+df_treat <- readRDS(INPUT_FILENAME)
+
+context_cols <- c('male', 
+                  'age', 
+                  'age_flag',
+                  'age_check_flag',
+                  'ed', 'ed_flag', 
+                  'urban',
+                  'rel_christian', 'rel_muslim',
+                  'denom_pentecostal', 
+                  'religiosity', 'religiosity_flag',
+                  'locus', 'locus_flag',
+                  'science', 'science_flag',
+                  'dli',
+                  'fb_post', 'fb_post_flag',
+                  'fb_msg', 'fb_msg_flag',
+                  'crt',
+                  'hhi', 'hhi_flag',
+                  'cash',
+                  'hh', 'hh_flag',
+                  'pol',
+                  'cov_concern', 'cov_concern_flag',
+                  'cov_efficacy', 'cov_efficacy_flag',
+                  'nigeria')
+
+demos_cols <- c('male', 
+                'age', 'age_flag',
+                'ed', 'ed_flag', 
+                'urban', 
+                'rel_none', 'rel_christian', 'rel_muslim', 'rel_traditionalist', 'rel_other', 'denom_pentecostal', 'religiosity',
+                'religiosity_flag',
+                'god',
+                'locus', 'locus_flag',
+                'science', 'science_flag',
+                'dli',
+                'fb_post', 'fb_post_flag',
+                'fb_msg', 'fb_msg_flag',
+                'crt',
+                'hhi', 'hhi_flag',
+                'cash',
+                'hh', 'hh_flag',
+                'pol',
+                'cov_concern', 
+                'cov_concern_flag',
+                'cov_info',
+                'cov_efficacy', 
+                'cov_efficacy_flag')
+
+predv_cols <- c('strat_send_false0', 'strat_send_false1', 'strat_send_false2', 
+                'strat_send_true0', 'strat_send_true1', 'strat_send_true2', 
+                'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
+                'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
+
+```
+
+
+```{r datasets, cache = FALSE}
+df_treat <- df_treat %>% 
+  mutate(Y_pre = -pre_false + 0.5 * pre_true,
+         ID = 1:n())
+df_eval <- df_treat[which(df_treat$batch == 5 & df_treat$probs_0!=0.025),]
+df_learn <- df_treat[which(df_treat$batch<5),]
+```
+
+
+```{r hyperparameters, cache = FALSE}
+## Hyperparameters
+num_batches <- 3
+# times at which the model is updated (applied in following observation)
+update_times <- sapply(1:4, function(x) max(df_treat$ID[which(df_treat$batch == x)]))
+num_init_draws <- update_times[1]
+A <- update_times[4] # no. observations in learning split/ last model update
+N <- nrow(df_learn) + nrow(df_eval)
+K <- length(unique((df_learn$W)))
+```
+
+
+# Analysis Overview
+
+## Response
+The response function is:
+
+$$Y_i = -M_i^{\text{post-treat}} + 0.5T_i^{\text{post-treat}}$$
+
+It is composed of $M_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *misinformation stimuli*, and $T_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *true stimuli*, both post-treatment. There are two types of each stimuli, and for each two questions about sharing: whether they would share directly on Messenger, and whether they woudld share on their timeline. 
+
+We assign greater weight to the sharing of *misinformation* in our response function, because our primary objective is to curb the spread of misinformation, although we would like to do so at minimal cost to the sharing of true information. 
+
+For example, response value of $Y_i = -1$ indicates that the respondent responded yes to two of the questions about sharing the misinformation stimuli and two of the questions about sharing true stimuli. 
+
+## Treatments
+
+Treatment is composed of a respondent-level treatment and a headline-level treatment. In the adaptive learning portion of the experiment, respondent-level treatments and headline-level treatments are implemented as separate factors, each of which has an empty baseline level that is the control. So respondents may be assigned the pure control condition, one of the respondent-level treatments but no headline-level treatment, one of the headline-level treatments but no respondent-level treatment, or one of the respondent-level treatments *and* one of the headline-level treatments. 
+
+**Respondent-level treatments:**
+
+* Control
+* Facebook tips
+* AfricaCheck tips
+* Video training
+* Emotion suppression
+* Pledge
+* Accuracy nudge
+* Deliberation nudge
+
+**Headline-level treatments**
+
+* Control
+* Related articles
+* Third-party factcheck
+* More information link
+* Real information statement
+
+## Response under unique treatments
+
+For use in analysis of the adaptive design, we calculate doubly robust scores. Scores are composed of a conditional means model, which is estimated by fitting $K$ separate causal forests, and a weighting term, which here are inverse probability weights using known probability of treatment assignment. 
+
+$$
+\Gamma_{i,w} = \mu_{w}(X_{i}) + 1 \{W_i = w \} \xi_w(X_i)(Y_{i} - \mu_w(X_i))
+$$
+
+$$
+\mu_{w}(x)  = \textrm{E}[Y_i(w) | X_i = x]
+$$
+
+$$
+\xi^{IPW}_w(X_i) = \frac{ 1 }{\Pr[W_i = w|X_i = x]}
+$$
+
+
