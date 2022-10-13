@@ -12,8 +12,10 @@ output:
 ## Packages
 
 ```{r packages, message = FALSE}
-set.seed(94305)
-source('utils.R')
+set.seed(60637)
+library(dplyr)
+library(readr)
+# source('utils.R')
 
 dir.create(file.path('..', 'tables'), showWarnings = FALSE)
 dir.create(file.path('..', 'figures'), showWarnings = FALSE)
@@ -588,7 +590,6 @@ df <-
 ```{r treatment_data}
 
 cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
-          
           # covariates
           'male', 
           'age', 'age_flag', 'age_check_flag',
@@ -645,7 +646,7 @@ cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
           'post_false_send_prop',
           'true_click_through_rate',
           'false_click_through_rate',
-          'batch', 'optimal'
+          'batch'
           )
 
 context_cols <- cols[!cols %in% c('Y', 'W', 'user_id', 'time_stamp')]
@@ -678,117 +679,27 @@ df_treat$W <- relevel(df_treat$W, ref = 'H_control_R_control')
 
 ```
 
-## Get optimal assignment
+```{r column_names}
 
-```{r factor_levels}
-W_levels <- levels(df_treat$W)
-# Decompose treatment levels into separate factors
-WH_levels <- unique(sub('_R_.*', '', W_levels))
-WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
-
-# Identify treatment locations where each respective factor level is represented
-WH_idx <- lapply(WH_levels, function(x) grep(x, W_levels))
-
-df_treat['treatment_r'] <- relevel(as.factor(df_treat[['treatment_r']]), 
-                                   ref = 'control')
-df_treat['treatment_h'] <- relevel(as.factor(df_treat[['treatment_h']]), 
-                                   ref = 'control')
-```
-
-```{r factor_scores}
-predict_cols <- c('male', 
-                  'age', 
-                  'age_flag',
-                  'age_check_flag',
-                  'ed', 'ed_flag', 
-                  'urban',
-                  'rel_christian', 'rel_muslim',
-                  'denom_pentecostal', 
-                  'religiosity', 'religiosity_flag',
-                  'locus', 'locus_flag',
-                  'science', 'science_flag',
-                  'dli',
-                  'fb_post', 'fb_post_flag',
-                  'fb_msg', 'fb_msg_flag',
-                  'crt',
-                  'hhi', 'hhi_flag',
-                  'cash',
-                  'hh', 'hh_flag',
-                  'pol',
-                  'cov_concern', 'cov_concern_flag',
-                  'cov_efficacy', 'cov_efficacy_flag',
-                  'nigeria', 
-                  'strat_send_false0', 'strat_send_false1', 'strat_send_false2', 
-                  'strat_send_true0', 'strat_send_true1', 'strat_send_true2', 
-                  'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
-                  'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
-
-xs <- as.matrix(df_treat[, predict_cols])
-
-
-# Include headline as context
-xs_h <- cbind(xs, 
-              model.matrix(lm(Y~ treatment_h-1, data = df_treat)))
-# Predict when headline == control
-xs_h_new <- xs_h
-treat_cols <- grepl(pattern = 'treatment', colnames(xs_h))
-xs_h_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
-                                 nrow = nrow(df_treat), 
-                                 ncol = sum(treat_cols), byrow = TRUE)
-
-h1 <- which(df_treat$batch <5)
-h2 <- which(df_treat$batch == 5)
 
 ```
 
 **filter out infeasible response data**
 ```{r predictions}
 
-W_forest <- readRDS('objects/policy_objects/W_forest.rds')
-multi_forest <- readRDS('objects/policy_objects/multi_forest.rds')
-Y_forest <- readRDS('objects/policy_objects/Y_forest.rds')
-
-# 2a. Predict m(x) = E[Y|X]
-Y_hat_test <- predict(Y_forest, xs_h_new[h2,])$predictions[,1]
-# 2b. Predict W.hat = E[W|X] 
-W_hat_test <- predict(W_forest, xs_h_new[h2,])$predictions
-# 2c. Predict baseline, E[Y(k) | X = x], and tau_k(X) = E[Y(k') - Y(k) | X = x]; 
-# here accuracy is baseline, 
-tau_hat_test <- predict(multi_forest, xs_h_new[h2,])$predictions[,,]
-Y_hat_baseline_test <- Y_hat_test - rowSums(W_hat_test[, -1, drop = FALSE] * tau_hat_test)
-
-# 3. combine to get mu_k(X) on test data (and re-order)
-muk_test <- cbind(Y_hat_baseline_test, Y_hat_baseline_test + tau_hat_test)[,c(2, 1, 3:8)]
-names(muk_test) <- WR_levels
-
-
-levels_implement <- c(2,4,7,8)
-wopt_multi_forest <- WH_idx[[1]][levels_implement[apply(
-  muk_test[,levels_implement], 1, which.max
-)]]
-
-
-
 prev_nrow <- nrow(df_treat)
 
 df_treat <- df_treat %>% 
-  mutate(optimal = c(rep(1, length(h1)), wopt_multi_forest),
-         opt_col = paste0('probs_', optimal-1)) %>% 
-  rowwise() %>% 
-  mutate(optimal_probs = get(opt_col)) %>% 
-  ungroup() %>% 
-  mutate(optimal = case_when(batch !=5 ~ NA_real_,
-                             TRUE ~ optimal)) %>% 
-  filter(optimal_probs!=0) %>% # probability of optimal assignment is 0
-  filter( (batch != 5) | ((probs_0 %in% c(0.025, 0.1666666667))) ) %>% # probabilities out of range
-  filter(Y >= -4 & Y <= 2) %>% 
-  filter(post_true >= 0 & post_true <= 4) %>%
-  filter(post_false >= 0 & post_false <= 4) %>% 
-  filter(pre_send_true >= 0 & pre_send_true <= 2) %>% 
-  filter(pre_send_false >= 0 & pre_send_false <= 2) %>% 
-  filter(post_timeline_true >= 0 & post_timeline_true <= 2) %>% 
-  filter(post_timeline_false >= 0 & post_timeline_false <= 2) %>% 
-  filter(seen_false < 6 & seen_true < 6) %>% 
+  filter( (batch != 5) | ((probs_0 %in% c(0.025, 0.1666666667))),
+  !(batch == 5 & probs_0==0.025),
+  Y >= -4 & Y <= 2,
+  post_true >= 0 & post_true <= 4,
+  post_false >= 0 & post_false <= 4, 
+  pre_send_true >= 0 & pre_send_true <= 2, 
+  pre_send_false >= 0 & pre_send_false <= 2, 
+  post_timeline_true >= 0 & post_timeline_true <= 2,
+  post_timeline_false >= 0 & post_timeline_false <= 2, 
+  seen_false < 6 & seen_true < 6) %>% 
   mutate(ID = as.numeric(factor(ID)))
 
 after_nrow <- nrow(df_treat)
@@ -904,8 +815,6 @@ attr(df_treat$W, 'shortDescription') <- "Treatment each subject receives. There 
 attr(df_treat$age_flag, 'shortDescription') <- "Pre-treatment covariate: binary coded as 1 if age >= 120 (i.e. abnormal age) or empty, 0 otherwise."
 
 attr(df_treat$batch, 'shortDescription') <- "The batch in the linear Thompson sampling algorithm; integer ranging from 1 to 5."
-
-attr(df_treat$optimal, 'shortDescription') <- ""
 
 attr(df_treat$post_true, "shortDescription") <- "Post-treatment true stimuli response count: record how many times the respondent wants to share any of the post-treatment true stimuli; integer coded between 0 and 4; note that for each stimulus, the respondent can share at most twice (once on timeline, once on messenger); there are two true stimuli and two false stimuli post-treatment."
 
@@ -1216,25 +1125,14 @@ df_treat$news_other_trust[!df_treat$news_other_trust %in% trust_lst] <- 'other'
 # Save data
 
 ```{r save}
-text_vars <- c('region', 'cv_denom', 'cv_ethnic', 
-               'questions_comments', 'cov_vaccine_no', 'open_input1', 'deliberation', 'open_input2', 
-               'reason_true', 'reason_false', 'open_input3','cov_masks_no_other', 'input4', 
-               'pledge_3_no', 'pledge_1_no', 'open_input', 'cv_religion_other')
-
-NA_cols <- colnames(df_treat)[sapply(df_treat, function(x)all(is.na(x)))]
-user_cols <- colnames(df_treat)[which(colnames(df_treat) == 'last.seen'):ncol(df_treat)]
-
-secondary_vars_interest <- colnames(df_treat)[!colnames(df_treat) %in% c(text_vars, NA_cols, user_cols, context_cols, transformed_cols)]
-
-
 ## Cleaned data
 CLEANED_FILENAME <- paste0('cleaned-data_', 
                            Sys.Date())
 
-write_csv(cbind(df_treat[, c('Y', 'W', context_cols, paste0('probs_', 0:39))]), 
+write_csv(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.csv'))
 
-write_rds(cbind(df_treat[, c('Y', 'W', context_cols, paste0('probs_', 0:39))]), 
+write_rds(cbind(df_treat[, c('ID','Y', 'W', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.rds'))
 
 ```

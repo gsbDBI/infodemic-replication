@@ -26,7 +26,7 @@ dir.create(file.path('objects'), showWarnings = FALSE)
 
 ## Load Data
 Load most recent download of data; the file name indicates the download date. 
-```{r data, cache = FALSE}
+```{r data, cache = TRUE}
 files <- list.files('../data', 
                     pattern = '^cleaned-data.*rds$', 
                     full.names = TRUE)
@@ -85,19 +85,38 @@ predv_cols <- c('strat_send_false0', 'strat_send_false1', 'strat_send_false2',
                 'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
                 'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
 
+# names for treatment levels
+W_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles', 'Control', 'Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck Tips', 'Facebook Tips', 'Video training') 
+WC_terms <- c('Control', W_terms) # with control
+
+# names for respondent-level treatments
+WR_terms <- c('Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck tips', 'Facebook tips', 'Video training')
+WCR_terms <- c('Control', WR_terms) # with control
+
+# names for headline-level treatments
+WH_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles')
+WCH_terms <- c('Control', WH_terms) # with control
+
+# evaluation treatment levels
+treatment_levels <- c('Control', 
+                      'Headline\nFactcheck', 
+                      'Headline\nRelated articles', 
+                      'Respondent\nAccuracy', 
+                      'Respondent\nFacebook tips', 
+                      'Respondent\nOptimal')
 ```
 
 
-```{r datasets, cache = FALSE}
+```{r datasets, cache = TRUE}
 df_treat <- df_treat %>% 
   mutate(Y_pre = -pre_false + 0.5 * pre_true,
          ID = 1:n())
-df_eval <- df_treat[which(df_treat$batch == 5 & df_treat$probs_0!=0.025),]
+df_eval <- df_treat[which(df_treat$batch == 5),]
 df_learn <- df_treat[which(df_treat$batch<5),]
 ```
 
 
-```{r hyperparameters, cache = FALSE}
+```{r hyperparameters, cache = TRUE}
 ## Hyperparameters
 num_batches <- 3
 # times at which the model is updated (applied in following observation)
@@ -106,6 +125,24 @@ num_init_draws <- update_times[1]
 A <- update_times[4] # no. observations in learning split/ last model update
 N <- nrow(df_learn) + nrow(df_eval)
 K <- length(unique((df_learn$W)))
+```
+
+```{r data_components, cache = TRUE}
+xs_learn <- as.matrix(df_learn[, c(context_cols, predv_cols)])
+yobs_learn <- df_learn$Y
+ws_learn <- as.numeric(df_learn$W)
+
+xs_eval <- as.matrix(df_eval[, c(context_cols, predv_cols)])
+yobs_eval <- df_eval$Y
+ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
+                               as.numeric(df_eval$W) == 2 ~  2, # headline factcheck,
+                               as.numeric(df_eval$W) == 5 ~ 3, # headline related,
+                               as.numeric(df_eval$W) == 6 ~ 4, # respondent accuracy
+                               as.numeric(df_eval$W) == 11 ~ 5, # facebook tips,
+                               # combine optimal with small groups
+                               TRUE ~ 6 # other optimal respondent (8/12)
+)) 
+
 ```
 
 
@@ -161,11 +198,403 @@ $$
 \xi^{IPW}_w(X_i) = \frac{ 1 }{\Pr[W_i = w|X_i = x]}
 $$
 
+## Calculating scores
+
+```{r factor_levels, cache=TRUE}
+# For learning split only
+df_learn['treatment_r'] <- relevel(as.factor(gsub('H_.*_|R_', '', df_learn$W)),
+                                   ref = 'control')
+df_learn['treatment_h'] <- relevel(as.factor(gsub('H_|_R_.*', '', df_learn$W)),
+                                   ref = 'control')
+
+W_levels <- levels(df_learn$W)
+# Decompose treatment levels into separate factors
+WH_levels <- unique(sub('_R_.*', '', W_levels))
+WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
+
+# Identify treatment locations where each respective factor level is represented
+WH_idx <- lapply(WH_levels, function(x) grep(x, W_levels))
+WR_idx <- lapply(WR_levels, function(x) grep(x, W_levels))
+
+
+ws_r <- as.numeric(df_learn$treatment_r) # respondent-level treatment only
+ws_h <- as.numeric(df_learn$treatment_h) # headline-level treatment only
+K_r <- length(unique(ws_r))
+K_h <- length(unique(ws_h))
+# Include headline as context
+xs_h <- cbind(xs_learn, 
+              model.matrix(lm(Y~ treatment_h-1, data = df_learn)))
+# Predict when headline == control
+xs_h_new <- xs_h
+treat_cols <- grepl(pattern = 'treatment', colnames(xs_h))
+xs_h_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
+                                 nrow = nrow(df_learn), 
+                                 ncol = sum(treat_cols), byrow = TRUE)
+
+# Include respondent as context
+xs_r <- cbind(xs_learn, 
+              model.matrix(lm(Y~ treatment_r-1, data = df_learn)))
+# Predict when headline == control
+xs_r_new <- xs_r
+treat_cols <- grepl(pattern = 'treatment', colnames(xs_r))
+xs_r_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
+                                 nrow = nrow(df_learn), 
+                                 ncol = sum(treat_cols), byrow = TRUE)
+
+```
+
+### Learning scores
+```{r probs_learning}
+# For learning
+probs_learn <- as.matrix(df_learn[, paste0('probs_', 0:39)])
+balwts_learn <- (1/probs_learn)[cbind(1:A, ws_learn)]
+
+# Re-calculate probs to aggregate across headline level
+probs_rwide <- probs_learn
+for(x in WH_idx){
+  probs_rwide[,x] <- probs_learn[,x]/rowSums(probs_learn[,x])
+}
+balwts_r <- (1/probs_rwide)[matrix(c(1:nrow(df_learn),ws_learn), ncol = 2)]
+
+
+probs_r <- t(sapply(1:nrow(df_learn), function(x){
+  hval <- ws_h[x]
+  colidx <- WH_idx[[hval]]
+  probs_rwide[x, colidx]
+} ))
+
+# Re-calculate probs to aggregate across respondent level
+probs_hwide <- probs_learn
+for(x in WR_idx){
+  probs_hwide[,x] <- probs_learn[,x]/rowSums(probs_learn[,x])
+}
+balwts_h <- (1/probs_hwide)[matrix(c(1:nrow(df_learn),ws_learn), ncol = 2)]
+
+
+probs_h <- t(sapply(1:nrow(df_learn), function(x){
+  rval <- ws_r[x]
+  colidx <- WR_idx[[rval]]
+  probs_hwide[x, colidx]
+} ))
+```
+
+For scores in the learning split, we are interested in making comparisons across levels within the two types of factors: respondent-level treatments, and headline-level treatments. To share information across treatment conditions, for our conditional means model, we run separate multi-arm causal forests for each factor type. 
+
+- For the respondent type factor, in the multi-arm causal forest model each *respondent* treatment is an arm, with the reference condition set as control. Headline treatments are treated as contexts. There are `r sum((df_learn$treatment_r=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_r)[2:8])` and `r max(table(df_learn$treatment_r)[2:8])` in a given treatment group, respectively.
+- For the headline type factor, in the multi-arm causal forest model each *headline* treatment is an arm, with the reference condition set as control. Respondent treatments are treated as contexts. There are `r sum((df_learn$treatment_h=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_h)[2:5])` and `r max(table(df_learn$treatment_h)[2:5])` in a given treatment group, respectively.
 
 
 
+```{r learn_scores, cache=TRUE}
 
-## Main Analysis
+# if(file.exists('objects/aipw_scores_learn.RDS')){ # read in scores if already generated
+#   aipw_scores_learn <- readRDS('objects/aipw_scores_learn.RDS')
+#   aipw_scoresR_learn <- aipw_scores_learn[[1]]
+#   aipw_scoresRmarg_learn <- aipw_scores_learn[[2]]
+#   aipw_scoresH_learn <- aipw_scores_learn[[3]]
+#   aipw_scoresHmarg_learn <- aipw_scores_learn[[4]]
+#   
+# }else{
+#   aipw_scores_learn <- aw_scores_learn(xs_h = xs_h, xs_r = xs_r, 
+#                                        ws_h = ws_h, ws_r = ws_r, ws = ws_learn, 
+#                                        yobs = yobs_learn, 
+#                                        K_h = K_h, K_r = K_r, K = K, 
+#                                        balwts = balwts_learn, 
+#                                        balwts_r = balwts_r, balwts_h = balwts_h, 
+#                                        probs_r = probs_r, probs_h = probs_h, 
+#                                        probsK = probs_learn,
+#                                        chunks = update_times)
+#   
+#   aipw_scoresR_learn <- aipw_scores_learn[[1]]
+#   aipw_scoresRmarg_learn <- aipw_scores_learn[[2]]
+#   aipw_scoresH_learn <- aipw_scores_learn[[3]]
+#   aipw_scoresHmarg_learn <- aipw_scores_learn[[4]]
+#   
+#   saveRDS(aipw_scores_learn, 'objects/aipw_scores_learn.RDS')
+#   
+# }
+```
+
+
+For the evaluation scores, we consider only respondents who are assigned policies of interest:
+
+- control
+- headline: related articles
+- headline: fact check
+- respondent: accuracy nudge
+- respondent: Facebook tips
+- respondent: contextual policy, composed of accuracy nudge, Facebook tips, emotion nudge, and video treatment
+
+Approximately 11% of respondents are assigned treatment uniformly at random; these respondents can be used for off-policy evaluation, but are not used in this analysis. 
+
+To calculate scores, our conditional means model is a multi-arm causal forest, with the reference condition set as the pure control. We include five arms for each of the non-contextual policies; because the contextual policy is composed of treatments that overlap with the non-contextual policies, we do not include a contextual policy condition, but rather a condition for the contextual assignments that are not accounted for in the non-contextual arms, the emotion nudge and video treatment. 
+
+
+### Evalution Scores
+```{r eval_scores_setup, cache=TRUE}
+
+# df_eval$optimal_assignment <- factor(optimal_assignment,
+#                                      labels = c('Optimal policy = accuracy', 'Optimal policy = FB tips'))
+
+# For evaluation
+probs_eval <- as.matrix(df_eval[, paste0('probs_', 0:39)])
+balwts_eval <- (1/probs_eval)[cbind(1:nrow(df_eval), ws_eval)]
+what_eval <- cbind(probs_eval[, c(1, 2, 5, 6, 11)], 
+                   probs_eval[, 8] + probs_eval[, 12])
+
+# Adjust probabilities for differences between learning and evaluation splits;
+# target is eval pop re-weighted to learning distribution
+ws_learn_eval <- rep(1, N)
+ws_learn_eval[1:A] <- 0 # 0 for learning, 1 for evaluation split
+learn_eval_forest <- multi_arm_causal_forest(X = rbind(xs_learn, xs_eval), 
+                                             Y = c(yobs_learn, yobs_eval), 
+                                             W = as.factor(ws_learn_eval))
+probs_adjusted <- learn_eval_forest$W.hat
+
+# probability of being in your own split over probability of being in learning split
+# Weight is 1 for observations in the learning split
+what_eval_adjustment <- (probs_adjusted[matrix(c(1:N, ws_learn_eval+1), ncol = 2)]/probs_adjusted[,1])[(A+1):N]
+# Standardize to appropriate group size
+what_eval_adjustment <- what_eval_adjustment*(N-A)/sum(what_eval_adjustment)
+
+```
+
+```{r optimal_policy_learning, cache=TRUE}
+train_idx <- ws_r %in%c(2,7)
+
+cf.priority <- causal_forest(
+  X = xs_learn[train_idx, ],
+  Y = df_learn$post_false_prop[train_idx],
+  W = 1*(ws_r[train_idx]==2),
+  W.hat = probs_r[train_idx, 2]/(rowSums(probs_r[train_idx, c(2,7)])),
+  seed = 60637)
+
+optimal_assignment <- ifelse(predict(cf.priority, xs_eval)$predictions<0, 4, 5)
+```
+
+```{r combined_eval_scores, cache=TRUE}
+## Combined response function scores 
+if(file.exists('objects/aipw_scores_eval.RDS')){ # read in scores if already generated
+  aipw_scores <- readRDS('objects/aipw_scores_eval.RDS')
+  
+}else{
+  aipw_scores <- aw_scores_eval(xs = xs_eval,
+                                yobs = yobs_eval, 
+                                ws = ws_eval, 
+                                # what = what_eval, 
+                                optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores, 'objects/aipw_scores_eval.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_adjusted <- readRDS('objects/aipw_scores_eval_adjusted.RDS')
+  
+}else{
+  aipw_scores_adjusted <- aw_scores_eval(xs = xs_eval,
+                                         yobs = yobs_eval, 
+                                         ws = ws_eval, 
+                                         sample.weights = what_eval_adjustment, 
+                                         optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_adjusted, 'objects/aipw_scores_eval_adjusted.RDS')
+}
+
+colnames(aipw_scores) <- colnames(aipw_scores_adjusted) <- treatment_levels
+
+```
+
+```{r any_eval_scores, cache = TRUE}
+## Any share scores
+any_true_eval <- df_eval$post_true_prop
+any_false_eval<- df_eval$post_false_prop
+
+if(file.exists('objects/aipw_scores_any_true_eval.RDS')){ # read in scores if already generated
+  aipw_scores_any_true_eval <- readRDS('objects/aipw_scores_any_true_eval.RDS')
+  
+}else{
+  aipw_scores_any_true_eval <- aw_scores_eval(xs = xs_eval,
+                                              yobs = any_true_eval, 
+                                              ws = ws_eval, 
+                                              what = what_eval, 
+                                              optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_any_true_eval, 'objects/aipw_scores_any_true_eval.RDS')
+}
+
+
+if(file.exists('objects/aipw_scores_any_false_eval.RDS')){ # read in scores if already generated
+  aipw_scores_any_false_eval <- readRDS('objects/aipw_scores_any_false_eval.RDS')
+  
+}else{
+  aipw_scores_any_false_eval <- aw_scores_eval(xs = xs_eval,
+                                               yobs = any_false_eval, 
+                                               ws = ws_eval, 
+                                               # what = what_eval, 
+                                               optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_any_false_eval, 'objects/aipw_scores_any_false_eval.RDS')
+}
+
+if(file.exists('objects/aipw_scores_any_true_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_any_true_eval_adjusted <- readRDS('objects/aipw_scores_any_true_eval_adjusted.RDS')
+  
+}else{
+  aipw_scores_any_true_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = any_true_eval, 
+                                                       ws = ws_eval, 
+                                                       sample.weights = what_eval_adjustment, 
+                                                       optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_any_true_eval_adjusted, 'objects/aipw_scores_any_true_eval_adjusted.RDS')
+}
+
+
+if(file.exists('objects/aipw_scores_any_false_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_any_false_eval_adjusted <- readRDS('objects/aipw_scores_any_false_eval_adjusted.RDS')
+  
+}else{
+  aipw_scores_any_false_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                        yobs = any_false_eval, 
+                                                        ws = ws_eval, 
+                                                        sample.weights = what_eval_adjustment,
+                                                        optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_any_false_eval_adjusted, 'objects/aipw_scores_any_false_eval_adjusted.RDS')
+}
+```
+
+```{r channel_eval_scores, cache = TRUE, message=FALSE, warning=FALSE}
+## Channel scores
+timeline_true_eval <- df_eval$post_true_timeline_prop
+timeline_false_eval <- df_eval$post_false_timeline_prop
+send_true_eval <- df_eval$post_true_send_prop
+send_false_eval <- df_eval$post_false_send_prop
+
+if(file.exists('objects/aipw_scores_timeline_true_eval.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true_eval <- readRDS('objects/aipw_scores_timeline_true_eval.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true_eval <- aw_scores_eval(xs = xs_eval,
+                                                   yobs = timeline_true_eval, 
+                                                   ws = ws_eval, 
+                                                   #                                                   what = what_eval, 
+                                                   optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_timeline_true_eval, 'objects/aipw_scores_timeline_true_eval.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_false_eval.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false_eval <- readRDS('objects/aipw_scores_timeline_false_eval.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false_eval <- aw_scores_eval(xs = xs_eval,
+                                                    yobs = timeline_false_eval, 
+                                                    ws = ws_eval, 
+                                                    #                                                    what = what_eval, 
+                                                    optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_timeline_false_eval, 'objects/aipw_scores_timeline_false_eval.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_send_true_eval.RDS')){ # read in scores if already generated
+  aipw_scores_send_true_eval <- readRDS('objects/aipw_scores_send_true_eval.RDS')
+  
+}else{
+  
+  aipw_scores_send_true_eval <- aw_scores_eval(xs = xs_eval,
+                                               yobs = send_true_eval, 
+                                               ws = ws_eval, 
+                                               #                                               what = what_eval, 
+                                               optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_send_true_eval, 'objects/aipw_scores_send_true_eval.RDS')
+}
+
+if(file.exists('objects/aipw_scores_send_false_eval.RDS')){ # read in scores if already generated
+  aipw_scores_send_false_eval <- readRDS('objects/aipw_scores_send_false_eval.RDS')
+  
+}else{
+  aipw_scores_send_false_eval <- aw_scores_eval(xs = xs_eval,
+                                                yobs = send_false_eval, 
+                                                ws = ws_eval, 
+                                                #                                                what = what_eval, 
+                                                optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_send_false_eval, 'objects/aipw_scores_send_false_eval.RDS')
+}
+
+
+# adjusted
+
+
+if(file.exists('objects/aipw_scores_timeline_true_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true_eval_adjusted <- readRDS('objects/aipw_scores_timeline_true_eval_adjusted.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                            yobs = timeline_true_eval, 
+                                                            ws = ws_eval, 
+                                                            sample.weights =  what_eval_adjustment, 
+                                                            optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_timeline_true_eval_adjusted, 'objects/aipw_scores_timeline_true_eval_adjusted.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_false_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false_eval_adjusted <- readRDS('objects/aipw_scores_timeline_false_eval_adjusted.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                             yobs = timeline_false_eval, 
+                                                             ws = ws_eval, 
+                                                             sample.weights =  what_eval_adjustment, 
+                                                             optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_timeline_false_eval_adjusted, 'objects/aipw_scores_timeline_false_eval_adjusted.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_send_true_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_send_true_eval_adjusted <- readRDS('objects/aipw_scores_send_true_eval_adjusted.RDS')
+  
+}else{
+  
+  aipw_scores_send_true_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                        yobs = send_true_eval, 
+                                                        ws = ws_eval, 
+                                                        sample.weights = what_eval_adjustment, 
+                                                        optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_send_true_eval_adjusted, 'objects/aipw_scores_send_true_eval_adjusted.RDS')
+}
+
+if(file.exists('objects/aipw_scores_send_false_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_send_false_eval_adjusted <- readRDS('objects/aipw_scores_send_false_eval_adjusted.RDS')
+  
+}else{
+  aipw_scores_send_false_eval_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                         yobs = send_false_eval, 
+                                                         ws = ws_eval, 
+                                                         sample.weights =  what_eval_adjustment, 
+                                                         optimal_assignment = optimal_assignment)
+  
+  saveRDS(aipw_scores_send_false_eval_adjusted, 'objects/aipw_scores_send_false_eval_adjusted.RDS')
+}
+```
+
+# Main Analysis
 
 * Notes on analysis:
     + Outcomes:
@@ -186,125 +615,730 @@ $$
         -  The best contextual policy achieves higher value than the best uniform headline-level treatment
         -  The best contextual policy achieves higher value than the best uniform respondent-level treatment
 
+```{r eval_setup, cache = TRUE}
+covariate_names <- c(context_cols, 'Y_pre')
+lin_covs <- formula(paste0(' ~ ', 
+                           paste(covariate_names, collapse = ' + ')))
+iter <- 1e3 # iterations for bootstraps
+```
 
-## Secondary analysis
+
+```{r combined_response_eval_estimation, cache=TRUE}
+# Scores estimates
+# mean response
+aipw_eval_est <- as.data.frame(t(apply(aipw_scores, 2, 
+                                       function(x){
+                                         if(!identical(x, aipw_scores[, 1])){
+                                           x <- aipw_scores[, 1] + x
+                                         }
+                                         estimate <- mean(x, na.rm = TRUE)
+                                         std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                         return(c(estimate = estimate,
+                                                  std.error = std.error,
+                                                  statistic = estimate/std.error))
+                                       }
+)))
+
+# treatment effects
+aipw_eval_te <- as.data.frame(t(apply(aipw_scores[, -1], 2, 
+                                      function(x){
+                                        estimate <- mean(x, na.rm = TRUE)
+                                        std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                        return(c(estimate = estimate,
+                                                 std.error = std.error,
+                                                 statistic = estimate/std.error,
+                                                 p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                 p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                      }
+)))
+
+## Covariate-shift adjusted
+aipw_eval_adj_est <- as.data.frame(t(apply(aipw_scores_adjusted, 2, 
+                                           function(x){
+                                             if(!identical(x, aipw_scores_adjusted[, 1])){
+                                               x <- aipw_scores_adjusted[, 1] + x
+                                             }
+                                             estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                       w = what_eval_adjustment)
+                                             std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                             return(c(estimate = estimate,
+                                                      std.error = std.error,
+                                                      statistic = estimate/std.error,
+                                                      p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                      p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                           }
+)))
+
+aipw_eval_adj_te <- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2, 
+                                          function(x){
+                                            estimate <- weighted.mean(x, na.rm = TRUE, w = what_eval_adjustment)
+                                            std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                            return(c(estimate = estimate,
+                                                     std.error = std.error,
+                                                     statistic = estimate/std.error,
+                                                     p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                          }
+)))
+
+```
+
+```{r any_response_eval_estimation, cache=TRUE}
+# Scores estimates
+## true
+aipw_eval_t_est <- as.data.frame(t(apply(aipw_scores_any_true_eval, 2, 
+                                         function(x){
+                                           if(!identical(x, aipw_scores_any_true_eval[, 1])){
+                                             x <- aipw_scores_any_true_eval[, 1] + x
+                                           }
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error))
+                                         }
+)))
+aipw_eval_t_te <- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2, 
+                                        function(x){
+                                          estimate <- mean(x, na.rm = TRUE)
+                                          std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                          return(c(estimate = estimate,
+                                                   std.error = std.error,
+                                                   statistic = estimate/std.error,
+                                                   p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                        }
+)))
+## false
+aipw_eval_f_est <- as.data.frame(t(apply(aipw_scores_any_false_eval, 2, 
+                                         function(x){
+                                           if(!identical(x, aipw_scores_any_false_eval[, 1])){
+                                             x <- aipw_scores_any_false_eval[, 1] + x
+                                           }
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error))
+                                         }
+)))
+aipw_eval_f_te <- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2, 
+                                        function(x){
+                                          estimate <- mean(x, na.rm = TRUE)
+                                          std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                          return(c(estimate = estimate,
+                                                   std.error = std.error,
+                                                   statistic = estimate/std.error,
+                                                   p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                        }
+)))
+## Covariate-shift adjusted
+## true
+aipw_eval_t_adj_est <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted, 2, 
+                                             function(x){
+                                               if(!identical(x, aipw_scores_any_true_eval_adjusted[, 1])){
+                                                 x <- aipw_scores_any_true_eval_adjusted[, 1] + x
+                                               }
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+aipw_eval_t_adj_te <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[, -1], 2, 
+                                            function(x){
+                                              estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                        w = what_eval_adjustment)
+                                              std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                              return(c(estimate = estimate,
+                                                       std.error = std.error,
+                                                       statistic = estimate/std.error,
+                                                       p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                            }
+)))
+## false
+aipw_eval_f_adj_est <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted, 2, 
+                                             function(x){
+                                               if(!identical(x, aipw_scores_any_false_eval_adjusted[, 1])){
+                                                 x <- aipw_scores_any_false_eval_adjusted[, 1] + x
+                                               }
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+aipw_eval_f_adj_te <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[, -1], 2, 
+                                            function(x){
+                                              estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                        w = what_eval_adjustment)
+                                              std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                              return(c(estimate = estimate,
+                                                       std.error = std.error,
+                                                       statistic = estimate/std.error,
+                                                       p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                            }
+)))
+```
+
+```{r channel_response_eval_estimation, cache=TRUE}
+# Scores estimates
+## true
+aipw_eval_tt_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2, 
+                                          function(x){
+                                            if(!identical(x, aipw_scores_timeline_true_eval[, 1])){
+                                              x <- aipw_scores_timeline_true_eval[, 1] + x
+                                            }
+                                            estimate <- mean(x, na.rm = TRUE)
+                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                            return(c(estimate = estimate,
+                                                     std.error = std.error))
+                                          }
+)))
+
+aipw_eval_st_est <- as.data.frame(t(apply(aipw_scores_send_true_eval, 2, 
+                                          function(x){
+                                            if(!identical(x, aipw_scores_send_true_eval[, 1])){
+                                              x <- aipw_scores_send_true_eval[, 1] + x
+                                            }
+                                            estimate <- mean(x, na.rm = TRUE)
+                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                            return(c(estimate = estimate,
+                                                     std.error = std.error))
+                                          }
+)))
+
+
+aipw_eval_tt_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2, 
+                                         function(x){
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error,
+                                                    statistic = estimate/std.error,
+                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                         }
+)))
+
+aipw_eval_st_te <- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2, 
+                                         function(x){
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error,
+                                                    statistic = estimate/std.error,
+                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                         }
+)))
+
+## false
+aipw_eval_tf_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2, 
+                                          function(x){
+                                            if(!identical(x, aipw_scores_timeline_false_eval[, 1])){
+                                              x <- aipw_scores_timeline_false_eval[, 1] + x
+                                            }
+                                            estimate <- mean(x, na.rm = TRUE)
+                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                            return(c(estimate = estimate,
+                                                     std.error = std.error))
+                                          }
+)))
+
+aipw_eval_sf_est <- as.data.frame(t(apply(aipw_scores_send_false_eval, 2, 
+                                          function(x){
+                                            if(!identical(x, aipw_scores_send_false_eval[, 1])){
+                                              x <- aipw_scores_send_false_eval[, 1] + x
+                                            }
+                                            estimate <- mean(x, na.rm = TRUE)
+                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                            return(c(estimate = estimate,
+                                                     std.error = std.error))
+                                          }
+)))
+
+
+aipw_eval_tf_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 2, 
+                                         function(x){
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error,
+                                                    statistic = estimate/std.error,
+                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                         }
+)))
+
+aipw_eval_sf_te <- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2, 
+                                         function(x){
+                                           estimate <- mean(x, na.rm = TRUE)
+                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                                           return(c(estimate = estimate,
+                                                    std.error = std.error,
+                                                    statistic = estimate/std.error,
+                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                         }
+)))
+
+## Covariate-shift adjusted
+## true
+aipw_eval_tt_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted, 2, 
+                                              function(x){
+                                                if(!identical(x, aipw_scores_timeline_true_eval_adjusted[, 1])){
+                                                  x <- aipw_scores_timeline_true_eval_adjusted[, 1] + x
+                                                }
+                                                estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                          w = what_eval_adjustment)
+                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                                return(c(estimate = estimate,
+                                                         std.error = std.error))
+                                              }
+)))
+
+aipw_eval_st_adj_est <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted, 2, 
+                                              function(x){
+                                                if(!identical(x, aipw_scores_send_true_eval_adjusted[, 1])){
+                                                  x <- aipw_scores_send_true_eval_adjusted[, 1] + x
+                                                }
+                                                estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                          w = what_eval_adjustment)
+                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                                return(c(estimate = estimate,
+                                                         std.error = std.error))
+                                              }
+)))
+
+
+aipw_eval_tt_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted[, -1], 2, 
+                                             function(x){
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+
+aipw_eval_st_adj_te <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted[, -1], 2, 
+                                             function(x){
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+
+## false
+aipw_eval_tf_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted, 2, 
+                                              function(x){
+                                                if(!identical(x, aipw_scores_timeline_false_eval_adjusted[, 1])){
+                                                  x <- aipw_scores_timeline_false_eval_adjusted[, 1] + x
+                                                }
+                                                estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                          w = what_eval_adjustment)
+                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                                return(c(estimate = estimate,
+                                                         std.error = std.error))
+                                              }
+)))
+
+aipw_eval_sf_adj_est <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted, 2, 
+                                              function(x){
+                                                if(!identical(x, aipw_scores_send_false_eval_adjusted[, 1])){
+                                                  x <- aipw_scores_send_false_eval_adjusted[, 1] + x
+                                                }
+                                                estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                          w = what_eval_adjustment)
+                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                                return(c(estimate = estimate,
+                                                         std.error = std.error))
+                                              }
+)))
+
+
+aipw_eval_tf_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted[, -1], 2, 
+                                             function(x){
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+
+aipw_eval_sf_adj_te <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted[, -1], 2, 
+                                             function(x){
+                                               estimate <- weighted.mean(x, na.rm = TRUE, 
+                                                                         w = what_eval_adjustment)
+                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
+                                               return(c(estimate = estimate,
+                                                        std.error = std.error,
+                                                        statistic = estimate/std.error,
+                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                                             }
+)))
+
+```
+
+```{r label_scores, cache=TRUE}
+
+aipw_eval_est$term <- aipw_eval_adj_est$term <- 
+  aipw_eval_t_est$term <- aipw_eval_t_adj_est$term <- 
+  aipw_eval_f_est$term <- aipw_eval_f_adj_est$term <- 
+  aipw_eval_tt_est$term <- aipw_eval_tf_est$term <- 
+  aipw_eval_st_est$term <- aipw_eval_sf_est$term <-
+  aipw_eval_tt_adj_est$term <- aipw_eval_tf_adj_est$term <- 
+  aipw_eval_st_adj_est$term <- aipw_eval_sf_adj_est$term <- 
+  treatment_levels
+
+aipw_eval_te$term <- aipw_eval_adj_te$term <- 
+  aipw_eval_f_te$term <- aipw_eval_f_adj_te$term <- 
+  aipw_eval_t_te$term <- aipw_eval_t_adj_te$term <- 
+  aipw_eval_t_te$term <- aipw_eval_t_adj_te$term <- 
+  aipw_eval_tt_te$term <- aipw_eval_tf_te$term <- 
+  aipw_eval_st_te$term <- aipw_eval_sf_te$term <-
+  aipw_eval_tt_adj_te$term <- aipw_eval_tf_adj_te$term <- 
+  aipw_eval_st_adj_te$term <- aipw_eval_sf_adj_te$term <-
+  treatment_levels[-1]
+
+```
+
+
+## Mean response by type of stimuli
+
+
+```{r any_eval_scoresplot, echo = FALSE, message = FALSE, cache=TRUE, warning=FALSE}
+
+any_scores <- bind_rows(list(`True` = aipw_eval_t_est,
+                             `False` = aipw_eval_f_est), 
+                        .id = 'Stimuli Type') %>% 
+  mutate(`Stimuli Type` = relevel(as.factor(`Stimuli Type`),
+                                  ref = 'True'))
+
+any_scores$Intervention <- factor(rep(rep(c('Control', 'Headline', 'Respondent'), 
+                                          times = c(1, 2,3)), 2))
+
+ggplot(any_scores, aes(x = estimate, y = term, color=`Stimuli Type`)) +
+  stat_gradientinterval(aes(y = term, 
+                            xdist = distributional::dist_normal(estimate, std.error), 
+                            color=`Stimuli Type`, fill = `Stimuli Type`), 
+                        position = position_dodge(width=0.5), .width = 0, size = 0) +
+  facet_grid(rows = vars(Intervention), scales = 'free_y', space = 'free_y') + 
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), width = 0.05, position=position_dodge(width=0.5)) +
+  scale_color_manual(values = cbPalette[c(6,7)]) +
+  scale_fill_manual(values = cbPalette[c(6,7)]) +
+  geom_point(aes(x = estimate), size = 2, position=position_dodge(width=0.5)) +
+  ylab('Policy') + 
+  xlab('Estimate') +
+  # geom_vline(xintercept = 0, colour = 'grey60', linetype = 2) + 
+  ggtitle(label = 'Average response', 
+          subtitle = 'Evaluation data') +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.text.y = element_blank()) +
+  coord_cartesian(xlim = c(0.35, 0.7))
+
+ggsave('../figures/evaluated_scores_any.png', width = 8, height = 6)
+```
+
+
+## Mean response by type of stimuli and channel
+
+```{r channel_eval_scoresplot, echo = FALSE, message = FALSE, cache=TRUE, warning=FALSE, message=FALSE}
+channel_scores <- bind_rows(list(
+  `Timeline` = bind_rows(list(`True` = aipw_eval_tt_est,
+                              `False` = aipw_eval_tf_est), 
+                         .id = 'Stimuli Type'),
+  `Messenger` = bind_rows(list(`True` = aipw_eval_st_est,
+                               `False` = aipw_eval_sf_est), 
+                          .id = 'Stimuli Type')), 
+  .id = 'Channel') %>% 
+  mutate(`Stimuli Type` = relevel(as.factor(`Stimuli Type`),
+                                  ref = 'True'),
+         `Channel` = relevel(as.factor(`Channel`),
+                             ref = 'Timeline'))
+
+channel_scores$Intervention <- factor(rep(c('Control', rep(c('Headline', 'Respondent'), times = c(2,3))),4))
+ggplot(channel_scores, aes(x = estimate, y =term, color=`Stimuli Type`, 
+                           shape = Channel)) +
+  stat_gradientinterval(aes(y = term, 
+                            xdist = distributional::dist_normal(estimate, std.error), 
+                            color=`Stimuli Type`, fill = `Stimuli Type`), 
+                        position = position_dodge(width=0.5), .width = 0, size = 0) +
+  geom_point(position=position_dodge(width=0.5), 
+             size = 4, fill = 'white') + # change size, fill here
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5)) + 
+  scale_shape_manual(values = c(21, 24)) + # change shape here
+  facet_grid(rows = vars(Intervention), scales = 'free_y', space = 'free_y') + 
+  xlab('Treatment') +
+  ylab('Estimate') +
+  coord_cartesian(xlim=c(.3, .65)) +
+  geom_vline(xintercept = 0, colour = 'grey60', linetype = 2) +
+  scale_color_manual(values = cbPalette[c(6,7)]) +
+  scale_fill_manual(values = cbPalette[c(6,7)]) +
+  ggtitle(label = 'Average response', 
+          subtitle = 'Evaluation data') +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.text.y = element_blank())
+
+ggsave('../figures/evaluated_scores_channel.png', width = 8, height = 6)
+```
+
+## Mean response across response measures
+```{r unified_eval_scoresplot, echo = FALSE, message = FALSE, cache=TRUE, warning=FALSE, message=FALSE}
+
+all_scores <- bind_rows(list(
+  `Any` = bind_rows(list(`True` = aipw_eval_t_est,
+                         `False` = aipw_eval_f_est,
+                         `Combined` = aipw_eval_est), 
+                    .id = 'Stimuli Type'), 
+  `Timeline` = bind_rows(list(`True` = aipw_eval_tt_est,
+                              `False` = aipw_eval_tf_est), 
+                         .id = 'Stimuli Type'),
+  `Messenger` = bind_rows(list(`True` = aipw_eval_st_est,
+                               `False` = aipw_eval_sf_est), 
+                          .id = 'Stimuli Type')), 
+  .id = 'Channel') %>% 
+  mutate(`Stimuli Type` = relevel(as.factor(`Stimuli Type`),
+                                  ref = 'True'),
+         `Channel` = relevel(as.factor(`Channel`),
+                             ref = 'Timeline'),
+         `Aggregation` = factor(case_when(
+           `Stimuli Type` == 'Combined' ~ 'Combined',
+           TRUE ~ 'Disaggregated'),
+           levels = c('Disaggregated', 'Combined')))
+
+all_scores$Intervention <- factor(rep(c('Control', rep(c('Headline', 'Respondent'), times = c(2,3))),7))
+
+ggplot(all_scores, aes(x = estimate, y =term, color=`Stimuli Type`, 
+                       shape = Channel)) +
+  stat_gradientinterval(
+    data = all_scores %>% filter(Channel != 'Any'),
+    aes(y = term, 
+        xdist = distributional::dist_normal(estimate, std.error), 
+        color=`Stimuli Type`, fill = `Stimuli Type`), 
+    position = position_dodge(width=0.5), .width = 0, size = 0) +
+  stat_gradientinterval(
+    data = all_scores %>% filter(Channel == 'Any'),
+    aes(y = term, 
+        xdist = distributional::dist_normal(estimate, std.error), 
+        color=`Stimuli Type`, fill = `Stimuli Type`), 
+    .width = 0, size = 0, height = 0.2)  +
+  geom_point(data = all_scores %>% filter(Channel != 'Any'),
+             position=position_dodge(width=0.5), 
+             size = 4, fill = 'white') + # change size, fill here
+  geom_point(data = all_scores %>% filter(Channel == 'Any'), 
+             size = 4, fill = 'white') + # change size, fill here
+  geom_errorbar(data = all_scores %>% filter(Channel != 'Any'),
+                aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5)) + 
+  geom_errorbar(data = all_scores %>% filter(Channel == 'Any'),
+                aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0) + 
+  scale_shape_manual(values = c(21, 22, 24)) + # change shape here
+  facet_grid(rows = vars(Intervention), 
+             cols = vars(Aggregation),
+             scales = 'free', space = 'free') + 
+  xlab('Estimate') +
+  ylab('Policy') +
+  scale_color_manual(values = cbPalette[c(2,6,7)]) +
+  scale_fill_manual(values = cbPalette[c(2,6,7)]) +
+  ggtitle(label = 'Average response', 
+          subtitle = 'Evaluation data') +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.text.y = element_blank())
+
+ggsave('../figures/evaluated_scores_all.png', width = 8, height = 6)
+```
+
+
+
+# Secondary analysis
 *	### Variation based on scientific views, cognitive reflection test
-    +	Notes on analysis:
-        + Outcomes:
-          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-        - Use learning data
-        - Replicate Figure 4
++	Notes on analysis:
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Replicate Figure 4
 ![image](https://user-images.githubusercontent.com/77539474/193426695-a7503a06-1024-4b34-bfb2-5e24fab2a7d1.png)
 ![image](https://user-images.githubusercontent.com/77539474/193426702-45428e07-0c7d-4fcd-aecb-56b166206660.png)
 
 
-    + Hypothesis: 
-        -  Facebook tips or AfricaCheck tips > Accuracy for respondents with high DLI, high CRT, high Science 
++ Hypothesis: 
+-  Facebook tips or AfricaCheck tips > Accuracy for respondents with high DLI, high CRT, high Science 
 
 
 * ### Industry Practice
-    + Notes on analysis:
-        + Outcomes:
-          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-        - Use learning data
-        - Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
-        - Treatments
-            - Factcheck (headline)
-            - More information (headline)
-            - Related articles (headline)
-            - Facebook tips (respondent)
-            - AfricaCheck tips (respondent) 
-        - Covariates
-            - Age
-            - Male
-            - Education
-    + Hypotheses:
-        -  The effect of Factcheck, more information, related articles: more educated users, older people, and women > less educated, younger and male 
-        -  The effect (reduce sharing of misinformation) of Facebook tips, AfricaCheck tips: less-educated > those with more education
++ Notes on analysis:
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+- Treatments
+- Factcheck (headline)
+- More information (headline)
+- Related articles (headline)
+- Facebook tips (respondent)
+- AfricaCheck tips (respondent) 
+- Covariates
+- Age
+- Male
+- Education
++ Hypotheses:
+-  The effect of Factcheck, more information, related articles: more educated users, older people, and women > less educated, younger and male 
+-  The effect (reduce sharing of misinformation) of Facebook tips, AfricaCheck tips: less-educated > those with more education
 
 
 * ### Social Science Theory
-    + Notes on analysis
-        + Outcomes:
-          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-        - Use learning data
-        - Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
-        - Covariates:
-            - CRT
-            - Facebook usage
-            - Religiosity
-        - Treatments:
-            - Accuracy nudge (respondent)
-            - Deliberation nudge (respondent)
-            - Pledge (respondent)
-    + Hypotheses
-        -  Compare responses under accuracy nudge and deliberation nudge between low CRT and high CRT respondents
-        -  Pledge respondent-level treatment: frequent user of Facebook, more religious, and high CRT > less frequent user of Facebook, less religious, and low CRT
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+- Covariates:
+- CRT
+- Facebook usage
+- Religiosity
+- Treatments:
+- Accuracy nudge (respondent)
+- Deliberation nudge (respondent)
+- Pledge (respondent)
++ Hypotheses
+-  Compare responses under accuracy nudge and deliberation nudge between low CRT and high CRT respondents
+-  Pledge respondent-level treatment: frequent user of Facebook, more religious, and high CRT > less frequent user of Facebook, less religious, and low CRT
 
 
 * ### Best respondent and headline-level treatments
-    + Notes on analysis
-        + Outcomes:
-          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-        - Use evaluation data
-    + Hypotheses
-        -  How locus of control and age interact with the best uniform respondent-level treatment
-        -  How CRT and education interact with the best uniform headline-level treatment
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use evaluation data
++ Hypotheses
+-  How locus of control and age interact with the best uniform respondent-level treatment
+-  How CRT and education interact with the best uniform headline-level treatment
 
 
 * ### Baseline level
-    + Notes on analysis
-        + Outcomes:
-          1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-          2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-        - Compare response under the following covariates to indicator = 1 or ≥ median to indicator = 0 or < median
-        - Use evaluation data
-    + Hypotheses
-        - Certain types of people are simply more likely to share false information:
-            -  Young
-            -  Male
-            -  Less educated
-            -  Low CRT
-            -  More religious
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Compare response under the following covariates to indicator = 1 or ≥ median to indicator = 0 or < median
+- Use evaluation data
++ Hypotheses
+- Certain types of people are simply more likely to share false information:
+-  Young
+-  Male
+-  Less educated
+-  Low CRT
+-  More religious
 
 
 ## Additional
 * ### Follow up on bonus stimuli [not coded yet]
-    + Notes on analysis
-        + Outcomes:
-          1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
-        + Use evaluation data
-    + Hypotheses
-        -  [ ] Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli; compare for each factor level separately
++ Notes on analysis
++ Outcomes:
+1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
++ Use evaluation data
++ Hypotheses
+-  [ ] Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli; compare for each factor level separately
 
 * ### Follow up questions 1-3 days after
-    + Notes on analysis
-        + Outcomes:
-           1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-           3. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-           4. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
-        + Respondents should only see 1 true and 1 false stimuli
-        + Following Broockman et al. (2017), we will analyze duration effects adjusting for differential response rate to the follow-up survey and the number of days since the respondent completed the survey
-        + Use evaluation data
-    + Hypotheses
-        -  Estimate mean response under each factor level separately
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+3. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+4. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
++ Respondents should only see 1 true and 1 false stimuli
++ Following Broockman et al. (2017), we will analyze duration effects adjusting for differential response rate to the follow-up survey and the number of days since the respondent completed the survey
++ Use evaluation data
++ Hypotheses
+-  Estimate mean response under each factor level separately
 
 * ### Open response question for deliberation question [not coded yet]
-    + Notes on analysis
-        + Outcomes:
-          1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
-        + Use evaluation data
-    + Hypotheses
-        -  Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli
++ Notes on analysis
++ Outcomes:
+1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
++ Use evaluation data
++ Hypotheses
+-  Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli
 
-  &nbsp;
+&nbsp;
 
-  &nbsp;
+&nbsp;
 
- - We will analyze how our sample compares to both the Facebook population and the general population in Kenya and Nigeria using Facebook’s advertising API data and nationally representative Afrobarometer surveys conducted in both countries.
-     - Conduct separately for learning and evaluation 
- - Aggregate number of times the associated Facebook post for each stimuli was shared (need to check Facebook timeline)
+### We will analyze how our sample compares to both the Facebook population and the general population in Kenya and Nigeria using Facebook’s advertising API data and nationally representative Afrobarometer surveys conducted in both countries.
+- Conduct separately for learning and evaluation 
+
+### Aggregate number of times the associated Facebook post for each stimuli was shared (need to check Facebook timeline)
+
+
+# Etc. 
+
+```{r old_optimal_policy_prediction, cache = TRUE, eval = FALSE}
+W_forest <- readRDS('objects/policy_objects/W_forest.rds')
+multi_forest <- readRDS('objects/policy_objects/multi_forest.rds')
+Y_forest <- readRDS('objects/policy_objects/Y_forest.rds')
+
+# 2a. Predict m(x) = E[Y|X]
+Y_hat_test <- predict(Y_forest, xs_h_new)$predictions[,1]
+# 2b. Predict W.hat = E[W|X] 
+W_hat_test <- predict(W_forest, xs_h_new)$predictions
+# 2c. Predict baseline, E[Y(k) | X = x], and tau_k(X) = E[Y(k') - Y(k) | X = x]; 
+# here accuracy is baseline, 
+tau_hat_test <- predict(multi_forest, xs_h_new)$predictions[,,]
+Y_hat_baseline_test <- Y_hat_test - rowSums(W_hat_test[, -1, drop = FALSE] * tau_hat_test)
+
+# 3. combine to get mu_k(X) on test data (and re-order)
+muk_test <- cbind(Y_hat_baseline_test, Y_hat_baseline_test + tau_hat_test)[,c(2, 1, 3:8)]
+names(muk_test) <- WR_levels
+
+
+levels_implement <- c(2,4,7,8)
+wopt_multi_forest <- WH_idx[[1]][levels_implement[apply(
+  muk_test[,levels_implement], 1, which.max
+)]]
+
+optimal_old <- case_when(wopt_multi_forest == 6 ~ 4,
+                         wopt_multi_forest == 8 ~ 6, #8/12 collapsed
+                         wopt_multi_forest == 11 ~ 5,
+                         wopt_multi_forest == 12 ~ 6))
+
+```
+
