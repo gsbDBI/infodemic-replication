@@ -1118,18 +1118,34 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
                                 TRUE ~ covariate_names)
   
   # Extract the mean and standard deviation of each covariate per subgroup
-  cov_table <- lapply(cov_means, function(cov_mean) {
-    means <- as.data.frame(t(coef(summary(cov_mean))[,c("Estimate", "Std. Error")]))
-    means
+  cov_means <- lapply(covariate_names, function(covariate) {
+    as.data.frame(cbind(
+      t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~ 0 + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")]),
+      'leafDifference' = t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~  + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")])[,2]))
   })
+  
+  table <- lapply(seq_along(covariate_names), function(j) {
+    covariate <- gsub('`', '', covariate_names[j])
+    label <- covariate_labels[j]
+    .mean <- mean(.df[, covariate], na.rm = TRUE)
+    .sd <- sd(.df[, covariate], na.rm = TRUE)
+    m <- as.matrix(round(signif(cov_means[[j]], digits=4), 3))
+    .standardized <- (m["Estimate",1:2] - .mean) / .sd
+    .standardized_mean <- m["Estimate",3]/m["Std. Error",3]
+    return(data.frame(covariate = label, 
+                      group = substring(colnames(m), 5),
+                      estimate = m["Estimate",], se = m["Std. Error",], 
+                      standardized = c(.standardized, NA)))
+  })
+  table <- rbindlist(table)
   
   # Preparation to color the chart
   temp_standardized <- sapply(seq_along(covariate_names), function(j) {
     covariate_name <- gsub('`', '', covariate_names[j])
     .mean <- mean(.df[, covariate_name], na.rm = TRUE)
     .sd <- sd(.df[, covariate_name], na.rm = TRUE)
-    m <- as.matrix(round(signif(cov_table[[j]], digits=4), 3))
-    .standardized <- (m["Estimate",] - .mean) / .sd
+    m <- as.matrix(round(signif(cov_means[[j]], digits=4), 3))
+    .standardized <- (m["Estimate",1:2] - .mean) / .sd
     .standardized
   })
   
@@ -1140,49 +1156,36 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     ordering <- order(apply(temp_standardized, MARGIN = 2, function(x) {.range <- range(x); abs(.range[2] - .range[1])}), decreasing = TRUE) 
   }
   
-  color_scale <- max(abs(c(max(temp_standardized, na.rm = TRUE), min(temp_standardized, na.rm = TRUE))))
-  color_scale <- color_scale * c(-1,1)
-  
-  
-  # Little trick to display the standard errors
-  table <- lapply(seq_along(covariate_names), function(j) {
-    covariate <- gsub('`', '', covariate_names[j])
-    label <- covariate_labels[j]
-    .mean <- mean(.df[, covariate], na.rm = TRUE)
-    .sd <- sd(.df[, covariate], na.rm = TRUE)
-    m <- as.matrix(round(signif(cov_table[[j]], digits=4), 3))
-    .standardized <- (m["Estimate",] - .mean) / .sd
-    return(data.frame(covariate = label, 
-                      group = substring(colnames(m), 5),
-                      estimate = m["Estimate",], se = m["Std. Error",], 
-                      standardized = .standardized))
-  })
-  table <- rbindlist(table)
   
   
   setnames(table, "group", "leaf")
   table[, covariate := factor(covariate, levels = rev(gsub('`', '', covariate_labels)[ordering]), ordered = TRUE)]
   
   if(is.factor(.df$leaf)){
-    table$leaf <- factor(table$leaf, levels = levels(.df$leaf))
+    table$leaf <- factor(table$leaf, levels = c(levels(.df$leaf), 'Difference'))
   }
   
+  table_dat <- table[covariate %in% head(gsub('`', '', covariate_labels)[ordering], n_top)] %>%
+    mutate(info = paste0(estimate, "\n(", se, ")"))
   
   
-  table[covariate %in% head(gsub('`', '', covariate_labels)[ordering], n_top)] %>%
-    mutate(info = paste0(estimate, "\n(", se, ")")) %>%
-    ggplot(aes_string(x = "leaf", y = "covariate")) +
+    ggplot(table_dat,
+           aes(x = leaf, y = covariate)) +
     # Add coloring
-    geom_raster(aes(fill = standardized)
+    geom_tile(aes(fill = standardized)
                 , alpha = 0.9
-    ) +
-    scale_fill_distiller(palette = "RdBu",
-                         direction = 1,
-                         breaks = round(color_scale, 1),
-                         labels = round(color_scale, 1),
-                         limits = round(color_scale+c(-.1, .1), 1),
-                         name = "Standard Deviation on\nNormalized Distribution"
-    ) + 
+    )  +
+      geom_tile(data = table_dat[which(table_dat$leaf == 'Difference')], 
+              aes(x = leaf, y = covariate),
+              color = cbPalette[1],
+              lwd = 1.5,
+              linetype = 1, 
+              fill = NA) +
+    scale_fill_gradientn(colours = c(cbPalette[3],
+                                     '#FFFFFFFF',
+                                     cbPalette[2]), 
+                         name = 'Standard Deviation on\nNormalized Distribution',
+                         na.value = 'white') +
     # add numerics
     geom_text(aes(label = info), size=2.5) +
     # reformat
@@ -1206,13 +1209,9 @@ plot_score_means_by_group <- function(.df = .df, n_top = 15,
   covariate_names <- rowvars[!grepl('flag', rowvars)]
   # Regress each covariate on =subgroup assignment to means p
   cov_means <- lapply(covariate_names, function(covariate) {
-    lm_robust(as.formula(paste0(covariate, " ~ 0 + ", "leaf")), data = .df)
-  })
-  
-  # Extract the mean and standard deviation of each covariate per subgroup
-  cov_table <- lapply(cov_means, function(cov_mean) {
-    means <- as.data.frame(t(coef(summary(cov_mean))[,c("Estimate", "Std. Error")]))
-    means
+    as.data.frame(cbind(
+      t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~ 0 + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")]),
+      'leafDifference' = t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~  + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")])[,2]))
   })
   
   # Preparation to color the chart
@@ -1220,7 +1219,7 @@ plot_score_means_by_group <- function(.df = .df, n_top = 15,
     # covariate_name <- gsub('`', '', covariate_names[j])
     # .mean <- mean(.df[, covariate_name], na.rm = TRUE)
     # .sd <- sd(.df[, covariate_name], na.rm = TRUE)
-    as.matrix(cov_table[[j]])['Estimate',]
+    as.matrix(cov_means[[j]])['Estimate',]
     # m <- as.matrix(round(signif(cov_table[[j]], digits=4), 3))
     # .standardized <- (m["Estimate",] - .mean) / .sd
     # .standardized
@@ -1268,13 +1267,10 @@ plot_score_means_by_group <- function(.df = .df, n_top = 15,
     geom_raster(aes(fill = standardized)
                 , alpha = 0.9
     ) +
-    scale_fill_distiller(palette = "RdBu",
-                         direction = 1,
-                         breaks = breaks,
-                         labels = labels,
-                         limits = color_scale,
-                         name = "Within-row Variation"
-    ) + 
+    scale_fill_gradientn(colours = c(cbPalette[3],
+                                     '#FFFFFFFF',
+                                     cbPalette[2]), 
+                         name = 'Within row variation') +
     # add numerics
     geom_text(aes(label = info), size=2.5) +
     # reformat
