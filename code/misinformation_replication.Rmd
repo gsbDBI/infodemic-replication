@@ -601,23 +601,23 @@ if(file.exists('objects/aipw_scores_send_false_eval_adjusted.RDS')){ # read in s
 # Main Analysis
 
 * Notes on analysis:
-    + Outcomes:
-      1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
-      2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
-      3. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
-      4. ) Rates of clicking on *true* stories, combined pre- and post-treatment, i.e., the percent of true stimuli that the respondent said they wanted to share during the survey for which they later click the button to share on Facebook (described in pre-analysis plan section 3.4.2)
-      5. ) Rates of clicking on debriefs about *false* stories, combined pre- and post-treatment, i.e., the percent of false stimuli that the respondent was debriefed on for which they later click the button to learn more about on (described in pre-analysis plan section 3.4.2)
-    + Use the last batch of data only
-    + Reported results are also weighted by the inverse probability of appearing in the last batch, as predicted by a regression forest 
-    + For respondents who attrit after collection of pre-test responses and before collection of post-test responses, the post-test interest in sharing response function will be coded as identical to the individual pre-test value; for behavioral sharing outcomes, we impute zeros for click-through-rates.
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+3. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
+4. ) Rates of clicking on *true* stories, combined pre- and post-treatment, i.e., the percent of true stimuli that the respondent said they wanted to share during the survey for which they later click the button to share on Facebook (described in pre-analysis plan section 3.4.2)
+5. ) Rates of clicking on debriefs about *false* stories, combined pre- and post-treatment, i.e., the percent of false stimuli that the respondent was debriefed on for which they later click the button to learn more about on (described in pre-analysis plan section 3.4.2)
++ Use the last batch of data only
++ Reported results are also weighted by the inverse probability of appearing in the last batch, as predicted by a regression forest 
++ For respondents who attrit after collection of pre-test responses and before collection of post-test responses, the post-test interest in sharing response function will be coded as identical to the individual pre-test value; for behavioral sharing outcomes, we impute zeros for click-through-rates.
 * Hypotheses
-    +	Uniform policy:
-        - The best uniform headline-level policy improves response over the control policy.
-        - The best uniform respondent-level policy improves response over the control policy.
-    + Contextual policy (primary): 
-        -  The best contextual policy achieves higher value than the control treatment
-        -  The best contextual policy achieves higher value than the best uniform headline-level treatment
-        -  The best contextual policy achieves higher value than the best uniform respondent-level treatment
++	Uniform policy:
+- The best uniform headline-level policy improves response over the control policy.
+- The best uniform respondent-level policy improves response over the control policy.
++ Contextual policy (primary): 
+-  The best contextual policy achieves higher value than the control treatment
+-  The best contextual policy achieves higher value than the best uniform headline-level treatment
+-  The best contextual policy achieves higher value than the best uniform respondent-level treatment
 
 ```{r eval_setup, cache = TRUE}
 covariate_names <- c(context_cols, 'Y_pre')
@@ -1212,10 +1212,96 @@ modelsummary(models, stars = TRUE,  title = 'Mean response estimates, evaluation
 ```
 
 ### Control heterogeneity tables
-```{r control_heterogeneity_any, cache = TRUE}
+
+```{r control_heterogeneity_primary, cache = TRUE}
 covariate_list <- c('age', 'male', 'pol', 'dli', 'science')
 stimuli_types <- c('true', 'false')
 channel_types <- c('send', 'timeline')
+
+table <- sapply(covariate_list, function(x) {
+  covariate <- x
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores[,1]  ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,1] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores[,1] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,1] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(NA, NA, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table <- do.call(rbind, table)
+
+table_combined <- table %>% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+```{r control_heterogeneity_any, cache = TRUE}
 
 apply_mat <- expand.grid(stimuli_types, covariate_list)
 table <- apply(apply_mat, 1, function(x) {
@@ -1225,19 +1311,18 @@ table <- apply(apply_mat, 1, function(x) {
   if(length(unique(df_eval[, covariate])) <= 2){
     # binary covariates
     fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type,
-                            '_eval[,1]', 
-                            ' ~  factor(',covariate, ') -1'))
+                            '_eval[,1] ~  factor(',covariate, ') -1'))
     fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type,
-                            '_eval[,1]', 
-                            ' ~  factor(',covariate, ')'))
+                            '_eval[,1] ~  factor(',covariate, ')'))
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
     adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, '_eval[,1]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, '_eval[,1]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,1] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,1] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -1413,6 +1498,7 @@ table_channel <- table %>%
 ```{r control_combined_heterogeneity, cache = TRUE}
 # Mean response estimates
 models <- list(
+  Combined = list(tidy = table_combined),
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
                                                          table_channel$Channel == 'send'),]),
@@ -1438,7 +1524,7 @@ modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evalua
 
 
 ### Treatment effect heterogeneity tables
-```{r treatment_heterogeneity_any, cache = TRUE}
+```{r treatment_heterogeneity_primary, cache = TRUE}
 # set outcomes
 df_eval$pooled_respondent <- rowMeans(aipw_scores[, c('Respondent\nAccuracy', 'Respondent\nFacebook tips')])
 df_eval$pooled_headline <- rowMeans(aipw_scores[, c('Headline\nFactcheck', 'Headline\nRelated articles')])
@@ -1462,7 +1548,91 @@ df_eval$pooled_headline_timeline_false <- rowMeans(aipw_scores_timeline_false_ev
 df_eval$pooled_respondent_timeline_true <- rowMeans(aipw_scores_timeline_true_eval[, 4:5])
 df_eval$pooled_headline_timeline_true <- rowMeans(aipw_scores_timeline_true_eval[, 2:3])
 
+table <- sapply(covariate_list, function(x) {
+  covariate <- x
+  outcome <- 'pooled_respondent'
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste(outcome, ' ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste(outcome, ' ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+}, simplify = FALSE)
+table <- do.call(rbind, table)
 
+table_combined <- table %>% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+
+```{r treatment_heterogeneity_any, cache = TRUE}
 apply_mat <- expand.grid(stimuli_types, covariate_list)
 table <- apply(apply_mat, 1, function(x) {
   stimuli_type <- x[1]
@@ -1654,6 +1824,7 @@ table_channel <- table %>%
 ```{r treatment_heterogeneity_combined, cache = TRUE}
 # Mean response estimates
 models <- list(
+  Combined = list(tidy = table_combined),
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
                                                          table_channel$Channel == 'send'),]),
@@ -1675,9 +1846,681 @@ modelsummary(models, stars = TRUE, title = 'Heterogeneity under pooled responden
 modelsummary(models, stars = TRUE,  title = 'Heterogeneity under pooled respondent treatment, evaluation', 
              output = '../tables/heterogeneity_treatment.tex')
 ```
+##### By treatment type
+```{r accuracy_heterogeneity_primary, cache = TRUE}
+covariate_list <- c('age', 'male', 'pol', 'dli', 'science')
+stimuli_types <- c('true', 'false')
+channel_types <- c('send', 'timeline')
+
+table <- sapply(covariate_list, function(x) {
+  covariate <- x
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores[,4]  ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table <- do.call(rbind, table)
+
+table_combined <- table %>% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+```{r accuracy_heterogeneity_any, cache = TRUE}
+
+apply_mat <- expand.grid(stimuli_types, covariate_list)
+table <- apply(apply_mat, 1, function(x) {
+  stimuli_type <- x[1]
+  covariate <- x[2]
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type,
+                            '_eval[,4] ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type,
+                            '_eval[,4] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,4] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+table <- do.call(rbind, table)
+
+table_any <- table %>% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c('True', 'False')), 
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+```{r accuracy_heterogeneity_channel, cache = TRUE}
+apply_mat <- expand.grid(stimuli_types, channel_types, covariate_list)
+table <- apply(apply_mat, 1, function(x) {
+  stimuli_type <- x[1]
+  covariate <- x[3]
+  channel <- x[2]
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores_', channel, '_', stimuli_type, '_eval[,4]', 
+                            
+                            ' ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, '_eval[,4]', 
+                            ' ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '_eval[,4]',
+                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '_eval[,4]',
+                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      `Channel` = channel,
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+
+
+table <- do.call(rbind, table)
+
+table_channel <- table %>% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c('True', 'False')), 
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+
+
+```
+
+```{r accuracy_combined_heterogeneity, cache = TRUE}
+# Mean response estimates
+models <- list(
+  Combined = list(tidy = table_combined),
+  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
+  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                                         table_channel$Channel == 'send'),]),
+  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                                        table_channel$Channel == 'timeline'),]),
+  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
+  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                                        table_channel$Channel == 'send'),]),
+  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                                       table_channel$Channel == 'timeline'),])
+)
+
+models <- lapply(models, function(x){
+  class(x) <- "modelsummary_list"
+  x
+})
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under accuracy, evaluation')
+modelsummary(models, stars = TRUE,  title = 'Heterogeneity under accuracy, evaluation', 
+             output = '../tables/heterogeneity_accuracy.tex')
+```
+
+#### Facebook
+```{r facebook_heterogeneity_primary, cache = TRUE}
+covariate_list <- c('age', 'male', 'pol', 'dli', 'science')
+stimuli_types <- c('true', 'false')
+channel_types <- c('send', 'timeline')
+
+table <- sapply(covariate_list, function(x) {
+  covariate <- x
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores[,5]  ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table <- do.call(rbind, table)
+
+table_combined <- table %>% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+```{r facebook_heterogeneity_any, cache = TRUE}
+
+apply_mat <- expand.grid(stimuli_types, covariate_list)
+table <- apply(apply_mat, 1, function(x) {
+  stimuli_type <- x[1]
+  covariate <- x[2]
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type,
+                            '_eval[,5] ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type,
+                            '_eval[,5] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,5] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, 
+                            '_eval[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+table <- do.call(rbind, table)
+
+table_any <- table %>% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c('True', 'False')), 
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+```
+
+```{r facebook_heterogeneity_channel, cache = TRUE}
+apply_mat <- expand.grid(stimuli_types, channel_types, covariate_list)
+table <- apply(apply_mat, 1, function(x) {
+  stimuli_type <- x[1]
+  covariate <- x[3]
+  channel <- x[2]
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste0('aipw_scores_', channel, '_', stimuli_type, '_eval[,5]', 
+                            
+                            ' ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, '_eval[,5]', 
+                            ' ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '_eval[,5]',
+                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '_eval[,5]',
+                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval))
+  
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate, ols1$estimate[2])
+  est_std.err <- c(ols0$std.error, ols1$std.error[2])
+  p_value <- c(ols0$p.value, ols1$p.value[2])
+  ns <- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      `Channel` = channel,
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+
+
+table <- do.call(rbind, table)
+
+table_channel <- table %>% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c('True', 'False')), 
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 0 ~ 
+        paste0('Below median (n = ', n, ')'),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 1 ~ 
+        paste0('Above median (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 0 ~ 
+        paste0(' Not male (n = ', n, ')'),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 1 ~ 
+        paste0('Male (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 0 ~ 
+        paste0('Kenya (n = ', n, ')'),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 1 ~ 
+        paste0('Nigeria (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 0 ~ 
+        paste0(' Not aligned (n = ', n, ')'),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 1 ~ 
+        paste0('Aligned w/ ruling party (n = ', n, ')'),
+      TRUE ~ 'Difference'),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital literacy index',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household Wealth Index',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political Allegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific beliefs index',
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, ': ', label)
+  )
+
+
+
+```
+
+```{r facebook_combined_heterogeneity, cache = TRUE}
+# Mean response estimates
+models <- list(
+  Combined = list(tidy = table_combined),
+  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
+  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                                         table_channel$Channel == 'send'),]),
+  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                                        table_channel$Channel == 'timeline'),]),
+  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
+  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                                        table_channel$Channel == 'send'),]),
+  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                                       table_channel$Channel == 'timeline'),])
+)
+
+models <- lapply(models, function(x){
+  class(x) <- "modelsummary_list"
+  x
+})
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under facebook, evaluation')
+modelsummary(models, stars = TRUE,  title = 'Heterogeneity under facebook, evaluation', 
+             output = '../tables/heterogeneity_facebook.tex')
+```
 
 
 ### Policy heterogeneity tables
+```{r policy_heterogeneity_combined, cache = TRUE}
+
+combined_df <- data.frame(
+  combined = c(aipw_scores[,4] + aipw_scores[,1],
+               aipw_scores[,5] + aipw_scores[,1]),
+  condition = rep(4:5, each = nrow(df_eval)),
+  optimal = rep(optimal_assignment, 2)
+)
+
+
+table <- {
+  outcome <- 'combined'
+  
+  fmla0 <- formula(paste(outcome, ' ~  factor(condition)*factor(optimal) -1'))
+  fmla1 <- formula(paste(outcome, ' ~  factor(condition)*factor(optimal)'))
+  fmla2 <- formula(paste(outcome, ' ~  factor(condition)*factor(optimal==4) -1'))
+  fmla3 <- formula(paste(outcome, ' ~  factor(condition)*factor(optimal==4)'))
+  ns <- table(optimal_assignment)
+  ols0 <- tidy(lm_robust(fmla0, data=combined_df))
+  ols1 <- tidy(lm_robust(fmla1, data=combined_df))
+  ols2 <- tidy(lm_robust(fmla2, data=combined_df))
+  ols3 <- tidy(lm_robust(fmla3, data=combined_df))
+  
+  # coef, standard error, n
+  est_coef <- c(ols0$estimate[1:2], ols1$estimate[2],
+                ols2$estimate[1:2], ols3$estimate[c(2,4)])
+  est_std.err <- c(ols0$std.error[1:2], ols1$std.error[2],
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
+  p_value <- c(NA, NA, ols1$p.value[2],
+               NA, NA, ols3$p.value[c(2,4)])
+  
+  # Tally up results
+  outdf <- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = c(rep(ns, each = 3), sum(ns)),
+                      `Policy type` = c(rep('Accuracy nudge', 3), rep('Facebook tips', 3), 'Grand difference'),
+                      Type = c(rep(0:2, times = 2), 3),
+                      check.names = FALSE)
+  
+  outdf
+  
+}
+
+table_combined <- table %>% 
+  mutate(
+    term = paste0(`Policy type`, ': ', 
+                  case_when(Type == 0 ~ 'Accuracy nudge',
+                            Type == 1 ~ 'Facebook tips',
+                            Type == 2 ~ 'Difference',
+                            TRUE ~ 'Grand difference'))
+  )
+
+```
+
 ```{r policy_heterogeneity_any, cache = TRUE}
 
 any_df <- data.frame(
@@ -1704,14 +2547,14 @@ table <- apply(apply_mat, 1, function(x) {
   ols1 <- tidy(lm_robust(fmla1, data=any_df))
   ols2 <- tidy(lm_robust(fmla2, data=any_df))
   ols3 <- tidy(lm_robust(fmla3, data=any_df))
-
+  
   # coef, standard error, n
   est_coef <- c(ols0$estimate[1:2], ols1$estimate[2],
                 ols2$estimate[1:2], ols3$estimate[c(2,4)])
   est_std.err <- c(ols0$std.error[1:2], ols1$std.error[2],
-                ols2$std.error[1:2], ols3$std.error[c(2,4)])
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
   p_value <- c(NA, NA, ols1$p.value[2],
-                NA, NA, ols3$p.value[c(2,4)])
+               NA, NA, ols3$p.value[c(2,4)])
   
   # Tally up results
   outdf <- data.frame(estimate = est_coef,
@@ -1741,6 +2584,9 @@ table_any <- table %>%
   )
 
 ```
+
+
+
 
 ```{r policy_heterogeneity_channel, cache = TRUE}
 apply_mat <- expand.grid(stimuli_types, channel_types)
@@ -1772,14 +2618,14 @@ table <- apply(apply_mat, 1, function(x) {
   ols1 <- tidy(lm_robust(fmla1, data=channel_df))
   ols2 <- tidy(lm_robust(fmla2, data=channel_df))
   ols3 <- tidy(lm_robust(fmla3, data=channel_df))
-
+  
   # coef, standard error, n
   est_coef <- c(ols0$estimate[1:2], ols1$estimate[2],
                 ols2$estimate[1:2], ols3$estimate[c(2,4)])
   est_std.err <- c(ols0$std.error[1:2], ols1$std.error[2],
-                ols2$std.error[1:2], ols3$std.error[c(2,4)])
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
   p_value <- c(NA, NA, ols1$p.value[2],
-                NA, NA, ols3$p.value[c(2,4)])
+               NA, NA, ols3$p.value[c(2,4)])
   
   # Tally up results
   outdf <- data.frame(estimate = est_coef,
@@ -1813,6 +2659,7 @@ table_channel <- table %>%
 ```{r policy_heterogeneity_combined, cache = TRUE}
 # Mean response estimates
 models <- list(
+  Combined = list(tidy = table_combined), 
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
                                                          table_channel$Channel == 'send'),]),
@@ -1823,7 +2670,7 @@ models <- list(
                                                         table_channel$Channel == 'send'),]),
   `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
                                                        table_channel$Channel == 'timeline'),])
-  )
+)
 
 models <- lapply(models, function(x){
   class(x) <- "modelsummary_list"
@@ -2469,6 +3316,218 @@ rate$TOC[which(rate$TOC$q == .4),]
 
 
 # Etc. 
+
+Results reported inline that are not otherwise in tables. 
+```{r results_control}
+# UNDER CONTROL
+# Difference in sharing of any true vs. false
+x <- (aipw_scores_any_true_eval[,1] - aipw_scores_any_false_eval[,1])
+test.object <- t.test(x)
+test.object
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# Difference in TRUE sharing of timeline vs. messenger
+x <- (aipw_scores_timeline_true_eval[,1] - aipw_scores_send_true_eval[,1])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# Difference in FALSE sharing of timeline vs. messenger
+x <- (aipw_scores_timeline_false_eval[,1] - aipw_scores_send_false_eval[,1])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+```
+
+```{r results_heterogeneity_best}
+
+# HETEROGENEITY IN BEST
+# we achieve larger magnitude treatment effects in decreasing false sharing intentions through our contextual policy as compared to either the accuracy nudge or the Facebook tips treatments assigned uniformly
+
+# accuracy
+x <- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,4])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# fb
+x <- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,5])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+```
+
+
+```{r results_channel}
+
+# CHANNEL SHARING
+# the Facebook tips treatment has larger effects on mitigating false sharing intentions relative to the accuracy nudge
+x <- (aipw_scores_any_false_eval[,5] - aipw_scores_any_false_eval[,4])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# and also true
+x <- (aipw_scores_any_true_eval[,5] - aipw_scores_any_true_eval[,4])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# combined
+x <- (aipw_scores[,5] - aipw_scores[,4])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+
+# The Facebook tips treatment and the accuracy nudge are both effective at moving false sharing intentions on the timeline
+# fb
+x <- aipw_scores_timeline_false_eval[,5]
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# accuracy
+x <- aipw_scores_timeline_false_eval[,4]
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# fb
+x <- aipw_scores_send_false_eval[,5]
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+# accuracy
+x <- aipw_scores_send_false_eval[,4]
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+
+
+# The Facebook tips treatment is relatively more effective at also moving false sharing intentions on Messenger 
+x <- (aipw_scores_send_false_eval[,5] - aipw_scores_send_false_eval[,4])
+(estimate <- mean(x))
+(std.error <- sd(x)/sqrt(length(x)))
+# pvalue greater than
+1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue less than
+pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+# pvalue two-sided
+2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+```
+
+```{r results_heterogeneity_overall}
+
+# HETEROGENEITY OVERALL
+# The largest treatment effects on false sharing intentions were for users with below median digital literacy and below median scientific knowledge. For these users, the Facebook tips treatment was more effective than the accuracy nudge
+
+covariate <- 'dli'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x <- aipw_scores_any_false_eval[,5]-aipw_scores_any_false_eval[,4]
+
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+covariate <- 'science'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+# For users with below median digital literacy and below median scientific knowledge, treatment effects under Facebook tips were driven by relatively larger effects on private sharing on Messenger as compared to public sharing on their timelines
+
+# for fb
+covariate <- 'dli'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x <- aipw_scores_timeline_false_eval[,5]-aipw_scores_send_false_eval[,5]
+
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+covariate <- 'science'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+# whereas for the accuracy nudge, effects on timeline as compared to messenger sharing are comparable for these groups 
+covariate <- 'dli'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x <- aipw_scores_timeline_false_eval[,4]-aipw_scores_send_false_eval[,4]
+
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+covariate <- 'science'
+adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
+
+
+```
+
 
 ```{r old_optimal_policy_prediction, cache = TRUE, eval = FALSE}
 W_forest <- readRDS('objects/policy_objects/W_forest.rds')
