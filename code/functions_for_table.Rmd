@@ -11,7 +11,7 @@ output: html_document
 find_est <- function(scores) {
     as.data.frame(t(apply(scores, 2, 
         function(x){
-          # if not control, add control mean
+            # if not control, add control mean
             if(!identical(x, scores[, 1])){ 
                 x <- scores[, 1] + x
             }
@@ -21,11 +21,11 @@ find_est <- function(scores) {
                      std.error = std.error,
                      statistic = estimate/std.error,
                      # one-sided p-value (less than)
-                     p.value.lower = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                     p.value.lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                      # one-sided p-value (greater than)
-                     p.value.upper = 1 - pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                     p.value.upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                      # two-sided p-value
-                     p.value.twosided = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                     p.value.twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
          })))
 }
 
@@ -40,11 +40,11 @@ find_te <- function(scores) {
                      std.error = std.error,
                      statistic = estimate/std.error,
                      # one-sided p-value (less than)
-                     p.value_lower = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                     p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                      # one-sided p-value (greater than)
-                     p.value_upper = 1 - pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
+                     p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                      # two-sided p-value
-                     p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                     p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
         })))
 }
 ```
@@ -82,8 +82,12 @@ find_adj_est <- function(scores, weights) {
             return(c(estimate = estimate,
                      std.error = std.error,
                      statistic = estimate/std.error,
-                     p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                     # one-sided p-value (less than)
+                     p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                     # one-sided p-value (greater than)
+                     p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                     # two-sided p-value
+                     p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
         })))
 }
 
@@ -97,8 +101,12 @@ find_adj_te <- function(scores, weights) {
             return(c(estimate = estimate,
                      std.error = std.error,
                      statistic = estimate/std.error,
-                     p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
+                     # one-sided p-value (less than)
+                     p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                     # one-sided p-value (greater than)
+                     p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                     # two-sided p-value
+                     p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
         })))
 }
 ```
