@@ -1058,6 +1058,86 @@ collect <- function(a, indices){
   }
 }
 
+# compute mean response
+find_est <- function(scores) {
+  as.data.frame(t(apply(scores, 2, 
+                        function(x){
+                          # if not control, add control mean
+                          if(!identical(x, scores[, 1])){ 
+                            x <- scores[, 1] + x
+                          }
+                          estimate <- mean(x, na.rm = T)
+                          std.error <- sd(x, na.rm = T)/sqrt(length(x))
+                          return(c(estimate = estimate,
+                                   std.error = std.error,
+                                   statistic = estimate/std.error,
+                                   # one-sided p-value (less than)
+                                   p.value.lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # one-sided p-value (greater than)
+                                   p.value.upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # two-sided p-value
+                                   p.value.twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
+                        })))
+}
+
+
+# compute treatment effect
+find_te <- function(scores) {
+  as.data.frame(t(apply(scores[, -1], 2, 
+                        function(x){
+                          estimate <- mean(x, na.rm = TRUE)
+                          std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
+                          return(c(estimate = estimate,
+                                   std.error = std.error,
+                                   statistic = estimate/std.error,
+                                   # one-sided p-value (less than)
+                                   p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # one-sided p-value (greater than)
+                                   p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # two-sided p-value
+                                   p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
+                        })))
+}
+
+# compute mean response - adjusted
+find_adj_est <- function(scores, weights) {
+  as.data.frame(t(apply(scores, 2, 
+                        function(x){
+                          if(!identical(x, scores[, 1])){
+                            x <- scores[, 1] + x
+                          }
+                          estimate <- weighted.mean(x, na.rm = TRUE, w = weights)
+                          std.error <- weighted_se(x, na.rm = TRUE, w = weights)
+                          return(c(estimate = estimate,
+                                   std.error = std.error,
+                                   statistic = estimate/std.error,
+                                   # one-sided p-value (less than)
+                                   p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # one-sided p-value (greater than)
+                                   p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # two-sided p-value
+                                   p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
+                        })))
+}
+
+# compute treatment effect - adjusted
+find_adj_te <- function(scores, weights) {
+  as.data.frame(t(apply(scores[, -1], 2, 
+                        function(x){
+                          estimate <- weighted.mean(x, na.rm = TRUE, w = weights)
+                          std.error <- weighted_se(x, na.rm = TRUE, w = weights)
+                          return(c(estimate = estimate,
+                                   std.error = std.error,
+                                   statistic = estimate/std.error,
+                                   # one-sided p-value (less than)
+                                   p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # one-sided p-value (greater than)
+                                   p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   # two-sided p-value
+                                   p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
+                        })))
+}
+
 # Plotting Functions ####
 
 plot_covariate_means_by_group <- function(.df = .df, n_top = 15, 
