@@ -643,6 +643,8 @@ aipw_eval_est <- as.data.frame(t(apply(aipw_scores, 2,
                                        }
 )))
 
+aipw_eval_est <- find_est(aipw_scores)
+
 # treatment effects
 aipw_eval_te <- as.data.frame(t(apply(aipw_scores[, -1], 2, 
                                       function(x){
@@ -655,6 +657,8 @@ aipw_eval_te <- as.data.frame(t(apply(aipw_scores[, -1], 2,
                                                  p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                       }
 )))
+
+aipw_eval_te <- find_te(aipw_scores)
 
 ## Covariate-shift adjusted
 aipw_eval_adj_est <- as.data.frame(t(apply(aipw_scores_adjusted, 2, 
@@ -673,6 +677,8 @@ aipw_eval_adj_est <- as.data.frame(t(apply(aipw_scores_adjusted, 2,
                                            }
 )))
 
+aipw_eval_adj_est <- find_adj_est(aipw_scores_adjusted, what_eval_adjustment)
+
 aipw_eval_adj_te <- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2, 
                                           function(x){
                                             estimate <- weighted.mean(x, na.rm = TRUE, w = what_eval_adjustment)
@@ -684,6 +690,8 @@ aipw_eval_adj_te <- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2,
                                                      p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                           }
 )))
+
+aipw_eval_adj_te <- find_adj_te(aipw_scores_adjusted, what_eval_adjustment)
 
 ```
 
@@ -701,6 +709,9 @@ aipw_eval_t_est <- as.data.frame(t(apply(aipw_scores_any_true_eval, 2,
                                                     std.error = std.error))
                                          }
 )))
+
+aipw_eval_t_est <- find_est(aipw_scores_any_true_eval)
+
 aipw_eval_t_te <- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2, 
                                         function(x){
                                           estimate <- mean(x, na.rm = TRUE)
@@ -712,6 +723,9 @@ aipw_eval_t_te <- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2,
                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                         }
 )))
+
+aipw_eval_t_te <- find_te(aipw_scores_any_true_eval)
+
 ## false
 aipw_eval_f_est <- as.data.frame(t(apply(aipw_scores_any_false_eval, 2, 
                                          function(x){
@@ -724,6 +738,9 @@ aipw_eval_f_est <- as.data.frame(t(apply(aipw_scores_any_false_eval, 2,
                                                     std.error = std.error))
                                          }
 )))
+
+aipw_eval_f_est <- find_est(aipw_scores_any_false_eval)
+
 aipw_eval_f_te <- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2, 
                                         function(x){
                                           estimate <- mean(x, na.rm = TRUE)
@@ -735,6 +752,9 @@ aipw_eval_f_te <- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2,
                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                         }
 )))
+
+aipw_eval_f_te <- find_te(aipw_scores_any_false_eval)
+
 ## Covariate-shift adjusted
 ## true
 aipw_eval_t_adj_est <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted, 2, 
@@ -752,6 +772,9 @@ aipw_eval_t_adj_est <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted,
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_t_adj_est <- find_adj_est(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_t_adj_te <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[, -1], 2, 
                                             function(x){
                                               estimate <- weighted.mean(x, na.rm = TRUE, 
@@ -764,6 +787,9 @@ aipw_eval_t_adj_te <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[,
                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                             }
 )))
+
+aipw_eval_t_adj_te <- find_adj_te(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
+
 ## false
 aipw_eval_f_adj_est <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted, 2, 
                                              function(x){
@@ -780,6 +806,9 @@ aipw_eval_f_adj_est <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_f_adj_est <- find_adj_est(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_f_adj_te <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[, -1], 2, 
                                             function(x){
                                               estimate <- weighted.mean(x, na.rm = TRUE, 
@@ -792,6 +821,8 @@ aipw_eval_f_adj_te <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[
                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                             }
 )))
+
+aipw_eval_f_adj_te <- find_adj_te(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
 ```
 
 ```{r channel_response_eval_estimation, cache=TRUE}
@@ -809,6 +840,8 @@ aipw_eval_tt_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2,
                                           }
 )))
 
+aipw_eval_tt_est <- find_est(aipw_scores_timeline_true_eval)
+
 aipw_eval_st_est <- as.data.frame(t(apply(aipw_scores_send_true_eval, 2, 
                                           function(x){
                                             if(!identical(x, aipw_scores_send_true_eval[, 1])){
@@ -821,6 +854,7 @@ aipw_eval_st_est <- as.data.frame(t(apply(aipw_scores_send_true_eval, 2,
                                           }
 )))
 
+aipw_eval_st_est <- find_est(aipw_scores_send_true_eval)
 
 aipw_eval_tt_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2, 
                                          function(x){
@@ -834,6 +868,8 @@ aipw_eval_tt_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2
                                          }
 )))
 
+aipw_eval_tt_te <- find_te(aipw_scores_timeline_true_eval)
+
 aipw_eval_st_te <- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2, 
                                          function(x){
                                            estimate <- mean(x, na.rm = TRUE)
@@ -845,6 +881,8 @@ aipw_eval_st_te <- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2,
                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                          }
 )))
+
+aipw_eval_st_te <- find_te(aipw_scores_send_true_eval)
 
 ## false
 aipw_eval_tf_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2, 
@@ -859,6 +897,8 @@ aipw_eval_tf_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2,
                                           }
 )))
 
+aipw_eval_tf_est <- find_est(aipw_scores_timeline_false_eval)
+
 aipw_eval_sf_est <- as.data.frame(t(apply(aipw_scores_send_false_eval, 2, 
                                           function(x){
                                             if(!identical(x, aipw_scores_send_false_eval[, 1])){
@@ -871,6 +911,7 @@ aipw_eval_sf_est <- as.data.frame(t(apply(aipw_scores_send_false_eval, 2,
                                           }
 )))
 
+aipw_eval_sf_est <- find_est(aipw_scores_send_false_eval)
 
 aipw_eval_tf_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 2, 
                                          function(x){
@@ -884,6 +925,8 @@ aipw_eval_tf_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 
                                          }
 )))
 
+aipw_eval_tf_te <- find_te(aipw_scores_timeline_false_eval)
+
 aipw_eval_sf_te <- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2, 
                                          function(x){
                                            estimate <- mean(x, na.rm = TRUE)
@@ -895,6 +938,8 @@ aipw_eval_sf_te <- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2,
                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                          }
 )))
+
+aipw_eval_sf_te <- find_te(aipw_scores_send_false_eval)
 
 ## Covariate-shift adjusted
 ## true
@@ -911,6 +956,8 @@ aipw_eval_tt_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adj
                                               }
 )))
 
+aipw_eval_tt_adj_est <- find_adj_est(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_st_adj_est <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted, 2, 
                                               function(x){
                                                 if(!identical(x, aipw_scores_send_true_eval_adjusted[, 1])){
@@ -924,6 +971,7 @@ aipw_eval_st_adj_est <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjuste
                                               }
 )))
 
+aipw_eval_st_adj_est <- find_adj_est(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 aipw_eval_tt_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted[, -1], 2, 
                                              function(x){
@@ -938,6 +986,8 @@ aipw_eval_tt_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adju
                                              }
 )))
 
+aipw_eval_tt_adj_te <- find_adj_te(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_st_adj_te <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted[, -1], 2, 
                                              function(x){
                                                estimate <- weighted.mean(x, na.rm = TRUE, 
@@ -950,6 +1000,8 @@ aipw_eval_st_adj_te <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_st_adj_te <- find_adj_te(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 ## false
 aipw_eval_tf_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted, 2, 
@@ -965,6 +1017,8 @@ aipw_eval_tf_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_ad
                                               }
 )))
 
+aipw_eval_tf_adj_est <- find_adj_est(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_sf_adj_est <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted, 2, 
                                               function(x){
                                                 if(!identical(x, aipw_scores_send_false_eval_adjusted[, 1])){
@@ -978,6 +1032,7 @@ aipw_eval_sf_adj_est <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjust
                                               }
 )))
 
+aipw_eval_sf_adj_est <- find_adj_est(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 
 aipw_eval_tf_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted[, -1], 2, 
                                              function(x){
@@ -992,6 +1047,8 @@ aipw_eval_tf_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adj
                                              }
 )))
 
+aipw_eval_tf_adj_te <- find_adj_te(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_sf_adj_te <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted[, -1], 2, 
                                              function(x){
                                                estimate <- weighted.mean(x, na.rm = TRUE, 
@@ -1005,6 +1062,7 @@ aipw_eval_sf_adj_te <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjuste
                                              }
 )))
 
+aipw_eval_sf_adj_te <- find_adj_te(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 ```
 
 ```{r label_scores, cache=TRUE}
@@ -3322,38 +3380,27 @@ Results reported inline that are not otherwise in tables.
 # UNDER CONTROL
 # Difference in sharing of any true vs. false
 x <- (aipw_scores_any_true_eval[,1] - aipw_scores_any_false_eval[,1])
-test.object <- t.test(x)
-test.object
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
-# pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # Difference in TRUE sharing of timeline vs. messenger
 x <- (aipw_scores_timeline_true_eval[,1] - aipw_scores_send_true_eval[,1])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
-# pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # Difference in FALSE sharing of timeline vs. messenger
 x <- (aipw_scores_timeline_false_eval[,1] - aipw_scores_send_false_eval[,1])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 ```
 
 ```{r results_heterogeneity_best}
@@ -3363,25 +3410,19 @@ pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 
 # accuracy
 x <- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,4])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # fb
 x <- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,5])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 ```
 
 
@@ -3390,94 +3431,82 @@ pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # CHANNEL SHARING
 # the Facebook tips treatment has larger effects on mitigating false sharing intentions relative to the accuracy nudge
 x <- (aipw_scores_any_false_eval[,5] - aipw_scores_any_false_eval[,4])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # and also true
 x <- (aipw_scores_any_true_eval[,5] - aipw_scores_any_true_eval[,4])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # combined
 x <- (aipw_scores[,5] - aipw_scores[,4])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 
 # The Facebook tips treatment and the accuracy nudge are both effective at moving false sharing intentions on the timeline
 # fb
 x <- aipw_scores_timeline_false_eval[,5]
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # accuracy
 x <- aipw_scores_timeline_false_eval[,4]
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # fb
 x <- aipw_scores_send_false_eval[,5]
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 # accuracy
 x <- aipw_scores_send_false_eval[,4]
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
-# pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 
 
 # The Facebook tips treatment is relatively more effective at also moving false sharing intentions on Messenger 
 x <- (aipw_scores_send_false_eval[,5] - aipw_scores_send_false_eval[,4])
-(estimate <- mean(x))
-(std.error <- sd(x)/sqrt(length(x)))
 # pvalue greater than
-1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'greater')$estimate
+t.test(x, alternative = 'greater')$p.value
 # pvalue less than
-pt(estimate/std.error, df = length(x) - 1, lower = FALSE)
+t.test(x, alternative = 'less')$estimate
+t.test(x, alternative = 'less')$p.value
 # pvalue two-sided
-2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))
+t.test(x)$p.value
 ```
 
 ```{r results_heterogeneity_overall}
