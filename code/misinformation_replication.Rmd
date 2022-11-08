@@ -1465,7 +1465,7 @@ table <- apply(apply_mat, 1, function(x) {
     fmla0 <- formula(paste0('aipw_scores_', channel, '_', stimuli_type, '_eval[,1]', 
                             
                             ' ~  factor(',covariate, ') -1'))
-    fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, '_eval[,1]', 
+    fmla1 <- formula(paste0('aipw_scores_', channel, '_', stimuli_type, '_eval[,1]', 
                             ' ~  factor(',covariate, ')'))
     ns <- table(df_eval[,covariate])
   }else{
