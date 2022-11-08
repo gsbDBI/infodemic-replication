@@ -1574,8 +1574,98 @@ models <- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation')
+
+
+#############
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation') 
+
 modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evaluation', 
+             output = '../tables/heterogeneity_control.tex')
+
+
+#############
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation') %>% 
+  row_spec(0, extra_css = "border-bottom: 3px solid")%>% 
+  row_spec(6, extra_css = "border-bottom: 2px solid")
+
+modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evaluation', 
+             output = '../tables/heterogeneity_control.tex') %>% 
+  row_spec(0, extra_css = "border-bottom: 3px solid") %>% 
+  row_spec(6, extra_css = "border-bottom: 2px solid") %>%
+  cat()
+
+
+#############
+row <- data.frame("Coefficients" = "",
+                  "Combined" = "",
+                  "False: Any sharing" = "",
+                  "False: Messenger" = "",
+                  "False: Timeline" = "",
+                  "True: Any sharing" = "",
+                  "True: Messenger" = "",
+                  "True: Timeline" = "")
+attr(row, "position") <- 7
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = row)
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Heterogeneity under control, evaluation', 
+             add_rows = row,
+             output = '../tables/heterogeneity_control.tex')
+
+
+#############
+# this works
+row <- data.frame("Coefficients" = "\\",
+                  "Combined" = "",
+                  "False: Any sharing" = "",
+                  "False: Messenger" = "",
+                  "False: Timeline" = "",
+                  "True: Any sharing" = "",
+                  "True: Messenger" = "",
+                  "True: Timeline" = "")
+attr(row, "position") <- 7
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = row, escape = FALSE) # note: escape = F
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Heterogeneity under control, evaluation', 
+             add_rows = row,
+             output = '../tables/heterogeneity_control.tex')
+
+
+#############
+# working on this
+rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                r'(\textbf{Age})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                '\\', '', '', '', '', '', '', '',
+                r'(\textbf{Gender})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                '\\', '', '', '', '', '', '', '',
+                r'(\textbf{Political allegiance})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                '\\', '', '', '', '', '', '', '',
+                r'(\textbf{Digital literacy index})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                '\\', '', '', '', '', '', '', '',
+                r'(\textbf{Scientific knowledge index})', '', '', '', '', '', '', ''
+               )
+
+attr(rows, 'position') <- c(1,8,9,
+                            10,17,18,
+                            19,26,27,
+                            28,35,36,
+                            37)
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) # note: escape = F
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Heterogeneity under control, evaluation', 
+             add_rows = rows,
              output = '../tables/heterogeneity_control.tex')
 ```
 
