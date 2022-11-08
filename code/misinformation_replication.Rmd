@@ -2804,7 +2804,7 @@ table_channel <- table %>%
   )
 ```
 
-```{r policy_heterogeneity_combined, cache = TRUE}
+```{r policy_heterogeneity_combined_tables, cache = TRUE}
 # Mean response estimates
 models <- list(
   Combined = list(tidy = table_combined), 

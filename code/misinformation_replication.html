@@ -3720,9 +3720,9 @@ if(file.exists(&#39;objects/aipw_scores_send_false_eval_adjusted.RDS&#39;)){ # r
 <div id="main-analysis" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Main Analysis</h1>
 <ul>
-<li>Notes on analysis:
-<ul>
-<li>Outcomes:
+<li>Notes on analysis:</li>
+<li>Outcomes:</li>
+</ul>
 <ol style="list-style-type: decimal">
 <li>) Sharing intentions as formalized in primary response function (Y
 =−Mb+0.5Tb, pre-analysis plan p. 17)</li>
@@ -3741,7 +3741,8 @@ combined pre- and post-treatment, i.e., the percent of false stimuli
 that the respondent was debriefed on for which they later click the
 button to learn more about on (described in pre-analysis plan section
 3.4.2)</li>
-</ol></li>
+</ol>
+<ul>
 <li>Use the last batch of data only</li>
 <li>Reported results are also weighted by the inverse probability of
 appearing in the last batch, as predicted by a regression forest</li>
@@ -3750,26 +3751,19 @@ and before collection of post-test responses, the post-test interest in
 sharing response function will be coded as identical to the individual
 pre-test value; for behavioral sharing outcomes, we impute zeros for
 click-through-rates.</li>
-</ul></li>
-<li>Hypotheses
-<ul>
-<li>Uniform policy:
-<ul>
+<li>Hypotheses</li>
+<li>Uniform policy:</li>
 <li>The best uniform headline-level policy improves response over the
 control policy.</li>
 <li>The best uniform respondent-level policy improves response over the
 control policy.</li>
-</ul></li>
-<li>Contextual policy (primary):
-<ul>
+<li>Contextual policy (primary):</li>
 <li>The best contextual policy achieves higher value than the control
 treatment</li>
 <li>The best contextual policy achieves higher value than the best
 uniform headline-level treatment</li>
 <li>The best contextual policy achieves higher value than the best
 uniform respondent-level treatment</li>
-</ul></li>
-</ul></li>
 </ul>
 <pre class="r"><code>covariate_names &lt;- c(context_cols, &#39;Y_pre&#39;)
 lin_covs &lt;- formula(paste0(&#39; ~ &#39;, 
@@ -3790,6 +3784,8 @@ aipw_eval_est &lt;- as.data.frame(t(apply(aipw_scores, 2,
                                        }
 )))
 
+aipw_eval_est &lt;- find_est(aipw_scores)
+
 # treatment effects
 aipw_eval_te &lt;- as.data.frame(t(apply(aipw_scores[, -1], 2, 
                                       function(x){
@@ -3802,6 +3798,8 @@ aipw_eval_te &lt;- as.data.frame(t(apply(aipw_scores[, -1], 2,
                                                  p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                       }
 )))
+
+aipw_eval_te &lt;- find_te(aipw_scores)
 
 ## Covariate-shift adjusted
 aipw_eval_adj_est &lt;- as.data.frame(t(apply(aipw_scores_adjusted, 2, 
@@ -3820,6 +3818,8 @@ aipw_eval_adj_est &lt;- as.data.frame(t(apply(aipw_scores_adjusted, 2,
                                            }
 )))
 
+aipw_eval_adj_est &lt;- find_adj_est(aipw_scores_adjusted, what_eval_adjustment)
+
 aipw_eval_adj_te &lt;- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2, 
                                           function(x){
                                             estimate &lt;- weighted.mean(x, na.rm = TRUE, w = what_eval_adjustment)
@@ -3830,7 +3830,9 @@ aipw_eval_adj_te &lt;- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2,
                                                      p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
                                                      p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                           }
-)))</code></pre>
+)))
+
+aipw_eval_adj_te &lt;- find_adj_te(aipw_scores_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code># Scores estimates
 ## true
 aipw_eval_t_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval, 2, 
@@ -3844,6 +3846,9 @@ aipw_eval_t_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval, 2,
                                                     std.error = std.error))
                                          }
 )))
+
+aipw_eval_t_est &lt;- find_est(aipw_scores_any_true_eval)
+
 aipw_eval_t_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2, 
                                         function(x){
                                           estimate &lt;- mean(x, na.rm = TRUE)
@@ -3855,6 +3860,9 @@ aipw_eval_t_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2,
                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                         }
 )))
+
+aipw_eval_t_te &lt;- find_te(aipw_scores_any_true_eval)
+
 ## false
 aipw_eval_f_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval, 2, 
                                          function(x){
@@ -3867,6 +3875,9 @@ aipw_eval_f_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval, 2,
                                                     std.error = std.error))
                                          }
 )))
+
+aipw_eval_f_est &lt;- find_est(aipw_scores_any_false_eval)
+
 aipw_eval_f_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2, 
                                         function(x){
                                           estimate &lt;- mean(x, na.rm = TRUE)
@@ -3878,6 +3889,9 @@ aipw_eval_f_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2,
                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                         }
 )))
+
+aipw_eval_f_te &lt;- find_te(aipw_scores_any_false_eval)
+
 ## Covariate-shift adjusted
 ## true
 aipw_eval_t_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted, 2, 
@@ -3895,6 +3909,9 @@ aipw_eval_t_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjust
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_t_adj_est &lt;- find_adj_est(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_t_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[, -1], 2, 
                                             function(x){
                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
@@ -3907,6 +3924,9 @@ aipw_eval_t_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjuste
                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                             }
 )))
+
+aipw_eval_t_adj_te &lt;- find_adj_te(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
+
 ## false
 aipw_eval_f_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted, 2, 
                                              function(x){
@@ -3923,6 +3943,9 @@ aipw_eval_f_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjus
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_f_adj_est &lt;- find_adj_est(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_f_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[, -1], 2, 
                                             function(x){
                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
@@ -3934,7 +3957,9 @@ aipw_eval_f_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjust
                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                             }
-)))</code></pre>
+)))
+
+aipw_eval_f_adj_te &lt;- find_adj_te(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code># Scores estimates
 ## true
 aipw_eval_tt_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2, 
@@ -3949,6 +3974,8 @@ aipw_eval_tt_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2,
                                           }
 )))
 
+aipw_eval_tt_est &lt;- find_est(aipw_scores_timeline_true_eval)
+
 aipw_eval_st_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval, 2, 
                                           function(x){
                                             if(!identical(x, aipw_scores_send_true_eval[, 1])){
@@ -3961,6 +3988,7 @@ aipw_eval_st_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval, 2,
                                           }
 )))
 
+aipw_eval_st_est &lt;- find_est(aipw_scores_send_true_eval)
 
 aipw_eval_tt_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2, 
                                          function(x){
@@ -3974,6 +4002,8 @@ aipw_eval_tt_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1]
                                          }
 )))
 
+aipw_eval_tt_te &lt;- find_te(aipw_scores_timeline_true_eval)
+
 aipw_eval_st_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2, 
                                          function(x){
                                            estimate &lt;- mean(x, na.rm = TRUE)
@@ -3985,6 +4015,8 @@ aipw_eval_st_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2,
                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                          }
 )))
+
+aipw_eval_st_te &lt;- find_te(aipw_scores_send_true_eval)
 
 ## false
 aipw_eval_tf_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2, 
@@ -3999,6 +4031,8 @@ aipw_eval_tf_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2,
                                           }
 )))
 
+aipw_eval_tf_est &lt;- find_est(aipw_scores_timeline_false_eval)
+
 aipw_eval_sf_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval, 2, 
                                           function(x){
                                             if(!identical(x, aipw_scores_send_false_eval[, 1])){
@@ -4011,6 +4045,7 @@ aipw_eval_sf_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval, 2,
                                           }
 )))
 
+aipw_eval_sf_est &lt;- find_est(aipw_scores_send_false_eval)
 
 aipw_eval_tf_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 2, 
                                          function(x){
@@ -4024,6 +4059,8 @@ aipw_eval_tf_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1
                                          }
 )))
 
+aipw_eval_tf_te &lt;- find_te(aipw_scores_timeline_false_eval)
+
 aipw_eval_sf_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2, 
                                          function(x){
                                            estimate &lt;- mean(x, na.rm = TRUE)
@@ -4035,6 +4072,8 @@ aipw_eval_sf_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2
                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                          }
 )))
+
+aipw_eval_sf_te &lt;- find_te(aipw_scores_send_false_eval)
 
 ## Covariate-shift adjusted
 ## true
@@ -4051,6 +4090,8 @@ aipw_eval_tt_adj_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval_
                                               }
 )))
 
+aipw_eval_tt_adj_est &lt;- find_adj_est(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_st_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted, 2, 
                                               function(x){
                                                 if(!identical(x, aipw_scores_send_true_eval_adjusted[, 1])){
@@ -4064,6 +4105,7 @@ aipw_eval_st_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adju
                                               }
 )))
 
+aipw_eval_st_adj_est &lt;- find_adj_est(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 aipw_eval_tt_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted[, -1], 2, 
                                              function(x){
@@ -4078,6 +4120,8 @@ aipw_eval_tt_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval_a
                                              }
 )))
 
+aipw_eval_tt_adj_te &lt;- find_adj_te(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_st_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted[, -1], 2, 
                                              function(x){
                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
@@ -4090,6 +4134,8 @@ aipw_eval_st_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adjus
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
 )))
+
+aipw_eval_st_adj_te &lt;- find_adj_te(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 ## false
 aipw_eval_tf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted, 2, 
@@ -4105,6 +4151,8 @@ aipw_eval_tf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval
                                               }
 )))
 
+aipw_eval_tf_adj_est &lt;- find_adj_est(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_sf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted, 2, 
                                               function(x){
                                                 if(!identical(x, aipw_scores_send_false_eval_adjusted[, 1])){
@@ -4118,6 +4166,7 @@ aipw_eval_sf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adj
                                               }
 )))
 
+aipw_eval_sf_adj_est &lt;- find_adj_est(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 
 aipw_eval_tf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted[, -1], 2, 
                                              function(x){
@@ -4132,6 +4181,8 @@ aipw_eval_tf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval_
                                              }
 )))
 
+aipw_eval_tf_adj_te &lt;- find_adj_te(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
+
 aipw_eval_sf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted[, -1], 2, 
                                              function(x){
                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
@@ -4143,7 +4194,9 @@ aipw_eval_sf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adju
                                                         p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
                                                         p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
                                              }
-)))</code></pre>
+)))
+
+aipw_eval_sf_adj_te &lt;- find_adj_te(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code>aipw_eval_est$term &lt;- aipw_eval_adj_est$term &lt;- 
   aipw_eval_t_est$term &lt;- aipw_eval_t_adj_est$term &lt;- 
   aipw_eval_f_est$term &lt;- aipw_eval_f_adj_est$term &lt;- 
@@ -4553,7 +4606,87 @@ heterogeneity tables</h3>
 stimuli_types &lt;- c(&#39;true&#39;, &#39;false&#39;)
 channel_types &lt;- c(&#39;send&#39;, &#39;timeline&#39;)
 
-apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
+table &lt;- sapply(covariate_list, function(x) {
+  covariate &lt;- x
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,1]  ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,1] ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,1] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,1] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(NA, NA, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table &lt;- do.call(rbind, table)
+
+table_combined &lt;- table %&gt;% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
 table &lt;- apply(apply_mat, 1, function(x) {
   stimuli_type &lt;- x[1]
   covariate &lt;- x[2]
@@ -4561,19 +4694,18 @@ table &lt;- apply(apply_mat, 1, function(x) {
   if(length(unique(df_eval[, covariate])) &lt;= 2){
     # binary covariates
     fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
-                            &#39;_eval[,1]&#39;, 
-                            &#39; ~  factor(&#39;,covariate, &#39;) -1&#39;))
+                            &#39;_eval[,1] ~  factor(&#39;,covariate, &#39;) -1&#39;))
     fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
-                            &#39;_eval[,1]&#39;, 
-                            &#39; ~  factor(&#39;,covariate, &#39;)&#39;))
+                            &#39;_eval[,1] ~  factor(&#39;,covariate, &#39;)&#39;))
     ns &lt;- table(df_eval[,covariate])
   }else{
     # continuous covariates
     adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, &#39;_eval[,1]&#39;,
-                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
-    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, &#39;_eval[,1]&#39;,
-                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,1] ~  factor(&#39;,covariate, 
+                            &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,1] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
     ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
   }
   ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
@@ -4654,7 +4786,7 @@ table &lt;- apply(apply_mat, 1, function(x) {
     fmla0 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;, stimuli_type, &#39;_eval[,1]&#39;, 
                             
                             &#39; ~  factor(&#39;,covariate, &#39;) -1&#39;))
-    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, &#39;_eval[,1]&#39;, 
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;, stimuli_type, &#39;_eval[,1]&#39;, 
                             &#39; ~  factor(&#39;,covariate, &#39;)&#39;))
     ns &lt;- table(df_eval[,covariate])
   }else{
@@ -4739,6 +4871,7 @@ table_channel &lt;- table %&gt;%
   )</code></pre>
 <pre class="r"><code># Mean response estimates
 models &lt;- list(
+  Combined = list(tidy = table_combined),
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;False&#39;),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
                                                          table_channel$Channel == &#39;send&#39;),]),
@@ -4756,7 +4889,10 @@ models &lt;- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;)</code></pre>
+
+
+#############
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) </code></pre>
 <table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
 <caption>
 Heterogeneity under control, evaluation
@@ -4764,6 +4900,9 @@ Heterogeneity under control, evaluation
 <thead>
 <tr>
 <th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
 </th>
 <th style="text-align:center;">
 False: Any sharing
@@ -4791,6 +4930,9 @@ True: Timeline
 Age × Below median (n = 6104)
 </td>
 <td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
 0.459
 </td>
 <td style="text-align:center;">
@@ -4811,6 +4953,9 @@ Age × Below median (n = 6104)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -4836,6 +4981,9 @@ Age × Below median (n = 6104)
 Age × Above median (n = 6030)
 </td>
 <td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
 0.421
 </td>
 <td style="text-align:center;">
@@ -4856,6 +5004,9 @@ Age × Above median (n = 6030)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -4881,6 +5032,9 @@ Age × Above median (n = 6030)
 Age × Difference
 </td>
 <td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
 -0.038*
 </td>
 <td style="text-align:center;">
@@ -4901,6 +5055,9 @@ Age × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
 </td>
 <td style="text-align:center;">
 (0.017)
@@ -4926,6 +5083,9 @@ Age × Difference
 Male ×  Not male (n = 5752)
 </td>
 <td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
 0.395
 </td>
 <td style="text-align:center;">
@@ -4946,6 +5106,9 @@ Male ×  Not male (n = 5752)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -4971,6 +5134,9 @@ Male ×  Not male (n = 5752)
 Male × Male (n = 6382)
 </td>
 <td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
 0.480
 </td>
 <td style="text-align:center;">
@@ -4991,6 +5157,9 @@ Male × Male (n = 6382)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -5016,29 +5185,32 @@ Male × Male (n = 6382)
 Male × Difference
 </td>
 <td style="text-align:center;">
-0.086***
+-0.074
 </td>
 <td style="text-align:center;">
 0.086***
 </td>
 <td style="text-align:center;">
-0.086***
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
 </td>
 <td style="text-align:center;">
 0.099***
 </td>
 <td style="text-align:center;">
-0.099***
+0.094***
 </td>
 <td style="text-align:center;">
-0.099***
+0.100***
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 </td>
 <td style="text-align:center;">
-(0.017)
+(0.052)
 </td>
 <td style="text-align:center;">
 (0.017)
@@ -5047,18 +5219,24 @@ Male × Difference
 (0.017)
 </td>
 <td style="text-align:center;">
-(0.023)
+(0.016)
 </td>
 <td style="text-align:center;">
 (0.023)
 </td>
 <td style="text-align:center;">
-(0.023)
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
 </td>
 <td style="text-align:center;">
 0.415
@@ -5081,6 +5259,9 @@ Political Allegiance ×  Not aligned (n = 8609)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
 </td>
 <td style="text-align:center;">
 (0.010)
@@ -5106,6 +5287,9 @@ Political Allegiance ×  Not aligned (n = 8609)
 Political Allegiance × Aligned w/ ruling party (n = 3525)
 </td>
 <td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
 0.501
 </td>
 <td style="text-align:center;">
@@ -5126,6 +5310,9 @@ Political Allegiance × Aligned w/ ruling party (n = 3525)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
 </td>
 <td style="text-align:center;">
 (0.016)
@@ -5151,29 +5338,32 @@ Political Allegiance × Aligned w/ ruling party (n = 3525)
 Political Allegiance × Difference
 </td>
 <td style="text-align:center;">
-0.086***
+-0.193***
 </td>
 <td style="text-align:center;">
 0.086***
 </td>
 <td style="text-align:center;">
-0.086***
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
 </td>
 <td style="text-align:center;">
 0.062*
 </td>
 <td style="text-align:center;">
-0.062*
+0.085***
 </td>
 <td style="text-align:center;">
-0.062*
+0.100***
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 </td>
 <td style="text-align:center;">
-(0.019)
+(0.058)
 </td>
 <td style="text-align:center;">
 (0.019)
@@ -5182,18 +5372,24 @@ Political Allegiance × Difference
 (0.019)
 </td>
 <td style="text-align:center;">
-(0.027)
+(0.018)
 </td>
 <td style="text-align:center;">
 (0.027)
 </td>
 <td style="text-align:center;">
-(0.027)
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
 </td>
 <td style="text-align:center;">
 0.492
@@ -5216,6 +5412,9 @@ Digital literacy index × Below median (n = 6186)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -5241,6 +5440,9 @@ Digital literacy index × Below median (n = 6186)
 Digital literacy index × Above median (n = 5948)
 </td>
 <td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
 0.386
 </td>
 <td style="text-align:center;">
@@ -5261,6 +5463,9 @@ Digital literacy index × Above median (n = 5948)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -5286,6 +5491,9 @@ Digital literacy index × Above median (n = 5948)
 Digital literacy index × Difference
 </td>
 <td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
 -0.106***
 </td>
 <td style="text-align:center;">
@@ -5306,6 +5514,9 @@ Digital literacy index × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
 </td>
 <td style="text-align:center;">
 (0.017)
@@ -5331,6 +5542,9 @@ Digital literacy index × Difference
 Scientific beliefs index × Below median (n = 6463)
 </td>
 <td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
 0.457
 </td>
 <td style="text-align:center;">
@@ -5351,6 +5565,9 @@ Scientific beliefs index × Below median (n = 6463)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -5376,6 +5593,9 @@ Scientific beliefs index × Below median (n = 6463)
 Scientific beliefs index × Above median (n = 5671)
 </td>
 <td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
 0.420
 </td>
 <td style="text-align:center;">
@@ -5396,6 +5616,9 @@ Scientific beliefs index × Above median (n = 5671)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -5421,6 +5644,9 @@ Scientific beliefs index × Above median (n = 5671)
 Scientific beliefs index × Difference
 </td>
 <td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
 -0.037*
 </td>
 <td style="text-align:center;">
@@ -5441,6 +5667,9 @@ Scientific beliefs index × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
 </td>
 <td style="text-align:center;">
 (0.017)
@@ -5472,6 +5701,3640 @@ Scientific beliefs index × Difference
 </tfoot>
 </table>
 <pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under control, evaluation&#39;, 
+             output = &#39;../tables/heterogeneity_control.tex&#39;)
+
+
+#############
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) %&gt;% 
+  row_spec(0, extra_css = &quot;border-bottom: 3px solid&quot;)%&gt;% 
+  row_spec(6, extra_css = &quot;border-bottom: 2px solid&quot;)</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under control, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;border-bottom: 3px solid">
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+Combined
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+False: Any sharing
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+False: Messenger
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+False: Timeline
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+True: Any sharing
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+True: Messenger
+</th>
+<th style="text-align:center;border-bottom: 3px solid">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
+0.459
+</td>
+<td style="text-align:center;">
+0.417
+</td>
+<td style="text-align:center;">
+0.374
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.546
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
+0.421
+</td>
+<td style="text-align:center;">
+0.375
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+0.664
+</td>
+<td style="text-align:center;">
+0.571
+</td>
+<td style="text-align:center;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.042*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.060***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;border-bottom: 2px solid">
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.052)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.017)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.017)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.016)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.023)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.017)
+</td>
+<td style="text-align:center;border-bottom: 2px solid">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
+0.395
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+<td style="text-align:center;">
+0.509
+</td>
+<td style="text-align:center;">
+0.537
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
+0.480
+</td>
+<td style="text-align:center;">
+0.430
+</td>
+<td style="text-align:center;">
+0.406
+</td>
+<td style="text-align:center;">
+0.692
+</td>
+<td style="text-align:center;">
+0.603
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+-0.074
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
+</td>
+<td style="text-align:center;">
+0.099***
+</td>
+<td style="text-align:center;">
+0.094***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.415
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.339
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.534
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
+0.501
+</td>
+<td style="text-align:center;">
+0.465
+</td>
+<td style="text-align:center;">
+0.434
+</td>
+<td style="text-align:center;">
+0.689
+</td>
+<td style="text-align:center;">
+0.619
+</td>
+<td style="text-align:center;">
+0.661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.024)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.193***
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
+</td>
+<td style="text-align:center;">
+0.062*
+</td>
+<td style="text-align:center;">
+0.085***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
+</td>
+<td style="text-align:center;">
+0.492
+</td>
+<td style="text-align:center;">
+0.446
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.653
+</td>
+<td style="text-align:center;">
+0.581
+</td>
+<td style="text-align:center;">
+0.614
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
+0.386
+</td>
+<td style="text-align:center;">
+0.344
+</td>
+<td style="text-align:center;">
+0.310
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+<td style="text-align:center;">
+0.535
+</td>
+<td style="text-align:center;">
+0.565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
+-0.106***
+</td>
+<td style="text-align:center;">
+-0.101***
+</td>
+<td style="text-align:center;">
+-0.110***
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.046**
+</td>
+<td style="text-align:center;">
+-0.049**
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
+0.457
+</td>
+<td style="text-align:center;">
+0.414
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.652
+</td>
+<td style="text-align:center;">
+0.558
+</td>
+<td style="text-align:center;">
+0.594
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.376
+</td>
+<td style="text-align:center;">
+0.347
+</td>
+<td style="text-align:center;">
+0.637
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+<td style="text-align:center;">
+0.586
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under control, evaluation&#39;, 
+             output = &#39;../tables/heterogeneity_control.tex&#39;) %&gt;% 
+  row_spec(0, extra_css = &quot;border-bottom: 3px solid&quot;) %&gt;% 
+  row_spec(6, extra_css = &quot;border-bottom: 2px solid&quot;) %&gt;%
+  cat()</code></pre>
+<pre><code>## \begin{table}
+## 
+## \caption{\label{tab:control_combined_heterogeneity}Heterogeneity under control, evaluation}
+## \centering
+## \begin{tabular}[t]{lccccccc}
+## \toprule
+##   &amp; Combined &amp; False: Any sharing &amp; False: Messenger &amp; False: Timeline &amp; True: Any sharing &amp; True: Messenger &amp; True: Timeline\\
+## \midrule
+## Age ×  Below median (n = 6104) &amp; \num{-0.486} &amp; \num{0.459} &amp; \num{0.417} &amp; \num{0.374} &amp; \num{0.627} &amp; \num{0.546} &amp; \num{0.560}\\
+##  &amp; (\num{0.035}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; \vphantom{1} (\num{0.012})\\
+## Age ×  Above median (n = 6030) &amp; \num{-0.298} &amp; \num{0.421} &amp; \num{0.375} &amp; \num{0.359} &amp; \num{0.664} &amp; \num{0.571} &amp; \num{0.620}\\
+##  &amp; (\num{0.039}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
+## Age ×  Difference &amp; \num{0.188}*** &amp; \num{-0.038}* &amp; \num{-0.042}* &amp; \num{-0.015} &amp; \num{0.037} &amp; \num{0.025} &amp; \num{0.060}***\\
+##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; \vphantom{2} (\num{0.017})\\
+## Male ×   Not male (n = 5752) &amp; \num{-0.353} &amp; \num{0.395} &amp; \num{0.358} &amp; \num{0.323} &amp; \num{0.593} &amp; \num{0.509} &amp; \num{0.537}\\
+##  &amp; (\num{0.036}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.013}) &amp; (\num{0.012})\\
+## Male ×  Male (n = 6382) &amp; \num{-0.428} &amp; \num{0.480} &amp; \num{0.430} &amp; \num{0.406} &amp; \num{0.692} &amp; \num{0.603} &amp; \num{0.638}\\
+##  &amp; (\num{0.038}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
+## Male ×  Difference &amp; \num{-0.074} &amp; \num{0.086}*** &amp; \num{0.072}*** &amp; \num{0.083}*** &amp; \num{0.099}*** &amp; \num{0.094}*** &amp; \num{0.100}***\\
+##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; \vphantom{1} (\num{0.017})\\
+## Political Allegiance ×   Not aligned (n = 8609) &amp; \num{-0.336} &amp; \num{0.415} &amp; \num{0.368} &amp; \num{0.339} &amp; \num{0.627} &amp; \num{0.534} &amp; \num{0.561}\\
+##  &amp; (\num{0.031}) &amp; (\num{0.010}) &amp; (\num{0.010}) &amp; (\num{0.010}) &amp; (\num{0.013}) &amp; (\num{0.010}) &amp; (\num{0.010})\\
+## Political Allegiance ×  Aligned w/ ruling party (n = 3525) &amp; \num{-0.530} &amp; \num{0.501} &amp; \num{0.465} &amp; \num{0.434} &amp; \num{0.689} &amp; \num{0.619} &amp; \num{0.661}\\
+##  &amp; (\num{0.049}) &amp; (\num{0.016}) &amp; (\num{0.016}) &amp; (\num{0.015}) &amp; (\num{0.024}) &amp; (\num{0.016}) &amp; (\num{0.016})\\
+## Political Allegiance ×  Difference &amp; \num{-0.193}*** &amp; \num{0.086}*** &amp; \num{0.097}*** &amp; \num{0.095}*** &amp; \num{0.062}* &amp; \num{0.085}*** &amp; \num{0.100}***\\
+##  &amp; (\num{0.058}) &amp; (\num{0.019}) &amp; (\num{0.019}) &amp; (\num{0.018}) &amp; (\num{0.027}) &amp; (\num{0.019}) &amp; (\num{0.019})\\
+## Digital literacy index ×  Below median (n = 6186) &amp; \num{-0.535} &amp; \num{0.492} &amp; \num{0.446} &amp; \num{0.420} &amp; \num{0.653} &amp; \num{0.581} &amp; \num{0.614}\\
+##  &amp; (\num{0.037}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
+## Digital literacy index ×  Above median (n = 5948) &amp; \num{-0.244} &amp; \num{0.386} &amp; \num{0.344} &amp; \num{0.310} &amp; \num{0.638} &amp; \num{0.535} &amp; \num{0.565}\\
+##  &amp; (\num{0.037}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.015}) &amp; (\num{0.013}) &amp; (\num{0.013})\\
+## Digital literacy index ×  Difference &amp; \num{0.291}*** &amp; \num{-0.106}*** &amp; \num{-0.101}*** &amp; \num{-0.110}*** &amp; \num{-0.015} &amp; \num{-0.046}** &amp; \num{-0.049}**\\
+##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; (\num{0.017})\\
+## Scientific beliefs index ×  Below median (n = 6463) &amp; \num{-0.442} &amp; \num{0.457} &amp; \num{0.414} &amp; \num{0.384} &amp; \num{0.652} &amp; \num{0.558} &amp; \num{0.594}\\
+##  &amp; (\num{0.035}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
+## Scientific beliefs index ×  Above median (n = 5671) &amp; \num{-0.336} &amp; \num{0.420} &amp; \num{0.376} &amp; \num{0.347} &amp; \num{0.637} &amp; \num{0.560} &amp; \num{0.586}\\
+##  &amp; (\num{0.039}) &amp; (\num{0.013}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.013})\\
+## Scientific beliefs index ×  Difference &amp; \num{0.106}* &amp; \num{-0.037}* &amp; \num{-0.038}* &amp; \num{-0.037}* &amp; \num{-0.015} &amp; \num{0.002} &amp; \num{-0.007}\\
+##  &amp; (\num{0.053}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; (\num{0.017})\\
+## \bottomrule
+## \multicolumn{8}{l}{\rule{0pt}{1em}+ p $&lt;$ 0.1, * p $&lt;$ 0.05, ** p $&lt;$ 0.01, *** p $&lt;$ 0.001}\\
+## \end{tabular}
+## \end{table}</code></pre>
+<pre class="r"><code>#############
+row &lt;- data.frame(&quot;Coefficients&quot; = &quot;&quot;,
+                  &quot;Combined&quot; = &quot;&quot;,
+                  &quot;False: Any sharing&quot; = &quot;&quot;,
+                  &quot;False: Messenger&quot; = &quot;&quot;,
+                  &quot;False: Timeline&quot; = &quot;&quot;,
+                  &quot;True: Any sharing&quot; = &quot;&quot;,
+                  &quot;True: Messenger&quot; = &quot;&quot;,
+                  &quot;True: Timeline&quot; = &quot;&quot;)
+attr(row, &quot;position&quot;) &lt;- 7
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = row)</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under control, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
+0.459
+</td>
+<td style="text-align:center;">
+0.417
+</td>
+<td style="text-align:center;">
+0.374
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.546
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
+0.421
+</td>
+<td style="text-align:center;">
+0.375
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+0.664
+</td>
+<td style="text-align:center;">
+0.571
+</td>
+<td style="text-align:center;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.042*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.060***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
+0.395
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+<td style="text-align:center;">
+0.509
+</td>
+<td style="text-align:center;">
+0.537
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
+0.480
+</td>
+<td style="text-align:center;">
+0.430
+</td>
+<td style="text-align:center;">
+0.406
+</td>
+<td style="text-align:center;">
+0.692
+</td>
+<td style="text-align:center;">
+0.603
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+-0.074
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
+</td>
+<td style="text-align:center;">
+0.099***
+</td>
+<td style="text-align:center;">
+0.094***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.415
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.339
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.534
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
+0.501
+</td>
+<td style="text-align:center;">
+0.465
+</td>
+<td style="text-align:center;">
+0.434
+</td>
+<td style="text-align:center;">
+0.689
+</td>
+<td style="text-align:center;">
+0.619
+</td>
+<td style="text-align:center;">
+0.661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.024)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.193***
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
+</td>
+<td style="text-align:center;">
+0.062*
+</td>
+<td style="text-align:center;">
+0.085***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
+</td>
+<td style="text-align:center;">
+0.492
+</td>
+<td style="text-align:center;">
+0.446
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.653
+</td>
+<td style="text-align:center;">
+0.581
+</td>
+<td style="text-align:center;">
+0.614
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
+0.386
+</td>
+<td style="text-align:center;">
+0.344
+</td>
+<td style="text-align:center;">
+0.310
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+<td style="text-align:center;">
+0.535
+</td>
+<td style="text-align:center;">
+0.565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
+-0.106***
+</td>
+<td style="text-align:center;">
+-0.101***
+</td>
+<td style="text-align:center;">
+-0.110***
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.046**
+</td>
+<td style="text-align:center;">
+-0.049**
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
+0.457
+</td>
+<td style="text-align:center;">
+0.414
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.652
+</td>
+<td style="text-align:center;">
+0.558
+</td>
+<td style="text-align:center;">
+0.594
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.376
+</td>
+<td style="text-align:center;">
+0.347
+</td>
+<td style="text-align:center;">
+0.637
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+<td style="text-align:center;">
+0.586
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Heterogeneity under control, evaluation&#39;, 
+             add_rows = row,
+             output = &#39;../tables/heterogeneity_control.tex&#39;)
+
+
+#############
+# this works
+row &lt;- data.frame(&quot;Coefficients&quot; = &quot;\\&quot;,
+                  &quot;Combined&quot; = &quot;&quot;,
+                  &quot;False: Any sharing&quot; = &quot;&quot;,
+                  &quot;False: Messenger&quot; = &quot;&quot;,
+                  &quot;False: Timeline&quot; = &quot;&quot;,
+                  &quot;True: Any sharing&quot; = &quot;&quot;,
+                  &quot;True: Messenger&quot; = &quot;&quot;,
+                  &quot;True: Timeline&quot; = &quot;&quot;)
+attr(row, &quot;position&quot;) &lt;- 7
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = row, escape = FALSE) # note: escape = F</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under control, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
+0.459
+</td>
+<td style="text-align:center;">
+0.417
+</td>
+<td style="text-align:center;">
+0.374
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.546
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
+0.421
+</td>
+<td style="text-align:center;">
+0.375
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+0.664
+</td>
+<td style="text-align:center;">
+0.571
+</td>
+<td style="text-align:center;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.042*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.060***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ 
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
+0.395
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+<td style="text-align:center;">
+0.509
+</td>
+<td style="text-align:center;">
+0.537
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
+0.480
+</td>
+<td style="text-align:center;">
+0.430
+</td>
+<td style="text-align:center;">
+0.406
+</td>
+<td style="text-align:center;">
+0.692
+</td>
+<td style="text-align:center;">
+0.603
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+-0.074
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
+</td>
+<td style="text-align:center;">
+0.099***
+</td>
+<td style="text-align:center;">
+0.094***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.415
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.339
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.534
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
+0.501
+</td>
+<td style="text-align:center;">
+0.465
+</td>
+<td style="text-align:center;">
+0.434
+</td>
+<td style="text-align:center;">
+0.689
+</td>
+<td style="text-align:center;">
+0.619
+</td>
+<td style="text-align:center;">
+0.661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.024)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.193***
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
+</td>
+<td style="text-align:center;">
+0.062*
+</td>
+<td style="text-align:center;">
+0.085***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
+</td>
+<td style="text-align:center;">
+0.492
+</td>
+<td style="text-align:center;">
+0.446
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.653
+</td>
+<td style="text-align:center;">
+0.581
+</td>
+<td style="text-align:center;">
+0.614
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
+0.386
+</td>
+<td style="text-align:center;">
+0.344
+</td>
+<td style="text-align:center;">
+0.310
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+<td style="text-align:center;">
+0.535
+</td>
+<td style="text-align:center;">
+0.565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
+-0.106***
+</td>
+<td style="text-align:center;">
+-0.101***
+</td>
+<td style="text-align:center;">
+-0.110***
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.046**
+</td>
+<td style="text-align:center;">
+-0.049**
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
+0.457
+</td>
+<td style="text-align:center;">
+0.414
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.652
+</td>
+<td style="text-align:center;">
+0.558
+</td>
+<td style="text-align:center;">
+0.594
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.376
+</td>
+<td style="text-align:center;">
+0.347
+</td>
+<td style="text-align:center;">
+0.637
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+<td style="text-align:center;">
+0.586
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Heterogeneity under control, evaluation&#39;, 
+             add_rows = row,
+             output = &#39;../tables/heterogeneity_control.tex&#39;)
+
+
+#############
+# working on this
+rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                r&#39;(\textbf{Age})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\textbf{Gender})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\textbf{Political allegiance})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\textbf{Digital literacy index})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\textbf{Scientific knowledge index})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+               )
+
+attr(rows, &#39;position&#39;) &lt;- c(1,8,9,
+                            10,17,18,
+                            19,26,27,
+                            28,35,36,
+                            37)
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = rows, escape = FALSE) # note: escape = F</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under control, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
+0.459
+</td>
+<td style="text-align:center;">
+0.417
+</td>
+<td style="text-align:center;">
+0.374
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.546
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
+0.421
+</td>
+<td style="text-align:center;">
+0.375
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+0.664
+</td>
+<td style="text-align:center;">
+0.571
+</td>
+<td style="text-align:center;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.042*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.060***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ 
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
+0.395
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+<td style="text-align:center;">
+0.509
+</td>
+<td style="text-align:center;">
+0.537
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
+0.480
+</td>
+<td style="text-align:center;">
+0.430
+</td>
+<td style="text-align:center;">
+0.406
+</td>
+<td style="text-align:center;">
+0.692
+</td>
+<td style="text-align:center;">
+0.603
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+-0.074
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
+</td>
+<td style="text-align:center;">
+0.099***
+</td>
+<td style="text-align:center;">
+0.094***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ 
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.415
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.339
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.534
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
+0.501
+</td>
+<td style="text-align:center;">
+0.465
+</td>
+<td style="text-align:center;">
+0.434
+</td>
+<td style="text-align:center;">
+0.689
+</td>
+<td style="text-align:center;">
+0.619
+</td>
+<td style="text-align:center;">
+0.661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.024)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.193***
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
+</td>
+<td style="text-align:center;">
+0.062*
+</td>
+<td style="text-align:center;">
+0.085***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ 
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
+</td>
+<td style="text-align:center;">
+0.492
+</td>
+<td style="text-align:center;">
+0.446
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.653
+</td>
+<td style="text-align:center;">
+0.581
+</td>
+<td style="text-align:center;">
+0.614
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
+0.386
+</td>
+<td style="text-align:center;">
+0.344
+</td>
+<td style="text-align:center;">
+0.310
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+<td style="text-align:center;">
+0.535
+</td>
+<td style="text-align:center;">
+0.565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
+-0.106***
+</td>
+<td style="text-align:center;">
+-0.101***
+</td>
+<td style="text-align:center;">
+-0.110***
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.046**
+</td>
+<td style="text-align:center;">
+-0.049**
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ 
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
+0.457
+</td>
+<td style="text-align:center;">
+0.414
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.652
+</td>
+<td style="text-align:center;">
+0.558
+</td>
+<td style="text-align:center;">
+0.594
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.376
+</td>
+<td style="text-align:center;">
+0.347
+</td>
+<td style="text-align:center;">
+0.637
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+<td style="text-align:center;">
+0.586
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Heterogeneity under control, evaluation&#39;, 
+             add_rows = rows,
              output = &#39;../tables/heterogeneity_control.tex&#39;)</code></pre>
 </div>
 <div id="treatment-effect-heterogeneity-tables" class="section level3" number="3.4.2">
@@ -5500,8 +9363,87 @@ df_eval$pooled_headline_timeline_false &lt;- rowMeans(aipw_scores_timeline_false
 df_eval$pooled_respondent_timeline_true &lt;- rowMeans(aipw_scores_timeline_true_eval[, 4:5])
 df_eval$pooled_headline_timeline_true &lt;- rowMeans(aipw_scores_timeline_true_eval[, 2:3])
 
+table &lt;- sapply(covariate_list, function(x) {
+  covariate &lt;- x
+  outcome &lt;- &#39;pooled_respondent&#39;
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste(outcome, &#39; ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste(outcome, &#39; ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(outcome, &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(outcome, &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+}, simplify = FALSE)
+table &lt;- do.call(rbind, table)
 
-apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
+table_combined &lt;- table %&gt;% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
 table &lt;- apply(apply_mat, 1, function(x) {
   stimuli_type &lt;- x[1]
   covariate &lt;- x[2]
@@ -5682,6 +9624,7 @@ table_channel &lt;- table %&gt;%
   )</code></pre>
 <pre class="r"><code># Mean response estimates
 models &lt;- list(
+  Combined = list(tidy = table_combined),
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;False&#39;),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
                                                          table_channel$Channel == &#39;send&#39;),]),
@@ -5709,6 +9652,9 @@ Heterogeneity under pooled respondent treatment, evaluation
 <th style="text-align:left;">
 </th>
 <th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
 False: Any sharing
 </th>
 <th style="text-align:center;">
@@ -5734,6 +9680,9 @@ True: Timeline
 Age × Below median (n = 6104)
 </td>
 <td style="text-align:center;">
+0.010
+</td>
+<td style="text-align:center;">
 -0.021
 </td>
 <td style="text-align:center;">
@@ -5754,6 +9703,9 @@ Age × Below median (n = 6104)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -5779,6 +9731,9 @@ Age × Below median (n = 6104)
 Age × Above median (n = 6030)
 </td>
 <td style="text-align:center;">
+0.124**
+</td>
+<td style="text-align:center;">
 -0.035**
 </td>
 <td style="text-align:center;">
@@ -5799,6 +9754,9 @@ Age × Above median (n = 6030)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.044)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -5824,6 +9782,9 @@ Age × Above median (n = 6030)
 Age × Difference
 </td>
 <td style="text-align:center;">
+0.113+
+</td>
+<td style="text-align:center;">
 -0.014
 </td>
 <td style="text-align:center;">
@@ -5844,6 +9805,9 @@ Age × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.059)
 </td>
 <td style="text-align:center;">
 (0.019)
@@ -5869,6 +9833,9 @@ Age × Difference
 Male ×  Not male (n = 5752)
 </td>
 <td style="text-align:center;">
+0.039
+</td>
+<td style="text-align:center;">
 -0.016
 </td>
 <td style="text-align:center;">
@@ -5889,6 +9856,9 @@ Male ×  Not male (n = 5752)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.041)
 </td>
 <td style="text-align:center;">
 (0.014)
@@ -5914,6 +9884,9 @@ Male ×  Not male (n = 5752)
 Male × Male (n = 6382)
 </td>
 <td style="text-align:center;">
+0.092*
+</td>
+<td style="text-align:center;">
 -0.039**
 </td>
 <td style="text-align:center;">
@@ -5934,6 +9907,9 @@ Male × Male (n = 6382)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -5959,6 +9935,9 @@ Male × Male (n = 6382)
 Male × Difference
 </td>
 <td style="text-align:center;">
+0.053
+</td>
+<td style="text-align:center;">
 -0.023
 </td>
 <td style="text-align:center;">
@@ -5979,6 +9958,9 @@ Male × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.059)
 </td>
 <td style="text-align:center;">
 (0.019)
@@ -6004,6 +9986,9 @@ Male × Difference
 Political Allegiance ×  Not aligned (n = 8609)
 </td>
 <td style="text-align:center;">
+0.112**
+</td>
+<td style="text-align:center;">
 -0.037**
 </td>
 <td style="text-align:center;">
@@ -6024,6 +10009,9 @@ Political Allegiance ×  Not aligned (n = 8609)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
 </td>
 <td style="text-align:center;">
 (0.011)
@@ -6049,6 +10037,9 @@ Political Allegiance ×  Not aligned (n = 8609)
 Political Allegiance × Aligned w/ ruling party (n = 3525)
 </td>
 <td style="text-align:center;">
+-0.042
+</td>
+<td style="text-align:center;">
 -0.006
 </td>
 <td style="text-align:center;">
@@ -6069,6 +10060,9 @@ Political Allegiance × Aligned w/ ruling party (n = 3525)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.054)
 </td>
 <td style="text-align:center;">
 (0.018)
@@ -6094,6 +10088,9 @@ Political Allegiance × Aligned w/ ruling party (n = 3525)
 Political Allegiance × Difference
 </td>
 <td style="text-align:center;">
+-0.154*
+</td>
+<td style="text-align:center;">
 0.031
 </td>
 <td style="text-align:center;">
@@ -6114,6 +10111,9 @@ Political Allegiance × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.064)
 </td>
 <td style="text-align:center;">
 (0.021)
@@ -6139,6 +10139,9 @@ Political Allegiance × Difference
 Digital literacy index × Below median (n = 6186)
 </td>
 <td style="text-align:center;">
+0.073+
+</td>
+<td style="text-align:center;">
 -0.044**
 </td>
 <td style="text-align:center;">
@@ -6159,6 +10162,9 @@ Digital literacy index × Below median (n = 6186)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
 </td>
 <td style="text-align:center;">
 (0.014)
@@ -6184,6 +10190,9 @@ Digital literacy index × Below median (n = 6186)
 Digital literacy index × Above median (n = 5948)
 </td>
 <td style="text-align:center;">
+0.061
+</td>
+<td style="text-align:center;">
 -0.012
 </td>
 <td style="text-align:center;">
@@ -6204,6 +10213,9 @@ Digital literacy index × Above median (n = 5948)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -6229,6 +10241,9 @@ Digital literacy index × Above median (n = 5948)
 Digital literacy index × Difference
 </td>
 <td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
 0.032+
 </td>
 <td style="text-align:center;">
@@ -6249,6 +10264,9 @@ Digital literacy index × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.059)
 </td>
 <td style="text-align:center;">
 (0.019)
@@ -6274,6 +10292,9 @@ Digital literacy index × Difference
 Scientific beliefs index × Below median (n = 6463)
 </td>
 <td style="text-align:center;">
+0.106**
+</td>
+<td style="text-align:center;">
 -0.046***
 </td>
 <td style="text-align:center;">
@@ -6294,6 +10315,9 @@ Scientific beliefs index × Below median (n = 6463)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.040)
 </td>
 <td style="text-align:center;">
 (0.013)
@@ -6319,6 +10343,9 @@ Scientific beliefs index × Below median (n = 6463)
 Scientific beliefs index × Above median (n = 5671)
 </td>
 <td style="text-align:center;">
+0.022
+</td>
+<td style="text-align:center;">
 -0.007
 </td>
 <td style="text-align:center;">
@@ -6339,6 +10366,9 @@ Scientific beliefs index × Above median (n = 5671)
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.044)
 </td>
 <td style="text-align:center;">
 (0.014)
@@ -6364,6 +10394,9 @@ Scientific beliefs index × Above median (n = 5671)
 Scientific beliefs index × Difference
 </td>
 <td style="text-align:center;">
+-0.084
+</td>
+<td style="text-align:center;">
 0.039*
 </td>
 <td style="text-align:center;">
@@ -6384,6 +10417,9 @@ Scientific beliefs index × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.059)
 </td>
 <td style="text-align:center;">
 (0.019)
@@ -6416,10 +10452,2261 @@ Scientific beliefs index × Difference
 </table>
 <pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, 
              output = &#39;../tables/heterogeneity_treatment.tex&#39;)</code></pre>
+<div id="by-treatment-type" class="section level5" number="3.4.2.0.1">
+<h5><span class="header-section-number">3.4.2.0.1</span> By treatment
+type</h5>
+<pre class="r"><code>covariate_list &lt;- c(&#39;age&#39;, &#39;male&#39;, &#39;pol&#39;, &#39;dli&#39;, &#39;science&#39;)
+stimuli_types &lt;- c(&#39;true&#39;, &#39;false&#39;)
+channel_types &lt;- c(&#39;send&#39;, &#39;timeline&#39;)
+
+table &lt;- sapply(covariate_list, function(x) {
+  covariate &lt;- x
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,4]  ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,4] ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,4] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,4] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table &lt;- do.call(rbind, table)
+
+table_combined &lt;- table %&gt;% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
+table &lt;- apply(apply_mat, 1, function(x) {
+  stimuli_type &lt;- x[1]
+  covariate &lt;- x[2]
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
+                            &#39;_eval[,4] ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
+                            &#39;_eval[,4] ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,4] ~  factor(&#39;,covariate, 
+                            &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,4] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+table &lt;- do.call(rbind, table)
+
+table_any &lt;- table %&gt;% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c(&#39;True&#39;, &#39;False&#39;)), 
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, channel_types, covariate_list)
+table &lt;- apply(apply_mat, 1, function(x) {
+  stimuli_type &lt;- x[1]
+  covariate &lt;- x[3]
+  channel &lt;- x[2]
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;, stimuli_type, &#39;_eval[,4]&#39;, 
+                            
+                            &#39; ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, &#39;_eval[,4]&#39;, 
+                            &#39; ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;,stimuli_type, &#39;_eval[,4]&#39;,
+                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;,stimuli_type, &#39;_eval[,4]&#39;,
+                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      `Channel` = channel,
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+
+
+table &lt;- do.call(rbind, table)
+
+table_channel &lt;- table %&gt;% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c(&#39;True&#39;, &#39;False&#39;)), 
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code># Mean response estimates
+models &lt;- list(
+  Combined = list(tidy = table_combined),
+  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;False&#39;),]),
+  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
+                                                         table_channel$Channel == &#39;send&#39;),]),
+  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
+                                                        table_channel$Channel == &#39;timeline&#39;),]),
+  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;True&#39;),]),
+  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;True&#39; &amp;
+                                                        table_channel$Channel == &#39;send&#39;),]),
+  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;True&#39; &amp;
+                                                       table_channel$Channel == &#39;timeline&#39;),])
+)
+
+models &lt;- lapply(models, function(x){
+  class(x) &lt;- &quot;modelsummary_list&quot;
+  x
+})
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under accuracy, evaluation&#39;)</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under accuracy, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+-0.022
+</td>
+<td style="text-align:center;">
+-0.028*
+</td>
+<td style="text-align:center;">
+-0.023+
+</td>
+<td style="text-align:center;">
+-0.025
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.028+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+0.116*
+</td>
+<td style="text-align:center;">
+-0.022
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.029*
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.026+
+</td>
+<td style="text-align:center;">
+0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.046)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.089
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+0.013
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+<td style="text-align:center;">
+0.049+
+</td>
+<td style="text-align:center;">
+0.039+
+</td>
+<td style="text-align:center;">
+0.037+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.063)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.028)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+0.038
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.016
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+0.008
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.044)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+0.102*
+</td>
+<td style="text-align:center;">
+-0.034*
+</td>
+<td style="text-align:center;">
+-0.026+
+</td>
+<td style="text-align:center;">
+-0.038**
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+0.004
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.045)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+0.064
+</td>
+<td style="text-align:center;">
+-0.025
+</td>
+<td style="text-align:center;">
+-0.025
+</td>
+<td style="text-align:center;">
+-0.025
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.063)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+0.115**
+</td>
+<td style="text-align:center;">
+-0.033**
+</td>
+<td style="text-align:center;">
+-0.031**
+</td>
+<td style="text-align:center;">
+-0.036**
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+0.009
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.034
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+0.026
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.149*
+</td>
+<td style="text-align:center;">
+0.036
+</td>
+<td style="text-align:center;">
+0.036
+</td>
+<td style="text-align:center;">
+0.036
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.069)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.032)
+</td>
+<td style="text-align:center;">
+(0.032)
+</td>
+<td style="text-align:center;">
+(0.032)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+0.076+
+</td>
+<td style="text-align:center;">
+-0.040**
+</td>
+<td style="text-align:center;">
+-0.034*
+</td>
+<td style="text-align:center;">
+-0.039**
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+<td style="text-align:center;">
+-0.016
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.044)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+0.066
+</td>
+<td style="text-align:center;">
+-0.004
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
+0.001
+</td>
+<td style="text-align:center;">
+0.016
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.045)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+-0.010
+</td>
+<td style="text-align:center;">
+0.036+
+</td>
+<td style="text-align:center;">
+0.026
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+0.019
+</td>
+<td style="text-align:center;">
+0.013
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.063)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.028)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+0.133**
+</td>
+<td style="text-align:center;">
+-0.040**
+</td>
+<td style="text-align:center;">
+-0.045***
+</td>
+<td style="text-align:center;">
+-0.043**
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+-0.027+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.043)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+0.001
+</td>
+<td style="text-align:center;">
+-0.002
+</td>
+<td style="text-align:center;">
+0.006
+</td>
+<td style="text-align:center;">
+-0.006
+</td>
+<td style="text-align:center;">
+0.008
+</td>
+<td style="text-align:center;">
+0.012
+</td>
+<td style="text-align:center;">
+0.011
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.046)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+-0.132*
+</td>
+<td style="text-align:center;">
+0.038+
+</td>
+<td style="text-align:center;">
+0.051**
+</td>
+<td style="text-align:center;">
+0.037+
+</td>
+<td style="text-align:center;">
+0.016
+</td>
+<td style="text-align:center;">
+0.012
+</td>
+<td style="text-align:center;">
+0.038+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.063)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.028)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under accuracy, evaluation&#39;, 
+             output = &#39;../tables/heterogeneity_accuracy.tex&#39;)</code></pre>
+</div>
+<div id="facebook" class="section level4" number="3.4.2.1">
+<h4><span class="header-section-number">3.4.2.1</span> Facebook</h4>
+<pre class="r"><code>covariate_list &lt;- c(&#39;age&#39;, &#39;male&#39;, &#39;pol&#39;, &#39;dli&#39;, &#39;science&#39;)
+stimuli_types &lt;- c(&#39;true&#39;, &#39;false&#39;)
+channel_types &lt;- c(&#39;send&#39;, &#39;timeline&#39;)
+
+table &lt;- sapply(covariate_list, function(x) {
+  covariate &lt;- x
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,5]  ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,5] ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores[,5] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores[,5] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+},
+simplify = FALSE)
+table &lt;- do.call(rbind, table)
+
+table_combined &lt;- table %&gt;% 
+  mutate(
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, covariate_list)
+table &lt;- apply(apply_mat, 1, function(x) {
+  stimuli_type &lt;- x[1]
+  covariate &lt;- x[2]
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
+                            &#39;_eval[,5] ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type,
+                            &#39;_eval[,5] ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,5] ~  factor(&#39;,covariate, 
+                            &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, 
+                            &#39;_eval[,5] ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+table &lt;- do.call(rbind, table)
+
+table_any &lt;- table %&gt;% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c(&#39;True&#39;, &#39;False&#39;)), 
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code>apply_mat &lt;- expand.grid(stimuli_types, channel_types, covariate_list)
+table &lt;- apply(apply_mat, 1, function(x) {
+  stimuli_type &lt;- x[1]
+  covariate &lt;- x[3]
+  channel &lt;- x[2]
+  
+  if(length(unique(df_eval[, covariate])) &lt;= 2){
+    # binary covariates
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;, stimuli_type, &#39;_eval[,5]&#39;, 
+                            
+                            &#39; ~  factor(&#39;,covariate, &#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_any_&#39;,stimuli_type, &#39;_eval[,5]&#39;, 
+                            &#39; ~  factor(&#39;,covariate, &#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;,stimuli_type, &#39;_eval[,5]&#39;,
+                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+    fmla1 &lt;- formula(paste0(&#39;aipw_scores_&#39;, channel, &#39;_&#39;,stimuli_type, &#39;_eval[,5]&#39;,
+                            &#39; ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;)&#39;))
+    ns &lt;- table(df_eval[,covariate] &gt; median(df_eval[,covariate]) + adjustment)
+  }
+  ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=df_eval))
+  
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate, ols1$estimate[2])
+  est_std.err &lt;- c(ols0$std.error, ols1$std.error[2])
+  p_value &lt;- c(ols0$p.value, ols1$p.value[2])
+  ns &lt;- c(ns, sum(ns))
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = ns,
+                      `Stimuli type` = str_to_sentence(stimuli_type),
+                      `Covariate type` = str_to_sentence(covariate),
+                      `Channel` = channel,
+                      Type = c(0,1,2),
+                      check.names = FALSE)
+  
+  outdf
+  
+})
+
+
+table &lt;- do.call(rbind, table)
+
+table_channel &lt;- table %&gt;% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c(&#39;True&#39;, &#39;False&#39;)), 
+    label = case_when(
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Below median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Age&#39;, &#39;Dli&#39;,&#39;Hhi&#39;, &#39;Science&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Above median (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Male&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Male (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39;Kenya (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Nigeria&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Nigeria (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 0 ~ 
+        paste0(&#39; Not aligned (n = &#39;, n, &#39;)&#39;),
+      `Covariate type` %in%  c(&#39;Pol&#39;)  &amp; 
+        Type == 1 ~ 
+        paste0(&#39;Aligned w/ ruling party (n = &#39;, n, &#39;)&#39;),
+      TRUE ~ &#39;Difference&#39;),
+    `Covariate type` = case_when(`Covariate type` == &#39;Dli&#39; ~ 
+                                   &#39;Digital literacy index&#39;,
+                                 `Covariate type` == &#39;Hhi&#39; ~ 
+                                   &#39;Household Wealth Index&#39;,
+                                 `Covariate type` == &#39;Nigeria&#39; ~ 
+                                   &#39;Country&#39;,
+                                 `Covariate type` == &#39;Pol&#39; ~ 
+                                   &#39;Political Allegiance&#39;,
+                                 `Covariate type` == &#39;Science&#39; ~ 
+                                   &#39;Scientific beliefs index&#39;,
+                                 TRUE ~ `Covariate type`),
+    term = paste0(`Covariate type`, &#39;: &#39;, label)
+  )</code></pre>
+<pre class="r"><code># Mean response estimates
+models &lt;- list(
+  Combined = list(tidy = table_combined),
+  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;False&#39;),]),
+  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
+                                                         table_channel$Channel == &#39;send&#39;),]),
+  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
+                                                        table_channel$Channel == &#39;timeline&#39;),]),
+  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;True&#39;),]),
+  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;True&#39; &amp;
+                                                        table_channel$Channel == &#39;send&#39;),]),
+  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;True&#39; &amp;
+                                                       table_channel$Channel == &#39;timeline&#39;),])
+)
+
+models &lt;- lapply(models, function(x){
+  class(x) &lt;- &quot;modelsummary_list&quot;
+  x
+})
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under facebook, evaluation&#39;)</code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under facebook, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.006
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.014
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.017
+</td>
+<td style="text-align:center;">
+-0.035*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.046)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+0.132*
+</td>
+<td style="text-align:center;">
+-0.047**
+</td>
+<td style="text-align:center;">
+-0.044**
+</td>
+<td style="text-align:center;">
+-0.044**
+</td>
+<td style="text-align:center;">
+0.012
+</td>
+<td style="text-align:center;">
+0.013
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.138*
+</td>
+<td style="text-align:center;">
+-0.027
+</td>
+<td style="text-align:center;">
+-0.024
+</td>
+<td style="text-align:center;">
+-0.030
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.030
+</td>
+<td style="text-align:center;">
+0.034
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.070)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+0.040
+</td>
+<td style="text-align:center;">
+-0.023
+</td>
+<td style="text-align:center;">
+-0.028+
+</td>
+<td style="text-align:center;">
+-0.025+
+</td>
+<td style="text-align:center;">
+0.004
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.030+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+0.083+
+</td>
+<td style="text-align:center;">
+-0.043**
+</td>
+<td style="text-align:center;">
+-0.036*
+</td>
+<td style="text-align:center;">
+-0.033*
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+<td style="text-align:center;">
+0.004
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+0.043
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.069)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+0.108**
+</td>
+<td style="text-align:center;">
+-0.042**
+</td>
+<td style="text-align:center;">
+-0.037**
+</td>
+<td style="text-align:center;">
+-0.044***
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.016
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.041)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.050
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.021
+</td>
+<td style="text-align:center;">
+0.008
+</td>
+<td style="text-align:center;">
+-0.010
+</td>
+<td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
+-0.025
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.064)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.159*
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.076)
+</td>
+<td style="text-align:center;">
+(0.025)
+</td>
+<td style="text-align:center;">
+(0.025)
+</td>
+<td style="text-align:center;">
+(0.025)
+</td>
+<td style="text-align:center;">
+(0.033)
+</td>
+<td style="text-align:center;">
+(0.033)
+</td>
+<td style="text-align:center;">
+(0.033)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+0.069
+</td>
+<td style="text-align:center;">
+-0.047**
+</td>
+<td style="text-align:center;">
+-0.045**
+</td>
+<td style="text-align:center;">
+-0.040**
+</td>
+<td style="text-align:center;">
+0.001
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.026+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+0.055
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.019
+</td>
+<td style="text-align:center;">
+-0.018
+</td>
+<td style="text-align:center;">
+-0.002
+</td>
+<td style="text-align:center;">
+0.004
+</td>
+<td style="text-align:center;">
+-0.010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.027
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.022
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+<td style="text-align:center;">
+0.013
+</td>
+<td style="text-align:center;">
+0.016
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.070)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+0.079+
+</td>
+<td style="text-align:center;">
+-0.052***
+</td>
+<td style="text-align:center;">
+-0.054***
+</td>
+<td style="text-align:center;">
+-0.044**
+</td>
+<td style="text-align:center;">
+-0.023
+</td>
+<td style="text-align:center;">
+-0.017
+</td>
+<td style="text-align:center;">
+-0.034*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.047)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+0.044
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
+0.026
+</td>
+<td style="text-align:center;">
+0.014
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.051)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+-0.035
+</td>
+<td style="text-align:center;">
+0.039+
+</td>
+<td style="text-align:center;">
+0.046*
+</td>
+<td style="text-align:center;">
+0.032
+</td>
+<td style="text-align:center;">
+0.049+
+</td>
+<td style="text-align:center;">
+0.031
+</td>
+<td style="text-align:center;">
+0.032
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.070)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.022)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under facebook, evaluation&#39;, 
+             output = &#39;../tables/heterogeneity_facebook.tex&#39;)</code></pre>
+</div>
 </div>
 <div id="policy-heterogeneity-tables" class="section level3" number="3.4.3">
 <h3><span class="header-section-number">3.4.3</span> Policy
 heterogeneity tables</h3>
+<pre class="r"><code>combined_df &lt;- data.frame(
+  combined = c(aipw_scores[,4] + aipw_scores[,1],
+               aipw_scores[,5] + aipw_scores[,1]),
+  condition = rep(4:5, each = nrow(df_eval)),
+  optimal = rep(optimal_assignment, 2)
+)
+
+
+table &lt;- {
+  outcome &lt;- &#39;combined&#39;
+  
+  fmla0 &lt;- formula(paste(outcome, &#39; ~  factor(condition)*factor(optimal) -1&#39;))
+  fmla1 &lt;- formula(paste(outcome, &#39; ~  factor(condition)*factor(optimal)&#39;))
+  fmla2 &lt;- formula(paste(outcome, &#39; ~  factor(condition)*factor(optimal==4) -1&#39;))
+  fmla3 &lt;- formula(paste(outcome, &#39; ~  factor(condition)*factor(optimal==4)&#39;))
+  ns &lt;- table(optimal_assignment)
+  ols0 &lt;- tidy(lm_robust(fmla0, data=combined_df))
+  ols1 &lt;- tidy(lm_robust(fmla1, data=combined_df))
+  ols2 &lt;- tidy(lm_robust(fmla2, data=combined_df))
+  ols3 &lt;- tidy(lm_robust(fmla3, data=combined_df))
+  
+  # coef, standard error, n
+  est_coef &lt;- c(ols0$estimate[1:2], ols1$estimate[2],
+                ols2$estimate[1:2], ols3$estimate[c(2,4)])
+  est_std.err &lt;- c(ols0$std.error[1:2], ols1$std.error[2],
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
+  p_value &lt;- c(NA, NA, ols1$p.value[2],
+               NA, NA, ols3$p.value[c(2,4)])
+  
+  # Tally up results
+  outdf &lt;- data.frame(estimate = est_coef,
+                      std.error = est_std.err, 
+                      p.value = p_value,
+                      n = c(rep(ns, each = 3), sum(ns)),
+                      `Policy type` = c(rep(&#39;Accuracy nudge&#39;, 3), rep(&#39;Facebook tips&#39;, 3), &#39;Grand difference&#39;),
+                      Type = c(rep(0:2, times = 2), 3),
+                      check.names = FALSE)
+  
+  outdf
+  
+}
+
+table_combined &lt;- table %&gt;% 
+  mutate(
+    term = paste0(`Policy type`, &#39;: &#39;, 
+                  case_when(Type == 0 ~ &#39;Accuracy nudge&#39;,
+                            Type == 1 ~ &#39;Facebook tips&#39;,
+                            Type == 2 ~ &#39;Difference&#39;,
+                            TRUE ~ &#39;Grand difference&#39;))
+  )</code></pre>
 <pre class="r"><code>any_df &lt;- data.frame(
   any_false = c(aipw_scores_any_false_eval[,4] + aipw_scores_any_false_eval[,1],
                 aipw_scores_any_false_eval[,5] + aipw_scores_any_false_eval[,1]),
@@ -6444,14 +12731,14 @@ table &lt;- apply(apply_mat, 1, function(x) {
   ols1 &lt;- tidy(lm_robust(fmla1, data=any_df))
   ols2 &lt;- tidy(lm_robust(fmla2, data=any_df))
   ols3 &lt;- tidy(lm_robust(fmla3, data=any_df))
-
+  
   # coef, standard error, n
   est_coef &lt;- c(ols0$estimate[1:2], ols1$estimate[2],
                 ols2$estimate[1:2], ols3$estimate[c(2,4)])
   est_std.err &lt;- c(ols0$std.error[1:2], ols1$std.error[2],
-                ols2$std.error[1:2], ols3$std.error[c(2,4)])
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
   p_value &lt;- c(NA, NA, ols1$p.value[2],
-                NA, NA, ols3$p.value[c(2,4)])
+               NA, NA, ols3$p.value[c(2,4)])
   
   # Tally up results
   outdf &lt;- data.frame(estimate = est_coef,
@@ -6508,14 +12795,14 @@ table &lt;- apply(apply_mat, 1, function(x) {
   ols1 &lt;- tidy(lm_robust(fmla1, data=channel_df))
   ols2 &lt;- tidy(lm_robust(fmla2, data=channel_df))
   ols3 &lt;- tidy(lm_robust(fmla3, data=channel_df))
-
+  
   # coef, standard error, n
   est_coef &lt;- c(ols0$estimate[1:2], ols1$estimate[2],
                 ols2$estimate[1:2], ols3$estimate[c(2,4)])
   est_std.err &lt;- c(ols0$std.error[1:2], ols1$std.error[2],
-                ols2$std.error[1:2], ols3$std.error[c(2,4)])
+                   ols2$std.error[1:2], ols3$std.error[c(2,4)])
   p_value &lt;- c(NA, NA, ols1$p.value[2],
-                NA, NA, ols3$p.value[c(2,4)])
+               NA, NA, ols3$p.value[c(2,4)])
   
   # Tally up results
   outdf &lt;- data.frame(estimate = est_coef,
@@ -6531,17 +12818,17 @@ table &lt;- apply(apply_mat, 1, function(x) {
   outdf
   
 })</code></pre>
-<pre><code>## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value = p_value, : row names were found
-## from a short variable and have been discarded
+<pre><code>## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value =
+## p_value, : row names were found from a short variable and have been discarded
 
-## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value = p_value, : row names were found
-## from a short variable and have been discarded
+## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value =
+## p_value, : row names were found from a short variable and have been discarded
 
-## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value = p_value, : row names were found
-## from a short variable and have been discarded
+## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value =
+## p_value, : row names were found from a short variable and have been discarded
 
-## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value = p_value, : row names were found
-## from a short variable and have been discarded</code></pre>
+## Warning in data.frame(estimate = est_coef, std.error = est_std.err, p.value =
+## p_value, : row names were found from a short variable and have been discarded</code></pre>
 <pre class="r"><code>table &lt;- do.call(rbind, table)
 
 table_channel &lt;- table %&gt;% 
@@ -6556,6 +12843,7 @@ table_channel &lt;- table %&gt;%
   )</code></pre>
 <pre class="r"><code># Mean response estimates
 models &lt;- list(
+  Combined = list(tidy = table_combined), 
   `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == &#39;False&#39;),]),
   `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;False&#39; &amp;
                                                          table_channel$Channel == &#39;send&#39;),]),
@@ -6566,7 +12854,7 @@ models &lt;- list(
                                                         table_channel$Channel == &#39;send&#39;),]),
   `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == &#39;True&#39; &amp;
                                                        table_channel$Channel == &#39;timeline&#39;),])
-  )
+)
 
 models &lt;- lapply(models, function(x){
   class(x) &lt;- &quot;modelsummary_list&quot;
@@ -6581,6 +12869,9 @@ Policy heterogeneity across respondent treatments, evaluation
 <thead>
 <tr>
 <th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
 </th>
 <th style="text-align:center;">
 False: Any sharing
@@ -6608,6 +12899,9 @@ True: Timeline
 Accuracy nudge × Accuracy nudge
 </td>
 <td style="text-align:center;">
+-0.150
+</td>
+<td style="text-align:center;">
 0.390
 </td>
 <td style="text-align:center;">
@@ -6628,6 +12922,9 @@ Accuracy nudge × Accuracy nudge
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
 </td>
 <td style="text-align:center;">
 (0.010)
@@ -6653,6 +12950,9 @@ Accuracy nudge × Accuracy nudge
 Accuracy nudge × Facebook tips
 </td>
 <td style="text-align:center;">
+-0.209
+</td>
+<td style="text-align:center;">
 0.410
 </td>
 <td style="text-align:center;">
@@ -6673,6 +12973,9 @@ Accuracy nudge × Facebook tips
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
 </td>
 <td style="text-align:center;">
 (0.012)
@@ -6698,6 +13001,9 @@ Accuracy nudge × Facebook tips
 Accuracy nudge × Difference
 </td>
 <td style="text-align:center;">
+-0.059
+</td>
+<td style="text-align:center;">
 0.019
 </td>
 <td style="text-align:center;">
@@ -6718,6 +13024,9 @@ Accuracy nudge × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
 </td>
 <td style="text-align:center;">
 (0.015)
@@ -6743,6 +13052,9 @@ Accuracy nudge × Difference
 Facebook tips × Accuracy nudge
 </td>
 <td style="text-align:center;">
+-0.467
+</td>
+<td style="text-align:center;">
 0.441
 </td>
 <td style="text-align:center;">
@@ -6763,6 +13075,9 @@ Facebook tips × Accuracy nudge
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.027)
 </td>
 <td style="text-align:center;">
 (0.009)
@@ -6788,6 +13103,9 @@ Facebook tips × Accuracy nudge
 Facebook tips × Facebook tips
 </td>
 <td style="text-align:center;">
+-0.434
+</td>
+<td style="text-align:center;">
 0.403
 </td>
 <td style="text-align:center;">
@@ -6808,6 +13126,9 @@ Facebook tips × Facebook tips
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.034)
 </td>
 <td style="text-align:center;">
 (0.011)
@@ -6833,6 +13154,9 @@ Facebook tips × Facebook tips
 Facebook tips × Difference
 </td>
 <td style="text-align:center;">
+0.033
+</td>
+<td style="text-align:center;">
 -0.038**
 </td>
 <td style="text-align:center;">
@@ -6853,6 +13177,9 @@ Facebook tips × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.043)
 </td>
 <td style="text-align:center;">
 (0.014)
@@ -6878,6 +13205,9 @@ Facebook tips × Difference
 Grand difference × Grand difference
 </td>
 <td style="text-align:center;">
+-0.092
+</td>
+<td style="text-align:center;">
 0.057**
 </td>
 <td style="text-align:center;">
@@ -6898,6 +13228,9 @@ Grand difference × Grand difference
 </tr>
 <tr>
 <td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.065)
 </td>
 <td style="text-align:center;">
 (0.021)
@@ -7697,6 +14030,247 @@ shared</h3></li>
 </div>
 <div id="etc." class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Etc.</h1>
+<p>Results reported inline that are not otherwise in tables.</p>
+<pre class="r"><code># UNDER CONTROL
+# Difference in sharing of any true vs. false
+x &lt;- (aipw_scores_any_true_eval[,1] - aipw_scores_any_false_eval[,1])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>## mean of x 
+## 0.2054592</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 1.635669e-61</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 3.271338e-61</code></pre>
+<pre class="r"><code># Difference in TRUE sharing of timeline vs. messenger
+x &lt;- (aipw_scores_timeline_true_eval[,1] - aipw_scores_send_true_eval[,1])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>##  mean of x 
+## 0.03132351</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 1.212956e-05</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 2.425911e-05</code></pre>
+<pre class="r"><code># Difference in FALSE sharing of timeline vs. messenger
+x &lt;- (aipw_scores_timeline_false_eval[,1] - aipw_scores_send_false_eval[,1])
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.02949975</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 2.126705e-06</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 4.25341e-06</code></pre>
+<pre class="r"><code># HETEROGENEITY IN BEST
+# we achieve larger magnitude treatment effects in decreasing false sharing intentions through our contextual policy as compared to either the accuracy nudge or the Facebook tips treatments assigned uniformly
+
+# accuracy
+x &lt;- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,4])
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.02141259</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.004956819</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.009913638</code></pre>
+<pre class="r"><code># fb
+x &lt;- (aipw_scores_any_false_eval[,6] - aipw_scores_send_false_eval[,5])
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.01046938</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.09383091</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.1876618</code></pre>
+<pre class="r"><code># CHANNEL SHARING
+# the Facebook tips treatment has larger effects on mitigating false sharing intentions relative to the accuracy nudge
+x &lt;- (aipw_scores_any_false_eval[,5] - aipw_scores_any_false_eval[,4])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.01158751</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.883307</code></pre>
+<pre class="r"><code># pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.01158751</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.116693</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.2333861</code></pre>
+<pre class="r"><code># and also true
+x &lt;- (aipw_scores_any_true_eval[,5] - aipw_scores_any_true_eval[,4])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>##     mean of x 
+## -0.0001639953</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.5051154</code></pre>
+<pre class="r"><code># pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##     mean of x 
+## -0.0001639953</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.4948846</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.9897691</code></pre>
+<pre class="r"><code># combined
+x &lt;- (aipw_scores[,5] - aipw_scores[,4])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>##    mean of x 
+## -0.009178727</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.6179028</code></pre>
+<pre class="r"><code># pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##    mean of x 
+## -0.009178727</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.3820972</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.7641945</code></pre>
+<pre class="r"><code># The Facebook tips treatment and the accuracy nudge are both effective at moving false sharing intentions on the timeline
+# fb
+x &lt;- aipw_scores_timeline_false_eval[,5]
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.02906411</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.002897466</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.005794933</code></pre>
+<pre class="r"><code># accuracy
+x &lt;- aipw_scores_timeline_false_eval[,4]
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.02601244</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.003167267</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.006334535</code></pre>
+<pre class="r"><code># fb
+x &lt;- aipw_scores_send_false_eval[,5]
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.03220741</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.001579869</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.003159738</code></pre>
+<pre class="r"><code># accuracy
+x &lt;- aipw_scores_send_false_eval[,4]
+# pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.02126421</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.01490802</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.02981605</code></pre>
+<pre class="r"><code># The Facebook tips treatment is relatively more effective at also moving false sharing intentions on Messenger 
+x &lt;- (aipw_scores_send_false_eval[,5] - aipw_scores_send_false_eval[,4])
+# pvalue greater than
+t.test(x, alternative = &#39;greater&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.01094321</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;greater&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.8741353</code></pre>
+<pre class="r"><code># pvalue less than
+t.test(x, alternative = &#39;less&#39;)$estimate</code></pre>
+<pre><code>##   mean of x 
+## -0.01094321</code></pre>
+<pre class="r"><code>t.test(x, alternative = &#39;less&#39;)$p.value</code></pre>
+<pre><code>## [1] 0.1258647</code></pre>
+<pre class="r"><code># pvalue two-sided
+t.test(x)$p.value</code></pre>
+<pre><code>## [1] 0.2517295</code></pre>
+<pre class="r"><code># HETEROGENEITY OVERALL
+# The largest treatment effects on false sharing intentions were for users with below median digital literacy and below median scientific knowledge. For these users, the Facebook tips treatment was more effective than the accuracy nudge
+
+covariate &lt;- &#39;dli&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x &lt;- aipw_scores_any_false_eval[,5]-aipw_scores_any_false_eval[,4]
+
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(dli > median(df_eval$dli) + 1e-05)FALSE","2":"-0.007347799","3":"0.01328892","4":"-0.5529267","5":"0.5803238","6":"-0.03339620","7":"0.01870061","8":"12132","9":"x"},{"1":"factor(dli > median(df_eval$dli) + 1e-05)TRUE","2":"-0.015996859","3":"0.01422881","4":"-1.1242588","5":"0.2609255","6":"-0.04388759","7":"0.01189387","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>covariate &lt;- &#39;science&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(science > median(df_eval$science) + 1e-05)FALSE","2":"-0.01191876","3":"0.01352943","4":"-0.8809505","5":"0.3783621","6":"-0.03843861","7":"0.01460109","8":"12132","9":"x"},{"1":"factor(science > median(df_eval$science) + 1e-05)TRUE","2":"-0.01120999","3":"0.01396817","4":"-0.8025383","5":"0.4222574","6":"-0.03858983","7":"0.01616985","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code># For users with below median digital literacy and below median scientific knowledge, treatment effects under Facebook tips were driven by relatively larger effects on private sharing on Messenger as compared to public sharing on their timelines
+
+# for fb
+covariate &lt;- &#39;dli&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x &lt;- aipw_scores_timeline_false_eval[,5]-aipw_scores_send_false_eval[,5]
+
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(dli > median(df_eval$dli) + 1e-05)FALSE","2":"0.004888289","3":"0.01182958","4":"0.4132260","5":"0.6794484","6":"-0.01829957","7":"0.02807615","8":"12132","9":"x"},{"1":"factor(dli > median(df_eval$dli) + 1e-05)TRUE","2":"0.001328497","3":"0.01243702","4":"0.1068179","5":"0.9149352","6":"-0.02305006","7":"0.02570705","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>covariate &lt;- &#39;science&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(science > median(df_eval$science) + 1e-05)FALSE","2":"0.009426962","3":"0.01163062","4":"0.8105298","5":"0.4176516","6":"-0.01337090","7":"0.03222483","8":"12132","9":"x"},{"1":"factor(science > median(df_eval$science) + 1e-05)TRUE","2":"-0.004017914","3":"0.01268700","4":"-0.3166953","5":"0.7514803","6":"-0.02888646","7":"0.02085064","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code># whereas for the accuracy nudge, effects on timeline as compared to messenger sharing are comparable for these groups 
+covariate &lt;- &#39;dli&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+x &lt;- aipw_scores_timeline_false_eval[,4]-aipw_scores_send_false_eval[,4]
+
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(dli > median(df_eval$dli) + 1e-05)FALSE","2":"-0.005343481","3":"0.01113192","4":"-0.4800144","5":"0.6312258","6":"-0.02716381","7":"0.01647685","8":"12132","9":"x"},{"1":"factor(dli > median(df_eval$dli) + 1e-05)TRUE","2":"-0.004129165","3":"0.01133380","4":"-0.3643232","5":"0.7156230","6":"-0.02634521","7":"0.01808688","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>covariate &lt;- &#39;science&#39;
+adjustment &lt;--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+fmla0 &lt;- formula(paste0(&#39;x ~  factor(&#39;,covariate, &#39;&gt; median(df_eval$&#39;, covariate, &#39;) +&#39;, adjustment,&#39;) -1&#39;))
+(ols0 &lt;- tidy(lm_robust(fmla0, data=df_eval)))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["term"],"name":[1],"type":["chr"],"align":["left"]},{"label":["estimate"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["std.error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["statistic"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["p.value"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["conf.low"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["conf.high"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["df"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["outcome"],"name":[9],"type":["chr"],"align":["left"]}],"data":[{"1":"factor(science > median(df_eval$science) + 1e-05)FALSE","2":"0.001734107","3":"0.01091830","4":"0.1588257","5":"0.8738089","6":"-0.01966751","7":"0.02313572","8":"12132","9":"x"},{"1":"factor(science > median(df_eval$science) + 1e-05)TRUE","2":"-0.012135880","3":"0.01157192","4":"-1.0487356","5":"0.2943207","6":"-0.03481868","7":"0.01054692","8":"12132","9":"x"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 <pre class="r"><code>W_forest &lt;- readRDS(&#39;objects/policy_objects/W_forest.rds&#39;)
 multi_forest &lt;- readRDS(&#39;objects/policy_objects/multi_forest.rds&#39;)
 Y_forest &lt;- readRDS(&#39;objects/policy_objects/Y_forest.rds&#39;)
