@@ -1250,17 +1250,36 @@ ggsave('../figures/evaluated_scores_all.png', width = 8, height = 4)
 ```{r response_eval_tables, warning=FALSE}
 # Mean response estimates
 models <- list(
-  `Combined` = list(tidy = bind_rows(aipw_eval_te,  aipw_eval_est[1,])),
-  `False: Any sharing` = list(tidy = bind_rows(aipw_eval_f_te,  aipw_eval_f_est[1,])),
-  `False: Messenger` = list(tidy = bind_rows(aipw_eval_sf_te,  aipw_eval_sf_est[1,])),
-  `False: Timeline` = list(tidy = bind_rows(aipw_eval_tf_te,  aipw_eval_tf_est[1,])),
-  `True: Any sharing` = list(tidy = bind_rows(aipw_eval_t_te,  aipw_eval_t_est[1,])),
-  `True: Messenger` = list(tidy = bind_rows(aipw_eval_st_te,  aipw_eval_st_est[1,])),
-  `True: Timeline` = list(tidy = bind_rows(aipw_eval_tt_te,  aipw_eval_tt_est[1,]))
+  `Combined` = list(
+    tidy = bind_rows(aipw_eval_te,  aipw_eval_est[1,]),
+    pval = 'p.value.upper'),
+  `False: Any sharing` = list(
+    tidy = bind_rows(aipw_eval_f_te,  aipw_eval_f_est[1,]),
+    pval = 'p.value.lower'),
+  `False: Messenger` = list(
+    tidy = bind_rows(aipw_eval_sf_te,  aipw_eval_sf_est[1,]),
+    pval = 'p.value.lower'),
+  `False: Timeline` = list(
+    tidy = bind_rows(aipw_eval_tf_te,  aipw_eval_tf_est[1,]),
+    pval = 'p.value.lower'),
+  `True: Any sharing` = list(
+    tidy = bind_rows(aipw_eval_t_te,  aipw_eval_t_est[1,]),
+    pval = 'p.value.upper'),
+  `True: Messenger` = list(
+    tidy = bind_rows(aipw_eval_st_te,  aipw_eval_st_est[1,]),
+    pval = 'p.value.upper'),
+  `True: Timeline` = list(
+    tidy = bind_rows(aipw_eval_tt_te,  aipw_eval_tt_est[1,]),
+    pval = 'p.value.upper'
+    )
 )
+
 
 models <- lapply(models, function(x){
   class(x) <- "modelsummary_list"
+  pvals <- x$tidy[,x$pval]
+  pvals[length(pvals)] <- NA
+  x$tidy$p.value <- pvals
   x
 })
 
