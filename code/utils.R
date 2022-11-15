@@ -1112,11 +1112,11 @@ find_adj_est <- function(scores, weights) {
                                    std.error = std.error,
                                    statistic = estimate/std.error,
                                    # one-sided p-value (less than)
-                                   p.value_lower = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   p.value.lower = pt(estimate/std.error, df = length(x)-1, lower = TRUE),
                                    # one-sided p-value (greater than)
-                                   p.value_upper = 1 - pt(estimate/std.error, df = length(x)-1, lower = FALSE),
+                                   p.value.upper = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                                    # two-sided p-value
-                                   p.value_twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
+                                   p.value.twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
                         })))
 }
 

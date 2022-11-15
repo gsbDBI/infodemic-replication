@@ -629,68 +629,15 @@ iter <- 1e3 # iterations for bootstraps
 
 ```{r combined_response_eval_estimation, cache=TRUE}
 # Scores estimates
-# mean response
-aipw_eval_est <- as.data.frame(t(apply(aipw_scores, 2, 
-                                       function(x){
-                                         if(!identical(x, aipw_scores[, 1])){
-                                           x <- aipw_scores[, 1] + x
-                                         }
-                                         estimate <- mean(x, na.rm = TRUE)
-                                         std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                         return(c(estimate = estimate,
-                                                  std.error = std.error,
-                                                  statistic = estimate/std.error))
-                                       }
-)))
 
+# mean response
 aipw_eval_est <- find_est(aipw_scores)
 
 # treatment effects
-aipw_eval_te <- as.data.frame(t(apply(aipw_scores[, -1], 2, 
-                                      function(x){
-                                        estimate <- mean(x, na.rm = TRUE)
-                                        std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                        return(c(estimate = estimate,
-                                                 std.error = std.error,
-                                                 statistic = estimate/std.error,
-                                                 p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                 p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                      }
-)))
-
 aipw_eval_te <- find_te(aipw_scores)
 
 ## Covariate-shift adjusted
-aipw_eval_adj_est <- as.data.frame(t(apply(aipw_scores_adjusted, 2, 
-                                           function(x){
-                                             if(!identical(x, aipw_scores_adjusted[, 1])){
-                                               x <- aipw_scores_adjusted[, 1] + x
-                                             }
-                                             estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                       w = what_eval_adjustment)
-                                             std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                             return(c(estimate = estimate,
-                                                      std.error = std.error,
-                                                      statistic = estimate/std.error,
-                                                      p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                      p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                           }
-)))
-
 aipw_eval_adj_est <- find_adj_est(aipw_scores_adjusted, what_eval_adjustment)
-
-aipw_eval_adj_te <- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2, 
-                                          function(x){
-                                            estimate <- weighted.mean(x, na.rm = TRUE, w = what_eval_adjustment)
-                                            std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error,
-                                                     statistic = estimate/std.error,
-                                                     p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                          }
-)))
-
 aipw_eval_adj_te <- find_adj_te(aipw_scores_adjusted, what_eval_adjustment)
 
 ```
@@ -698,370 +645,52 @@ aipw_eval_adj_te <- find_adj_te(aipw_scores_adjusted, what_eval_adjustment)
 ```{r any_response_eval_estimation, cache=TRUE}
 # Scores estimates
 ## true
-aipw_eval_t_est <- as.data.frame(t(apply(aipw_scores_any_true_eval, 2, 
-                                         function(x){
-                                           if(!identical(x, aipw_scores_any_true_eval[, 1])){
-                                             x <- aipw_scores_any_true_eval[, 1] + x
-                                           }
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error))
-                                         }
-)))
-
 aipw_eval_t_est <- find_est(aipw_scores_any_true_eval)
-
-aipw_eval_t_te <- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2, 
-                                        function(x){
-                                          estimate <- mean(x, na.rm = TRUE)
-                                          std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                          return(c(estimate = estimate,
-                                                   std.error = std.error,
-                                                   statistic = estimate/std.error,
-                                                   p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                        }
-)))
-
 aipw_eval_t_te <- find_te(aipw_scores_any_true_eval)
 
 ## false
-aipw_eval_f_est <- as.data.frame(t(apply(aipw_scores_any_false_eval, 2, 
-                                         function(x){
-                                           if(!identical(x, aipw_scores_any_false_eval[, 1])){
-                                             x <- aipw_scores_any_false_eval[, 1] + x
-                                           }
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error))
-                                         }
-)))
-
 aipw_eval_f_est <- find_est(aipw_scores_any_false_eval)
-
-aipw_eval_f_te <- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2, 
-                                        function(x){
-                                          estimate <- mean(x, na.rm = TRUE)
-                                          std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                          return(c(estimate = estimate,
-                                                   std.error = std.error,
-                                                   statistic = estimate/std.error,
-                                                   p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                        }
-)))
-
 aipw_eval_f_te <- find_te(aipw_scores_any_false_eval)
 
 ## Covariate-shift adjusted
 ## true
-aipw_eval_t_adj_est <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted, 2, 
-                                             function(x){
-                                               if(!identical(x, aipw_scores_any_true_eval_adjusted[, 1])){
-                                                 x <- aipw_scores_any_true_eval_adjusted[, 1] + x
-                                               }
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_t_adj_est <- find_adj_est(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_t_adj_te <- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[, -1], 2, 
-                                            function(x){
-                                              estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                        w = what_eval_adjustment)
-                                              std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                              return(c(estimate = estimate,
-                                                       std.error = std.error,
-                                                       statistic = estimate/std.error,
-                                                       p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                            }
-)))
-
 aipw_eval_t_adj_te <- find_adj_te(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
 
 ## false
-aipw_eval_f_adj_est <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted, 2, 
-                                             function(x){
-                                               if(!identical(x, aipw_scores_any_false_eval_adjusted[, 1])){
-                                                 x <- aipw_scores_any_false_eval_adjusted[, 1] + x
-                                               }
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_f_adj_est <- find_adj_est(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_f_adj_te <- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[, -1], 2, 
-                                            function(x){
-                                              estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                        w = what_eval_adjustment)
-                                              std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                              return(c(estimate = estimate,
-                                                       std.error = std.error,
-                                                       statistic = estimate/std.error,
-                                                       p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                            }
-)))
-
 aipw_eval_f_adj_te <- find_adj_te(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
 ```
 
 ```{r channel_response_eval_estimation, cache=TRUE}
 # Scores estimates
 ## true
-aipw_eval_tt_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_timeline_true_eval[, 1])){
-                                              x <- aipw_scores_timeline_true_eval[, 1] + x
-                                            }
-                                            estimate <- mean(x, na.rm = TRUE)
-                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_tt_est <- find_est(aipw_scores_timeline_true_eval)
-
-aipw_eval_st_est <- as.data.frame(t(apply(aipw_scores_send_true_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_send_true_eval[, 1])){
-                                              x <- aipw_scores_send_true_eval[, 1] + x
-                                            }
-                                            estimate <- mean(x, na.rm = TRUE)
-                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_st_est <- find_est(aipw_scores_send_true_eval)
 
-aipw_eval_tt_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2, 
-                                         function(x){
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_tt_te <- find_te(aipw_scores_timeline_true_eval)
-
-aipw_eval_st_te <- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2, 
-                                         function(x){
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_st_te <- find_te(aipw_scores_send_true_eval)
 
 ## false
-aipw_eval_tf_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_timeline_false_eval[, 1])){
-                                              x <- aipw_scores_timeline_false_eval[, 1] + x
-                                            }
-                                            estimate <- mean(x, na.rm = TRUE)
-                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_tf_est <- find_est(aipw_scores_timeline_false_eval)
-
-aipw_eval_sf_est <- as.data.frame(t(apply(aipw_scores_send_false_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_send_false_eval[, 1])){
-                                              x <- aipw_scores_send_false_eval[, 1] + x
-                                            }
-                                            estimate <- mean(x, na.rm = TRUE)
-                                            std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_sf_est <- find_est(aipw_scores_send_false_eval)
 
-aipw_eval_tf_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 2, 
-                                         function(x){
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_tf_te <- find_te(aipw_scores_timeline_false_eval)
-
-aipw_eval_sf_te <- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2, 
-                                         function(x){
-                                           estimate <- mean(x, na.rm = TRUE)
-                                           std.error <- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_sf_te <- find_te(aipw_scores_send_false_eval)
 
 ## Covariate-shift adjusted
 ## true
-aipw_eval_tt_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_timeline_true_eval_adjusted[, 1])){
-                                                  x <- aipw_scores_timeline_true_eval_adjusted[, 1] + x
-                                                }
-                                                estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_tt_adj_est <- find_adj_est(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_st_adj_est <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_send_true_eval_adjusted[, 1])){
-                                                  x <- aipw_scores_send_true_eval_adjusted[, 1] + x
-                                                }
-                                                estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_st_adj_est <- find_adj_est(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
-aipw_eval_tt_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_tt_adj_te <- find_adj_te(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_st_adj_te <- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_st_adj_te <- find_adj_te(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 ## false
-aipw_eval_tf_adj_est <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_timeline_false_eval_adjusted[, 1])){
-                                                  x <- aipw_scores_timeline_false_eval_adjusted[, 1] + x
-                                                }
-                                                estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_tf_adj_est <- find_adj_est(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_sf_adj_est <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_send_false_eval_adjusted[, 1])){
-                                                  x <- aipw_scores_send_false_eval_adjusted[, 1] + x
-                                                }
-                                                estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_sf_adj_est <- find_adj_est(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 
-aipw_eval_tf_adj_te <- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_tf_adj_te <- find_adj_te(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_sf_adj_te <- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate <- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error <- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_sf_adj_te <- find_adj_te(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 ```
 
@@ -1654,7 +1283,7 @@ attr(rows, 'position') <- c(1,2,3,
                             28,35,
                             36)
 
-modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) # note: escape = F
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) 
 
 modelsummary(models, 
              stars = TRUE,  

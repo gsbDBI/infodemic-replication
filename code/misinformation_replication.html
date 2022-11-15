@@ -3534,8 +3534,9 @@ if(file.exists(&#39;objects/aipw_scores_any_true_eval.RDS&#39;)){ # read in scor
   
   saveRDS(aipw_scores_any_true_eval, &#39;objects/aipw_scores_any_true_eval.RDS&#39;)
 }</code></pre>
-<pre><code>## Warning in multi_arm_causal_forest(X = xs, Y = yobs, W = ws, W.hat = what, : Column names are provided for
-## W.hat, but do not correspond to the treatment levels W (multi_arm_causal_forest assume the following is TRUE:
+<pre><code>## Warning in multi_arm_causal_forest(X = xs, Y = yobs, W = ws, W.hat =
+## what, : Column names are provided for W.hat, but do not correspond to the
+## treatment levels W (multi_arm_causal_forest assume the following is TRUE:
 ## `identical(levels(W), colnames(W.hat))`).</code></pre>
 <pre><code>## Warning in get_scores.multi_arm_causal_forest(mcf): Estimated treatment propensities take values very close to 0 or 1 meaning some estimates may not be well identified. In particular, the minimum propensity estimates for each arm is
 ## 1: 0.025 2: 0.025 3: 0.025 4: 0.025 5: 0.025 6: 0
@@ -3770,432 +3771,61 @@ lin_covs &lt;- formula(paste0(&#39; ~ &#39;,
                            paste(covariate_names, collapse = &#39; + &#39;)))
 iter &lt;- 1e3 # iterations for bootstraps</code></pre>
 <pre class="r"><code># Scores estimates
-# mean response
-aipw_eval_est &lt;- as.data.frame(t(apply(aipw_scores, 2, 
-                                       function(x){
-                                         if(!identical(x, aipw_scores[, 1])){
-                                           x &lt;- aipw_scores[, 1] + x
-                                         }
-                                         estimate &lt;- mean(x, na.rm = TRUE)
-                                         std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                         return(c(estimate = estimate,
-                                                  std.error = std.error,
-                                                  statistic = estimate/std.error))
-                                       }
-)))
 
+# mean response
 aipw_eval_est &lt;- find_est(aipw_scores)
 
 # treatment effects
-aipw_eval_te &lt;- as.data.frame(t(apply(aipw_scores[, -1], 2, 
-                                      function(x){
-                                        estimate &lt;- mean(x, na.rm = TRUE)
-                                        std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                        return(c(estimate = estimate,
-                                                 std.error = std.error,
-                                                 statistic = estimate/std.error,
-                                                 p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                 p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                      }
-)))
-
 aipw_eval_te &lt;- find_te(aipw_scores)
 
 ## Covariate-shift adjusted
-aipw_eval_adj_est &lt;- as.data.frame(t(apply(aipw_scores_adjusted, 2, 
-                                           function(x){
-                                             if(!identical(x, aipw_scores_adjusted[, 1])){
-                                               x &lt;- aipw_scores_adjusted[, 1] + x
-                                             }
-                                             estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                       w = what_eval_adjustment)
-                                             std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                             return(c(estimate = estimate,
-                                                      std.error = std.error,
-                                                      statistic = estimate/std.error,
-                                                      p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                      p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                           }
-)))
-
 aipw_eval_adj_est &lt;- find_adj_est(aipw_scores_adjusted, what_eval_adjustment)
-
-aipw_eval_adj_te &lt;- as.data.frame(t(apply(aipw_scores_adjusted[, -1], 2, 
-                                          function(x){
-                                            estimate &lt;- weighted.mean(x, na.rm = TRUE, w = what_eval_adjustment)
-                                            std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error,
-                                                     statistic = estimate/std.error,
-                                                     p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                     p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                          }
-)))
-
 aipw_eval_adj_te &lt;- find_adj_te(aipw_scores_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code># Scores estimates
 ## true
-aipw_eval_t_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval, 2, 
-                                         function(x){
-                                           if(!identical(x, aipw_scores_any_true_eval[, 1])){
-                                             x &lt;- aipw_scores_any_true_eval[, 1] + x
-                                           }
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error))
-                                         }
-)))
-
 aipw_eval_t_est &lt;- find_est(aipw_scores_any_true_eval)
-
-aipw_eval_t_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval[, -1], 2, 
-                                        function(x){
-                                          estimate &lt;- mean(x, na.rm = TRUE)
-                                          std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                          return(c(estimate = estimate,
-                                                   std.error = std.error,
-                                                   statistic = estimate/std.error,
-                                                   p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                        }
-)))
-
 aipw_eval_t_te &lt;- find_te(aipw_scores_any_true_eval)
 
 ## false
-aipw_eval_f_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval, 2, 
-                                         function(x){
-                                           if(!identical(x, aipw_scores_any_false_eval[, 1])){
-                                             x &lt;- aipw_scores_any_false_eval[, 1] + x
-                                           }
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error))
-                                         }
-)))
-
 aipw_eval_f_est &lt;- find_est(aipw_scores_any_false_eval)
-
-aipw_eval_f_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval[, -1], 2, 
-                                        function(x){
-                                          estimate &lt;- mean(x, na.rm = TRUE)
-                                          std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                          return(c(estimate = estimate,
-                                                   std.error = std.error,
-                                                   statistic = estimate/std.error,
-                                                   p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                   p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                        }
-)))
-
 aipw_eval_f_te &lt;- find_te(aipw_scores_any_false_eval)
 
 ## Covariate-shift adjusted
 ## true
-aipw_eval_t_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted, 2, 
-                                             function(x){
-                                               if(!identical(x, aipw_scores_any_true_eval_adjusted[, 1])){
-                                                 x &lt;- aipw_scores_any_true_eval_adjusted[, 1] + x
-                                               }
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_t_adj_est &lt;- find_adj_est(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_t_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_true_eval_adjusted[, -1], 2, 
-                                            function(x){
-                                              estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                        w = what_eval_adjustment)
-                                              std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                              return(c(estimate = estimate,
-                                                       std.error = std.error,
-                                                       statistic = estimate/std.error,
-                                                       p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                            }
-)))
-
 aipw_eval_t_adj_te &lt;- find_adj_te(aipw_scores_any_true_eval_adjusted, what_eval_adjustment)
 
 ## false
-aipw_eval_f_adj_est &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted, 2, 
-                                             function(x){
-                                               if(!identical(x, aipw_scores_any_false_eval_adjusted[, 1])){
-                                                 x &lt;- aipw_scores_any_false_eval_adjusted[, 1] + x
-                                               }
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_f_adj_est &lt;- find_adj_est(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_f_adj_te &lt;- as.data.frame(t(apply(aipw_scores_any_false_eval_adjusted[, -1], 2, 
-                                            function(x){
-                                              estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                        w = what_eval_adjustment)
-                                              std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                              return(c(estimate = estimate,
-                                                       std.error = std.error,
-                                                       statistic = estimate/std.error,
-                                                       p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                       p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                            }
-)))
-
 aipw_eval_f_adj_te &lt;- find_adj_te(aipw_scores_any_false_eval_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code># Scores estimates
 ## true
-aipw_eval_tt_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_timeline_true_eval[, 1])){
-                                              x &lt;- aipw_scores_timeline_true_eval[, 1] + x
-                                            }
-                                            estimate &lt;- mean(x, na.rm = TRUE)
-                                            std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_tt_est &lt;- find_est(aipw_scores_timeline_true_eval)
-
-aipw_eval_st_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_send_true_eval[, 1])){
-                                              x &lt;- aipw_scores_send_true_eval[, 1] + x
-                                            }
-                                            estimate &lt;- mean(x, na.rm = TRUE)
-                                            std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_st_est &lt;- find_est(aipw_scores_send_true_eval)
 
-aipw_eval_tt_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval[, -1], 2, 
-                                         function(x){
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_tt_te &lt;- find_te(aipw_scores_timeline_true_eval)
-
-aipw_eval_st_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval[, -1], 2, 
-                                         function(x){
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_st_te &lt;- find_te(aipw_scores_send_true_eval)
 
 ## false
-aipw_eval_tf_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_timeline_false_eval[, 1])){
-                                              x &lt;- aipw_scores_timeline_false_eval[, 1] + x
-                                            }
-                                            estimate &lt;- mean(x, na.rm = TRUE)
-                                            std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_tf_est &lt;- find_est(aipw_scores_timeline_false_eval)
-
-aipw_eval_sf_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval, 2, 
-                                          function(x){
-                                            if(!identical(x, aipw_scores_send_false_eval[, 1])){
-                                              x &lt;- aipw_scores_send_false_eval[, 1] + x
-                                            }
-                                            estimate &lt;- mean(x, na.rm = TRUE)
-                                            std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                            return(c(estimate = estimate,
-                                                     std.error = std.error))
-                                          }
-)))
-
 aipw_eval_sf_est &lt;- find_est(aipw_scores_send_false_eval)
 
-aipw_eval_tf_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval[, -1], 2, 
-                                         function(x){
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_tf_te &lt;- find_te(aipw_scores_timeline_false_eval)
-
-aipw_eval_sf_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval[, -1], 2, 
-                                         function(x){
-                                           estimate &lt;- mean(x, na.rm = TRUE)
-                                           std.error &lt;- sd(x, na.rm = TRUE)/sqrt(length(x))
-                                           return(c(estimate = estimate,
-                                                    std.error = std.error,
-                                                    statistic = estimate/std.error,
-                                                    p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                    p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                         }
-)))
-
 aipw_eval_sf_te &lt;- find_te(aipw_scores_send_false_eval)
 
 ## Covariate-shift adjusted
 ## true
-aipw_eval_tt_adj_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_timeline_true_eval_adjusted[, 1])){
-                                                  x &lt;- aipw_scores_timeline_true_eval_adjusted[, 1] + x
-                                                }
-                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_tt_adj_est &lt;- find_adj_est(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_st_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_send_true_eval_adjusted[, 1])){
-                                                  x &lt;- aipw_scores_send_true_eval_adjusted[, 1] + x
-                                                }
-                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_st_adj_est &lt;- find_adj_est(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
-aipw_eval_tt_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_true_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_tt_adj_te &lt;- find_adj_te(aipw_scores_timeline_true_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_st_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_true_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_st_adj_te &lt;- find_adj_te(aipw_scores_send_true_eval_adjusted, what_eval_adjustment)
 
 ## false
-aipw_eval_tf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_timeline_false_eval_adjusted[, 1])){
-                                                  x &lt;- aipw_scores_timeline_false_eval_adjusted[, 1] + x
-                                                }
-                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_tf_adj_est &lt;- find_adj_est(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_sf_adj_est &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted, 2, 
-                                              function(x){
-                                                if(!identical(x, aipw_scores_send_false_eval_adjusted[, 1])){
-                                                  x &lt;- aipw_scores_send_false_eval_adjusted[, 1] + x
-                                                }
-                                                estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                          w = what_eval_adjustment)
-                                                std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                                return(c(estimate = estimate,
-                                                         std.error = std.error))
-                                              }
-)))
-
 aipw_eval_sf_adj_est &lt;- find_adj_est(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)
 
-aipw_eval_tf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_timeline_false_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_tf_adj_te &lt;- find_adj_te(aipw_scores_timeline_false_eval_adjusted, what_eval_adjustment)
-
-aipw_eval_sf_adj_te &lt;- as.data.frame(t(apply(aipw_scores_send_false_eval_adjusted[, -1], 2, 
-                                             function(x){
-                                               estimate &lt;- weighted.mean(x, na.rm = TRUE, 
-                                                                         w = what_eval_adjustment)
-                                               std.error &lt;- weighted_se(x, na.rm = TRUE, w = what_eval_adjustment)
-                                               return(c(estimate = estimate,
-                                                        std.error = std.error,
-                                                        statistic = estimate/std.error,
-                                                        p.value = 1-pt(estimate/std.error, df = length(x) - 1, lower = FALSE),
-                                                        p.value2 = 2*(pt(abs(estimate/std.error), df = length(x) - 1, lower = FALSE))))
-                                             }
-)))
-
 aipw_eval_sf_adj_te &lt;- find_adj_te(aipw_scores_send_false_eval_adjusted, what_eval_adjustment)</code></pre>
 <pre class="r"><code>aipw_eval_est$term &lt;- aipw_eval_adj_est$term &lt;- 
   aipw_eval_t_est$term &lt;- aipw_eval_t_adj_est$term &lt;- 
@@ -4234,17 +3864,36 @@ response measures</h2>
 <h2><span class="header-section-number">3.4</span> Tables</h2>
 <pre class="r"><code># Mean response estimates
 models &lt;- list(
-  `Combined` = list(tidy = bind_rows(aipw_eval_te,  aipw_eval_est[1,])),
-  `False: Any sharing` = list(tidy = bind_rows(aipw_eval_f_te,  aipw_eval_f_est[1,])),
-  `False: Messenger` = list(tidy = bind_rows(aipw_eval_sf_te,  aipw_eval_sf_est[1,])),
-  `False: Timeline` = list(tidy = bind_rows(aipw_eval_tf_te,  aipw_eval_tf_est[1,])),
-  `True: Any sharing` = list(tidy = bind_rows(aipw_eval_t_te,  aipw_eval_t_est[1,])),
-  `True: Messenger` = list(tidy = bind_rows(aipw_eval_st_te,  aipw_eval_st_est[1,])),
-  `True: Timeline` = list(tidy = bind_rows(aipw_eval_tt_te,  aipw_eval_tt_est[1,]))
+  `Combined` = list(
+    tidy = bind_rows(aipw_eval_te,  aipw_eval_est[1,]),
+    pval = &#39;p.value.upper&#39;),
+  `False: Any sharing` = list(
+    tidy = bind_rows(aipw_eval_f_te,  aipw_eval_f_est[1,]),
+    pval = &#39;p.value.lower&#39;),
+  `False: Messenger` = list(
+    tidy = bind_rows(aipw_eval_sf_te,  aipw_eval_sf_est[1,]),
+    pval = &#39;p.value.lower&#39;),
+  `False: Timeline` = list(
+    tidy = bind_rows(aipw_eval_tf_te,  aipw_eval_tf_est[1,]),
+    pval = &#39;p.value.lower&#39;),
+  `True: Any sharing` = list(
+    tidy = bind_rows(aipw_eval_t_te,  aipw_eval_t_est[1,]),
+    pval = &#39;p.value.upper&#39;),
+  `True: Messenger` = list(
+    tidy = bind_rows(aipw_eval_st_te,  aipw_eval_st_est[1,]),
+    pval = &#39;p.value.upper&#39;),
+  `True: Timeline` = list(
+    tidy = bind_rows(aipw_eval_tt_te,  aipw_eval_tt_est[1,]),
+    pval = &#39;p.value.upper&#39;
+    )
 )
+
 
 models &lt;- lapply(models, function(x){
   class(x) &lt;- &quot;modelsummary_list&quot;
+  pvals &lt;- x$tidy[,x$pval]
+  pvals[length(pvals)] &lt;- NA
+  x$tidy$p.value &lt;- pvals
   x
 })
 
@@ -4888,8 +4537,6 @@ models &lt;- lapply(models, function(x){
   class(x) &lt;- &quot;modelsummary_list&quot;
   x
 })
-
-
 
 #############
 modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) </code></pre>
@@ -5705,2576 +5352,24 @@ Scientific beliefs index × Difference
 
 
 #############
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) %&gt;% 
-  row_spec(0, extra_css = &quot;border-bottom: 3px solid&quot;)%&gt;% 
-  row_spec(6, extra_css = &quot;border-bottom: 2px solid&quot;)</code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Heterogeneity under control, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;border-bottom: 3px solid">
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-Combined
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-False: Any sharing
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-False: Messenger
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-False: Timeline
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-True: Any sharing
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-True: Messenger
-</th>
-<th style="text-align:center;border-bottom: 3px solid">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Age × Below median (n = 6104)
-</td>
-<td style="text-align:center;">
--0.486
-</td>
-<td style="text-align:center;">
-0.459
-</td>
-<td style="text-align:center;">
-0.417
-</td>
-<td style="text-align:center;">
-0.374
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.546
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Above median (n = 6030)
-</td>
-<td style="text-align:center;">
--0.298
-</td>
-<td style="text-align:center;">
-0.421
-</td>
-<td style="text-align:center;">
-0.375
-</td>
-<td style="text-align:center;">
-0.359
-</td>
-<td style="text-align:center;">
-0.664
-</td>
-<td style="text-align:center;">
-0.571
-</td>
-<td style="text-align:center;">
-0.620
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Difference
-</td>
-<td style="text-align:center;">
-0.188***
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.042*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.037
-</td>
-<td style="text-align:center;">
-0.025
-</td>
-<td style="text-align:center;">
-0.060***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;border-bottom: 2px solid">
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.052)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.017)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.017)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.016)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.023)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.017)
-</td>
-<td style="text-align:center;border-bottom: 2px solid">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male ×  Not male (n = 5752)
-</td>
-<td style="text-align:center;">
--0.353
-</td>
-<td style="text-align:center;">
-0.395
-</td>
-<td style="text-align:center;">
-0.358
-</td>
-<td style="text-align:center;">
-0.323
-</td>
-<td style="text-align:center;">
-0.593
-</td>
-<td style="text-align:center;">
-0.509
-</td>
-<td style="text-align:center;">
-0.537
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.036)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Male (n = 6382)
-</td>
-<td style="text-align:center;">
--0.428
-</td>
-<td style="text-align:center;">
-0.480
-</td>
-<td style="text-align:center;">
-0.430
-</td>
-<td style="text-align:center;">
-0.406
-</td>
-<td style="text-align:center;">
-0.692
-</td>
-<td style="text-align:center;">
-0.603
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.038)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Difference
-</td>
-<td style="text-align:center;">
--0.074
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.072***
-</td>
-<td style="text-align:center;">
-0.083***
-</td>
-<td style="text-align:center;">
-0.099***
-</td>
-<td style="text-align:center;">
-0.094***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance ×  Not aligned (n = 8609)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.415
-</td>
-<td style="text-align:center;">
-0.368
-</td>
-<td style="text-align:center;">
-0.339
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.534
-</td>
-<td style="text-align:center;">
-0.561
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.031)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Aligned w/ ruling party (n = 3525)
-</td>
-<td style="text-align:center;">
--0.530
-</td>
-<td style="text-align:center;">
-0.501
-</td>
-<td style="text-align:center;">
-0.465
-</td>
-<td style="text-align:center;">
-0.434
-</td>
-<td style="text-align:center;">
-0.689
-</td>
-<td style="text-align:center;">
-0.619
-</td>
-<td style="text-align:center;">
-0.661
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.049)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.024)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Difference
-</td>
-<td style="text-align:center;">
--0.193***
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.097***
-</td>
-<td style="text-align:center;">
-0.095***
-</td>
-<td style="text-align:center;">
-0.062*
-</td>
-<td style="text-align:center;">
-0.085***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.058)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.027)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Below median (n = 6186)
-</td>
-<td style="text-align:center;">
--0.535
-</td>
-<td style="text-align:center;">
-0.492
-</td>
-<td style="text-align:center;">
-0.446
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.653
-</td>
-<td style="text-align:center;">
-0.581
-</td>
-<td style="text-align:center;">
-0.614
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Above median (n = 5948)
-</td>
-<td style="text-align:center;">
--0.244
-</td>
-<td style="text-align:center;">
-0.386
-</td>
-<td style="text-align:center;">
-0.344
-</td>
-<td style="text-align:center;">
-0.310
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-<td style="text-align:center;">
-0.535
-</td>
-<td style="text-align:center;">
-0.565
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Difference
-</td>
-<td style="text-align:center;">
-0.291***
-</td>
-<td style="text-align:center;">
--0.106***
-</td>
-<td style="text-align:center;">
--0.101***
-</td>
-<td style="text-align:center;">
--0.110***
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
--0.046**
-</td>
-<td style="text-align:center;">
--0.049**
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Below median (n = 6463)
-</td>
-<td style="text-align:center;">
--0.442
-</td>
-<td style="text-align:center;">
-0.457
-</td>
-<td style="text-align:center;">
-0.414
-</td>
-<td style="text-align:center;">
-0.384
-</td>
-<td style="text-align:center;">
-0.652
-</td>
-<td style="text-align:center;">
-0.558
-</td>
-<td style="text-align:center;">
-0.594
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Above median (n = 5671)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.376
-</td>
-<td style="text-align:center;">
-0.347
-</td>
-<td style="text-align:center;">
-0.637
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-<td style="text-align:center;">
-0.586
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Difference
-</td>
-<td style="text-align:center;">
-0.106*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.002
-</td>
-<td style="text-align:center;">
--0.007
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.053)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under control, evaluation&#39;, 
-             output = &#39;../tables/heterogeneity_control.tex&#39;) %&gt;% 
-  row_spec(0, extra_css = &quot;border-bottom: 3px solid&quot;) %&gt;% 
-  row_spec(6, extra_css = &quot;border-bottom: 2px solid&quot;) %&gt;%
-  cat()</code></pre>
-<pre><code>## \begin{table}
-## 
-## \caption{\label{tab:control_combined_heterogeneity}Heterogeneity under control, evaluation}
-## \centering
-## \begin{tabular}[t]{lccccccc}
-## \toprule
-##   &amp; Combined &amp; False: Any sharing &amp; False: Messenger &amp; False: Timeline &amp; True: Any sharing &amp; True: Messenger &amp; True: Timeline\\
-## \midrule
-## Age ×  Below median (n = 6104) &amp; \num{-0.486} &amp; \num{0.459} &amp; \num{0.417} &amp; \num{0.374} &amp; \num{0.627} &amp; \num{0.546} &amp; \num{0.560}\\
-##  &amp; (\num{0.035}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; \vphantom{1} (\num{0.012})\\
-## Age ×  Above median (n = 6030) &amp; \num{-0.298} &amp; \num{0.421} &amp; \num{0.375} &amp; \num{0.359} &amp; \num{0.664} &amp; \num{0.571} &amp; \num{0.620}\\
-##  &amp; (\num{0.039}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
-## Age ×  Difference &amp; \num{0.188}*** &amp; \num{-0.038}* &amp; \num{-0.042}* &amp; \num{-0.015} &amp; \num{0.037} &amp; \num{0.025} &amp; \num{0.060}***\\
-##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; \vphantom{2} (\num{0.017})\\
-## Male ×   Not male (n = 5752) &amp; \num{-0.353} &amp; \num{0.395} &amp; \num{0.358} &amp; \num{0.323} &amp; \num{0.593} &amp; \num{0.509} &amp; \num{0.537}\\
-##  &amp; (\num{0.036}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.013}) &amp; (\num{0.012})\\
-## Male ×  Male (n = 6382) &amp; \num{-0.428} &amp; \num{0.480} &amp; \num{0.430} &amp; \num{0.406} &amp; \num{0.692} &amp; \num{0.603} &amp; \num{0.638}\\
-##  &amp; (\num{0.038}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
-## Male ×  Difference &amp; \num{-0.074} &amp; \num{0.086}*** &amp; \num{0.072}*** &amp; \num{0.083}*** &amp; \num{0.099}*** &amp; \num{0.094}*** &amp; \num{0.100}***\\
-##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; \vphantom{1} (\num{0.017})\\
-## Political Allegiance ×   Not aligned (n = 8609) &amp; \num{-0.336} &amp; \num{0.415} &amp; \num{0.368} &amp; \num{0.339} &amp; \num{0.627} &amp; \num{0.534} &amp; \num{0.561}\\
-##  &amp; (\num{0.031}) &amp; (\num{0.010}) &amp; (\num{0.010}) &amp; (\num{0.010}) &amp; (\num{0.013}) &amp; (\num{0.010}) &amp; (\num{0.010})\\
-## Political Allegiance ×  Aligned w/ ruling party (n = 3525) &amp; \num{-0.530} &amp; \num{0.501} &amp; \num{0.465} &amp; \num{0.434} &amp; \num{0.689} &amp; \num{0.619} &amp; \num{0.661}\\
-##  &amp; (\num{0.049}) &amp; (\num{0.016}) &amp; (\num{0.016}) &amp; (\num{0.015}) &amp; (\num{0.024}) &amp; (\num{0.016}) &amp; (\num{0.016})\\
-## Political Allegiance ×  Difference &amp; \num{-0.193}*** &amp; \num{0.086}*** &amp; \num{0.097}*** &amp; \num{0.095}*** &amp; \num{0.062}* &amp; \num{0.085}*** &amp; \num{0.100}***\\
-##  &amp; (\num{0.058}) &amp; (\num{0.019}) &amp; (\num{0.019}) &amp; (\num{0.018}) &amp; (\num{0.027}) &amp; (\num{0.019}) &amp; (\num{0.019})\\
-## Digital literacy index ×  Below median (n = 6186) &amp; \num{-0.535} &amp; \num{0.492} &amp; \num{0.446} &amp; \num{0.420} &amp; \num{0.653} &amp; \num{0.581} &amp; \num{0.614}\\
-##  &amp; (\num{0.037}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
-## Digital literacy index ×  Above median (n = 5948) &amp; \num{-0.244} &amp; \num{0.386} &amp; \num{0.344} &amp; \num{0.310} &amp; \num{0.638} &amp; \num{0.535} &amp; \num{0.565}\\
-##  &amp; (\num{0.037}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.015}) &amp; (\num{0.013}) &amp; (\num{0.013})\\
-## Digital literacy index ×  Difference &amp; \num{0.291}*** &amp; \num{-0.106}*** &amp; \num{-0.101}*** &amp; \num{-0.110}*** &amp; \num{-0.015} &amp; \num{-0.046}** &amp; \num{-0.049}**\\
-##  &amp; (\num{0.052}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; (\num{0.017})\\
-## Scientific beliefs index ×  Below median (n = 6463) &amp; \num{-0.442} &amp; \num{0.457} &amp; \num{0.414} &amp; \num{0.384} &amp; \num{0.652} &amp; \num{0.558} &amp; \num{0.594}\\
-##  &amp; (\num{0.035}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.011}) &amp; (\num{0.017}) &amp; (\num{0.012}) &amp; (\num{0.012})\\
-## Scientific beliefs index ×  Above median (n = 5671) &amp; \num{-0.336} &amp; \num{0.420} &amp; \num{0.376} &amp; \num{0.347} &amp; \num{0.637} &amp; \num{0.560} &amp; \num{0.586}\\
-##  &amp; (\num{0.039}) &amp; (\num{0.013}) &amp; (\num{0.012}) &amp; (\num{0.012}) &amp; (\num{0.015}) &amp; (\num{0.012}) &amp; (\num{0.013})\\
-## Scientific beliefs index ×  Difference &amp; \num{0.106}* &amp; \num{-0.037}* &amp; \num{-0.038}* &amp; \num{-0.037}* &amp; \num{-0.015} &amp; \num{0.002} &amp; \num{-0.007}\\
-##  &amp; (\num{0.053}) &amp; (\num{0.017}) &amp; (\num{0.017}) &amp; (\num{0.016}) &amp; (\num{0.023}) &amp; (\num{0.017}) &amp; (\num{0.017})\\
-## \bottomrule
-## \multicolumn{8}{l}{\rule{0pt}{1em}+ p $&lt;$ 0.1, * p $&lt;$ 0.05, ** p $&lt;$ 0.01, *** p $&lt;$ 0.001}\\
-## \end{tabular}
-## \end{table}</code></pre>
-<pre class="r"><code>#############
-row &lt;- data.frame(&quot;Coefficients&quot; = &quot;&quot;,
-                  &quot;Combined&quot; = &quot;&quot;,
-                  &quot;False: Any sharing&quot; = &quot;&quot;,
-                  &quot;False: Messenger&quot; = &quot;&quot;,
-                  &quot;False: Timeline&quot; = &quot;&quot;,
-                  &quot;True: Any sharing&quot; = &quot;&quot;,
-                  &quot;True: Messenger&quot; = &quot;&quot;,
-                  &quot;True: Timeline&quot; = &quot;&quot;)
-attr(row, &quot;position&quot;) &lt;- 7
 
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = row)</code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Heterogeneity under control, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Combined
-</th>
-<th style="text-align:center;">
-False: Any sharing
-</th>
-<th style="text-align:center;">
-False: Messenger
-</th>
-<th style="text-align:center;">
-False: Timeline
-</th>
-<th style="text-align:center;">
-True: Any sharing
-</th>
-<th style="text-align:center;">
-True: Messenger
-</th>
-<th style="text-align:center;">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Age × Below median (n = 6104)
-</td>
-<td style="text-align:center;">
--0.486
-</td>
-<td style="text-align:center;">
-0.459
-</td>
-<td style="text-align:center;">
-0.417
-</td>
-<td style="text-align:center;">
-0.374
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.546
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Above median (n = 6030)
-</td>
-<td style="text-align:center;">
--0.298
-</td>
-<td style="text-align:center;">
-0.421
-</td>
-<td style="text-align:center;">
-0.375
-</td>
-<td style="text-align:center;">
-0.359
-</td>
-<td style="text-align:center;">
-0.664
-</td>
-<td style="text-align:center;">
-0.571
-</td>
-<td style="text-align:center;">
-0.620
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Difference
-</td>
-<td style="text-align:center;">
-0.188***
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.042*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.037
-</td>
-<td style="text-align:center;">
-0.025
-</td>
-<td style="text-align:center;">
-0.060***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male ×  Not male (n = 5752)
-</td>
-<td style="text-align:center;">
--0.353
-</td>
-<td style="text-align:center;">
-0.395
-</td>
-<td style="text-align:center;">
-0.358
-</td>
-<td style="text-align:center;">
-0.323
-</td>
-<td style="text-align:center;">
-0.593
-</td>
-<td style="text-align:center;">
-0.509
-</td>
-<td style="text-align:center;">
-0.537
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.036)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Male (n = 6382)
-</td>
-<td style="text-align:center;">
--0.428
-</td>
-<td style="text-align:center;">
-0.480
-</td>
-<td style="text-align:center;">
-0.430
-</td>
-<td style="text-align:center;">
-0.406
-</td>
-<td style="text-align:center;">
-0.692
-</td>
-<td style="text-align:center;">
-0.603
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.038)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Difference
-</td>
-<td style="text-align:center;">
--0.074
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.072***
-</td>
-<td style="text-align:center;">
-0.083***
-</td>
-<td style="text-align:center;">
-0.099***
-</td>
-<td style="text-align:center;">
-0.094***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance ×  Not aligned (n = 8609)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.415
-</td>
-<td style="text-align:center;">
-0.368
-</td>
-<td style="text-align:center;">
-0.339
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.534
-</td>
-<td style="text-align:center;">
-0.561
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.031)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Aligned w/ ruling party (n = 3525)
-</td>
-<td style="text-align:center;">
--0.530
-</td>
-<td style="text-align:center;">
-0.501
-</td>
-<td style="text-align:center;">
-0.465
-</td>
-<td style="text-align:center;">
-0.434
-</td>
-<td style="text-align:center;">
-0.689
-</td>
-<td style="text-align:center;">
-0.619
-</td>
-<td style="text-align:center;">
-0.661
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.049)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.024)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Difference
-</td>
-<td style="text-align:center;">
--0.193***
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.097***
-</td>
-<td style="text-align:center;">
-0.095***
-</td>
-<td style="text-align:center;">
-0.062*
-</td>
-<td style="text-align:center;">
-0.085***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.058)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.027)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Below median (n = 6186)
-</td>
-<td style="text-align:center;">
--0.535
-</td>
-<td style="text-align:center;">
-0.492
-</td>
-<td style="text-align:center;">
-0.446
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.653
-</td>
-<td style="text-align:center;">
-0.581
-</td>
-<td style="text-align:center;">
-0.614
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Above median (n = 5948)
-</td>
-<td style="text-align:center;">
--0.244
-</td>
-<td style="text-align:center;">
-0.386
-</td>
-<td style="text-align:center;">
-0.344
-</td>
-<td style="text-align:center;">
-0.310
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-<td style="text-align:center;">
-0.535
-</td>
-<td style="text-align:center;">
-0.565
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Difference
-</td>
-<td style="text-align:center;">
-0.291***
-</td>
-<td style="text-align:center;">
--0.106***
-</td>
-<td style="text-align:center;">
--0.101***
-</td>
-<td style="text-align:center;">
--0.110***
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
--0.046**
-</td>
-<td style="text-align:center;">
--0.049**
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Below median (n = 6463)
-</td>
-<td style="text-align:center;">
--0.442
-</td>
-<td style="text-align:center;">
-0.457
-</td>
-<td style="text-align:center;">
-0.414
-</td>
-<td style="text-align:center;">
-0.384
-</td>
-<td style="text-align:center;">
-0.652
-</td>
-<td style="text-align:center;">
-0.558
-</td>
-<td style="text-align:center;">
-0.594
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Above median (n = 5671)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.376
-</td>
-<td style="text-align:center;">
-0.347
-</td>
-<td style="text-align:center;">
-0.637
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-<td style="text-align:center;">
-0.586
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Difference
-</td>
-<td style="text-align:center;">
-0.106*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.002
-</td>
-<td style="text-align:center;">
--0.007
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.053)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, 
-             stars = TRUE,  
-             title = &#39;Heterogeneity under control, evaluation&#39;, 
-             add_rows = row,
-             output = &#39;../tables/heterogeneity_control.tex&#39;)
-
-
-#############
-# this works
-row &lt;- data.frame(&quot;Coefficients&quot; = &quot;\\&quot;,
-                  &quot;Combined&quot; = &quot;&quot;,
-                  &quot;False: Any sharing&quot; = &quot;&quot;,
-                  &quot;False: Messenger&quot; = &quot;&quot;,
-                  &quot;False: Timeline&quot; = &quot;&quot;,
-                  &quot;True: Any sharing&quot; = &quot;&quot;,
-                  &quot;True: Messenger&quot; = &quot;&quot;,
-                  &quot;True: Timeline&quot; = &quot;&quot;)
-attr(row, &quot;position&quot;) &lt;- 7
-
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = row, escape = FALSE) # note: escape = F</code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Heterogeneity under control, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Combined
-</th>
-<th style="text-align:center;">
-False: Any sharing
-</th>
-<th style="text-align:center;">
-False: Messenger
-</th>
-<th style="text-align:center;">
-False: Timeline
-</th>
-<th style="text-align:center;">
-True: Any sharing
-</th>
-<th style="text-align:center;">
-True: Messenger
-</th>
-<th style="text-align:center;">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Age × Below median (n = 6104)
-</td>
-<td style="text-align:center;">
--0.486
-</td>
-<td style="text-align:center;">
-0.459
-</td>
-<td style="text-align:center;">
-0.417
-</td>
-<td style="text-align:center;">
-0.374
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.546
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Above median (n = 6030)
-</td>
-<td style="text-align:center;">
--0.298
-</td>
-<td style="text-align:center;">
-0.421
-</td>
-<td style="text-align:center;">
-0.375
-</td>
-<td style="text-align:center;">
-0.359
-</td>
-<td style="text-align:center;">
-0.664
-</td>
-<td style="text-align:center;">
-0.571
-</td>
-<td style="text-align:center;">
-0.620
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Difference
-</td>
-<td style="text-align:center;">
-0.188***
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.042*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.037
-</td>
-<td style="text-align:center;">
-0.025
-</td>
-<td style="text-align:center;">
-0.060***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
- 
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male ×  Not male (n = 5752)
-</td>
-<td style="text-align:center;">
--0.353
-</td>
-<td style="text-align:center;">
-0.395
-</td>
-<td style="text-align:center;">
-0.358
-</td>
-<td style="text-align:center;">
-0.323
-</td>
-<td style="text-align:center;">
-0.593
-</td>
-<td style="text-align:center;">
-0.509
-</td>
-<td style="text-align:center;">
-0.537
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.036)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Male (n = 6382)
-</td>
-<td style="text-align:center;">
--0.428
-</td>
-<td style="text-align:center;">
-0.480
-</td>
-<td style="text-align:center;">
-0.430
-</td>
-<td style="text-align:center;">
-0.406
-</td>
-<td style="text-align:center;">
-0.692
-</td>
-<td style="text-align:center;">
-0.603
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.038)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Difference
-</td>
-<td style="text-align:center;">
--0.074
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.072***
-</td>
-<td style="text-align:center;">
-0.083***
-</td>
-<td style="text-align:center;">
-0.099***
-</td>
-<td style="text-align:center;">
-0.094***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance ×  Not aligned (n = 8609)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.415
-</td>
-<td style="text-align:center;">
-0.368
-</td>
-<td style="text-align:center;">
-0.339
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.534
-</td>
-<td style="text-align:center;">
-0.561
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.031)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Aligned w/ ruling party (n = 3525)
-</td>
-<td style="text-align:center;">
--0.530
-</td>
-<td style="text-align:center;">
-0.501
-</td>
-<td style="text-align:center;">
-0.465
-</td>
-<td style="text-align:center;">
-0.434
-</td>
-<td style="text-align:center;">
-0.689
-</td>
-<td style="text-align:center;">
-0.619
-</td>
-<td style="text-align:center;">
-0.661
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.049)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.024)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Difference
-</td>
-<td style="text-align:center;">
--0.193***
-</td>
-<td style="text-align:center;">
-0.086***
-</td>
-<td style="text-align:center;">
-0.097***
-</td>
-<td style="text-align:center;">
-0.095***
-</td>
-<td style="text-align:center;">
-0.062*
-</td>
-<td style="text-align:center;">
-0.085***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.058)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.027)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Below median (n = 6186)
-</td>
-<td style="text-align:center;">
--0.535
-</td>
-<td style="text-align:center;">
-0.492
-</td>
-<td style="text-align:center;">
-0.446
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.653
-</td>
-<td style="text-align:center;">
-0.581
-</td>
-<td style="text-align:center;">
-0.614
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Above median (n = 5948)
-</td>
-<td style="text-align:center;">
--0.244
-</td>
-<td style="text-align:center;">
-0.386
-</td>
-<td style="text-align:center;">
-0.344
-</td>
-<td style="text-align:center;">
-0.310
-</td>
-<td style="text-align:center;">
-0.638
-</td>
-<td style="text-align:center;">
-0.535
-</td>
-<td style="text-align:center;">
-0.565
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Difference
-</td>
-<td style="text-align:center;">
-0.291***
-</td>
-<td style="text-align:center;">
--0.106***
-</td>
-<td style="text-align:center;">
--0.101***
-</td>
-<td style="text-align:center;">
--0.110***
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
--0.046**
-</td>
-<td style="text-align:center;">
--0.049**
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Below median (n = 6463)
-</td>
-<td style="text-align:center;">
--0.442
-</td>
-<td style="text-align:center;">
-0.457
-</td>
-<td style="text-align:center;">
-0.414
-</td>
-<td style="text-align:center;">
-0.384
-</td>
-<td style="text-align:center;">
-0.652
-</td>
-<td style="text-align:center;">
-0.558
-</td>
-<td style="text-align:center;">
-0.594
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Above median (n = 5671)
-</td>
-<td style="text-align:center;">
--0.336
-</td>
-<td style="text-align:center;">
-0.420
-</td>
-<td style="text-align:center;">
-0.376
-</td>
-<td style="text-align:center;">
-0.347
-</td>
-<td style="text-align:center;">
-0.637
-</td>
-<td style="text-align:center;">
-0.560
-</td>
-<td style="text-align:center;">
-0.586
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Difference
-</td>
-<td style="text-align:center;">
-0.106*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.037*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
-0.002
-</td>
-<td style="text-align:center;">
--0.007
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.053)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.023)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, 
-             stars = TRUE,  
-             title = &#39;Heterogeneity under control, evaluation&#39;, 
-             add_rows = row,
-             output = &#39;../tables/heterogeneity_control.tex&#39;)
-
-
-#############
-# working on this
 rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
-                r&#39;(\textbf{Age})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Age}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\textbf{Gender})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Gender}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\textbf{Political allegiance})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Political allegiance}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\textbf{Digital literacy index})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                &#39;\\&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\textbf{Scientific knowledge index})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+                r&#39;(\multicolumn{4}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
                )
 
-attr(rows, &#39;position&#39;) &lt;- c(1,8,9,
-                            10,17,18,
-                            19,26,27,
-                            28,35,36,
-                            37)
+attr(rows, &#39;position&#39;) &lt;- c(1,8,
+                            9,16,
+                            17,24,
+                            25,32,
+                            33)
 
 modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = rows, escape = FALSE) # note: escape = F</code></pre>
 <table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
@@ -8502,25 +5597,6 @@ Age × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
- 
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 
 </td>
 <td style="text-align:center;">
@@ -8694,25 +5770,6 @@ Male × Difference
 <tr>
 <td style="text-align:left;">
 (lr){2-8}
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
- 
 </td>
 <td style="text-align:center;">
 </td>
@@ -8922,7 +5979,1063 @@ Political Allegiance × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
- 
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 6186)
+</td>
+<td style="text-align:center;">
+-0.535
+</td>
+<td style="text-align:center;">
+0.492
+</td>
+<td style="text-align:center;">
+0.446
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.653
+</td>
+<td style="text-align:center;">
+0.581
+</td>
+<td style="text-align:center;">
+0.614
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5948)
+</td>
+<td style="text-align:center;">
+-0.244
+</td>
+<td style="text-align:center;">
+0.386
+</td>
+<td style="text-align:center;">
+0.344
+</td>
+<td style="text-align:center;">
+0.310
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+<td style="text-align:center;">
+0.535
+</td>
+<td style="text-align:center;">
+0.565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.037)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+0.291***
+</td>
+<td style="text-align:center;">
+-0.106***
+</td>
+<td style="text-align:center;">
+-0.101***
+</td>
+<td style="text-align:center;">
+-0.110***
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+-0.046**
+</td>
+<td style="text-align:center;">
+-0.049**
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 6463)
+</td>
+<td style="text-align:center;">
+-0.442
+</td>
+<td style="text-align:center;">
+0.457
+</td>
+<td style="text-align:center;">
+0.414
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.652
+</td>
+<td style="text-align:center;">
+0.558
+</td>
+<td style="text-align:center;">
+0.594
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5671)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.420
+</td>
+<td style="text-align:center;">
+0.376
+</td>
+<td style="text-align:center;">
+0.347
+</td>
+<td style="text-align:center;">
+0.637
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+<td style="text-align:center;">
+0.586
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+0.106*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.037*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.053)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Heterogeneity under control, evaluation&#39;, 
+             add_rows = rows,
+             output = &#39;../tables/heterogeneity_control.tex&#39;)
+
+
+
+# working on this
+rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
+                &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
+                 r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8} \multicolumn{4}{l}{\textbf{Overall control mean}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+
+                r&#39;(\hline \multicolumn{2}{l}{\textbf{Age}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Gender}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Political allegiance}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+               )
+
+attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
+                            4,11,
+                            12,19,
+                            20,27,
+                            28,35,
+                            36)
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = rows, escape = FALSE) </code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under control, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-2} (lr){3-5} (lr){6-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 6104)
+</td>
+<td style="text-align:center;">
+-0.486
+</td>
+<td style="text-align:center;">
+0.459
+</td>
+<td style="text-align:center;">
+0.417
+</td>
+<td style="text-align:center;">
+0.374
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.546
+</td>
+<td style="text-align:center;">
+0.560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 6030)
+</td>
+<td style="text-align:center;">
+-0.298
+</td>
+<td style="text-align:center;">
+0.421
+</td>
+<td style="text-align:center;">
+0.375
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+0.664
+</td>
+<td style="text-align:center;">
+0.571
+</td>
+<td style="text-align:center;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.188***
+</td>
+<td style="text-align:center;">
+-0.038*
+</td>
+<td style="text-align:center;">
+-0.042*
+</td>
+<td style="text-align:center;">
+-0.015
+</td>
+<td style="text-align:center;">
+0.037
+</td>
+<td style="text-align:center;">
+0.025
+</td>
+<td style="text-align:center;">
+0.060***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5752)
+</td>
+<td style="text-align:center;">
+-0.353
+</td>
+<td style="text-align:center;">
+0.395
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+<td style="text-align:center;">
+0.509
+</td>
+<td style="text-align:center;">
+0.537
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 6382)
+</td>
+<td style="text-align:center;">
+-0.428
+</td>
+<td style="text-align:center;">
+0.480
+</td>
+<td style="text-align:center;">
+0.430
+</td>
+<td style="text-align:center;">
+0.406
+</td>
+<td style="text-align:center;">
+0.692
+</td>
+<td style="text-align:center;">
+0.603
+</td>
+<td style="text-align:center;">
+0.638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+-0.074
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.072***
+</td>
+<td style="text-align:center;">
+0.083***
+</td>
+<td style="text-align:center;">
+0.099***
+</td>
+<td style="text-align:center;">
+0.094***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.052)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.023)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 8609)
+</td>
+<td style="text-align:center;">
+-0.336
+</td>
+<td style="text-align:center;">
+0.415
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.339
+</td>
+<td style="text-align:center;">
+0.627
+</td>
+<td style="text-align:center;">
+0.534
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.031)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3525)
+</td>
+<td style="text-align:center;">
+-0.530
+</td>
+<td style="text-align:center;">
+0.501
+</td>
+<td style="text-align:center;">
+0.465
+</td>
+<td style="text-align:center;">
+0.434
+</td>
+<td style="text-align:center;">
+0.689
+</td>
+<td style="text-align:center;">
+0.619
+</td>
+<td style="text-align:center;">
+0.661
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.015)
+</td>
+<td style="text-align:center;">
+(0.024)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+<td style="text-align:center;">
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.193***
+</td>
+<td style="text-align:center;">
+0.086***
+</td>
+<td style="text-align:center;">
+0.097***
+</td>
+<td style="text-align:center;">
+0.095***
+</td>
+<td style="text-align:center;">
+0.062*
+</td>
+<td style="text-align:center;">
+0.085***
+</td>
+<td style="text-align:center;">
+0.100***
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.058)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
 </td>
 <td style="text-align:center;">
 </td>
@@ -9132,25 +7245,6 @@ Digital literacy index × Difference
 </tr>
 <tr>
 <td style="text-align:left;">
- 
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 
 </td>
 <td style="text-align:center;">
@@ -9335,6 +7429,22 @@ Scientific beliefs index × Difference
              stars = TRUE,  
              title = &#39;Heterogeneity under control, evaluation&#39;, 
              add_rows = rows,
+             escape = FALSE,
+             coef_rename = c(&#39;Age: Below median (n = 6104)&#39; = r&#39;(\hspace{1em} Below Median)&#39;,
+                             &#39;Age: Above median (n = 6030)&#39; = r&#39;(\hspace{1em} Above Median)&#39;,
+                             &#39;Age: Difference&#39; = r&#39;(\hspace{1em} Difference)&#39;,
+                             &#39;Male:  Not male (n = 5752)&#39; = r&#39;(\hspace{1em} Not male)&#39;,
+                             &#39;Male: Male (n = 6382)&#39; = r&#39;(\hspace{1em} Male)&#39;,
+                             &#39;Male: Difference&#39; = r&#39;(\hspace{1em} Difference )&#39;,
+                             &#39;Political Allegiance:  Not aligned (n = 8609)&#39; = r&#39;(\hspace{1em} Not aligned)&#39;,
+                             &#39;Political Allegiance: Aligned w/ ruling party (n = 3525)&#39; = r&#39;(\hspace{1em} Aligned w/ ruling party)&#39;,
+                             &#39;Political Allegiance: Difference&#39; = r&#39;(\hspace{1em} Difference  )&#39;,
+                             &#39;Digital literacy index: Below median (n = 6186)&#39; = r&#39;(\hspace{1em} Below median )&#39;,
+                             &#39;Digital literacy index: Above median (n = 5948)&#39; = r&#39;(\hspace{1em} Above median )&#39;,
+                             &#39;Digital literacy index: Difference&#39; = r&#39;(\hspace{1em}  Difference)&#39;,
+                             &#39;Scientific beliefs index: Below median (n = 6463)&#39; = r&#39;(\hspace{1em} Below median  )&#39;,
+                             &#39;Scientific beliefs index: Above median (n = 5671)&#39; = r&#39;(\hspace{1em} Above median  )&#39;,
+                             &#39;Scientific beliefs index: Difference&#39; = r&#39;(\hspace{1em} Difference   )&#39;),
              output = &#39;../tables/heterogeneity_control.tex&#39;)</code></pre>
 </div>
 <div id="treatment-effect-heterogeneity-tables" class="section level3" number="3.4.2">
@@ -13621,7 +11731,8 @@ p +
        # caption = &#39;P-values represent statistical significance of difference across covariate types in control response estimates.&#39;
   ) +
   ylab(&#39;Estimate&#39;)</code></pre>
-<pre><code>## Scale for &#39;alpha&#39; is already present. Adding another scale for &#39;alpha&#39;, which will replace the existing scale.</code></pre>
+<pre><code>## Scale for &#39;alpha&#39; is already present. Adding another scale for &#39;alpha&#39;, which
+## will replace the existing scale.</code></pre>
 <pre><code>## Coordinate system already present. Adding new coordinate system, which will replace the existing one.</code></pre>
 <p><img src="data:image/png;base64,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" width="672" /></p>
 <pre class="r"><code>ggsave(&#39;../figures/any_sharing_by_covariates_control.png&#39;, height = 7, width = 9.5)
