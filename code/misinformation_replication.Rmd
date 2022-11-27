@@ -1257,25 +1257,27 @@ attr(rows, 'position') <- c(1,2,3,
 
 modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) 
 
+terms = models$Combined$tidy$term
+
 modelsummary(models, 
              stars = TRUE,  
              title = 'Heterogeneity under control, evaluation', 
              add_rows = rows,
              escape = FALSE,
-             coef_rename = c('Age: Below median (n = 6104)' = r'(\hspace{1em} Below Median)',
-                             'Age: Above median (n = 6030)' = r'(\hspace{1em} Above Median)',
+             coef_rename = c('Age: Below median (n = 5412)' = r'(\hspace{1em} Below Median)',
+                             'Age: Above median (n = 5271)' = r'(\hspace{1em} Above Median)',
                              'Age: Difference' = r'(\hspace{1em} Difference)',
-                             'Male:  Not male (n = 5752)' = r'(\hspace{1em} Not male)',
-                             'Male: Male (n = 6382)' = r'(\hspace{1em} Male)',
+                             'Male:  Not male (n = 5050)' = r'(\hspace{1em} Not male)',
+                             'Male: Male (n = 5633)' = r'(\hspace{1em} Male)',
                              'Male: Difference' = r'(\hspace{1em} Difference )',
-                             'Political Allegiance:  Not aligned (n = 8609)' = r'(\hspace{1em} Not aligned)',
-                             'Political Allegiance: Aligned w/ ruling party (n = 3525)' = r'(\hspace{1em} Aligned w/ ruling party)',
+                             'Political Allegiance:  Not aligned (n = 7570)' = r'(\hspace{1em} Not aligned)',
+                             'Political Allegiance: Aligned w/ ruling party (n = 3113)' = r'(\hspace{1em} Aligned w/ ruling party)',
                              'Political Allegiance: Difference' = r'(\hspace{1em} Difference  )',
-                             'Digital literacy index: Below median (n = 6186)' = r'(\hspace{1em} Below median )',
-                             'Digital literacy index: Above median (n = 5948)' = r'(\hspace{1em} Above median )',
+                             'Digital literacy index: Below median (n = 5443)' = r'(\hspace{1em} Below median )',
+                             'Digital literacy index: Above median (n = 5240)' = r'(\hspace{1em} Above median )',
                              'Digital literacy index: Difference' = r'(\hspace{1em}  Difference)',
-                             'Scientific beliefs index: Below median (n = 6463)' = r'(\hspace{1em} Below median  )',
-                             'Scientific beliefs index: Above median (n = 5671)' = r'(\hspace{1em} Above median  )',
+                             'Scientific beliefs index: Below median (n = 5677)' = r'(\hspace{1em} Below median  )',
+                             'Scientific beliefs index: Above median (n = 5006)' = r'(\hspace{1em} Above median  )',
                              'Scientific beliefs index: Difference' = r'(\hspace{1em} Difference   )'),
              output = '../tables/heterogeneity_control.tex')
 
@@ -1604,9 +1606,62 @@ models <- lapply(models, function(x){
   x
 })
 
+################
 modelsummary(models, stars = TRUE, title = 'Heterogeneity under pooled respondent treatment, evaluation')
 modelsummary(models, stars = TRUE,  title = 'Heterogeneity under pooled respondent treatment, evaluation', 
              output = '../tables/heterogeneity_treatment.tex')
+
+#############
+# the new modelsummary
+rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
+                '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+                 r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8} \multicolumn{4}{l}{\textbf{Overall control mean}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+
+                r'(\hline \multicolumn{2}{l}{\textbf{Age}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Gender}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Political allegiance}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', ''
+               )
+
+attr(rows, 'position') <- c(1,2,3,
+                            4,9,
+                            12,17,
+                            20,25,
+                            28,33,
+                            36)
+
+modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) 
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Heterogeneity under control, evaluation', 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c('Age: Below median (n = 6104)' = r'(\hspace{1em} Below Median)',
+                             'Age: Above median (n = 6030)' = r'(\hspace{1em} Above Median)',
+                             'Age: Difference' = r'(\hspace{1em} Difference)',
+                             'Male:  Not male (n = 5752)' = r'(\hspace{1em} Not male)',
+                             'Male: Male (n = 6382)' = r'(\hspace{1em} Male)',
+                             'Male: Difference' = r'(\hspace{1em} Difference )',
+                             'Political Allegiance:  Not aligned (n = 8609)' = r'(\hspace{1em} Not aligned)',
+                             'Political Allegiance: Aligned w/ ruling party (n = 3525)' = r'(\hspace{1em} Aligned w/ ruling party)',
+                             'Political Allegiance: Difference' = r'(\hspace{1em} Difference  )',
+                             'Digital literacy index: Below median (n = 6186)' = r'(\hspace{1em} Below median )',
+                             'Digital literacy index: Above median (n = 5948)' = r'(\hspace{1em} Above median )',
+                             'Digital literacy index: Difference' = r'(\hspace{1em}  Difference)',
+                             'Scientific beliefs index: Below median (n = 6463)' = r'(\hspace{1em} Below median  )',
+                             'Scientific beliefs index: Above median (n = 5671)' = r'(\hspace{1em} Above median  )',
+                             'Scientific beliefs index: Difference' = r'(\hspace{1em} Difference   )'),
+             output = '../tables/heterogeneity_treatment.tex')
+
+# print out n's
+models$Combined$tidy$term
 ```
 ##### By treatment type
 ```{r accuracy_heterogeneity_primary, cache = TRUE}
