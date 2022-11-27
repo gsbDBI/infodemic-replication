@@ -1223,6 +1223,7 @@ models <- lapply(models, function(x){
 })
 
 #############
+# the original modelsummary
 modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation') 
 
 modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evaluation', 
@@ -1230,38 +1231,9 @@ modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evalua
 
 
 #############
-
+# the new modelsummary
 rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
-                r'(\multicolumn{4}{l}{\textbf{Age}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
-                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
-                r'(\multicolumn{4}{l}{\textbf{Gender}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
-                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
-                r'(\multicolumn{4}{l}{\textbf{Political allegiance}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
-                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
-                r'(\multicolumn{4}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
-                r"(\cmidrule(lr){2-8})", '', '', '', '', '', '', '',
-                r'(\multicolumn{4}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', ''
-               )
-
-attr(rows, 'position') <- c(1,8,
-                            9,16,
-                            17,24,
-                            25,32,
-                            33)
-
-modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) # note: escape = F
-
-modelsummary(models, 
-             stars = TRUE,  
-             title = 'Heterogeneity under control, evaluation', 
-             add_rows = rows,
-             output = '../tables/heterogeneity_control.tex')
-
-
-
-# working on this
-rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
-                '', '', '', r'({\textbf{True}})', '', '', r'({\textbf{True}})', '',
+                '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
                 '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                  r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8} \multicolumn{4}{l}{\textbf{Overall control mean}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
 
@@ -1277,10 +1249,10 @@ rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
                )
 
 attr(rows, 'position') <- c(1,2,3,
-                            4,11,
-                            12,19,
-                            20,27,
-                            28,35,
+                            4,9,
+                            12,17,
+                            20,25,
+                            28,33,
                             36)
 
 modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation', add_rows = rows, escape = FALSE) 
@@ -1306,6 +1278,9 @@ modelsummary(models,
                              'Scientific beliefs index: Above median (n = 5671)' = r'(\hspace{1em} Above median  )',
                              'Scientific beliefs index: Difference' = r'(\hspace{1em} Difference   )'),
              output = '../tables/heterogeneity_control.tex')
+
+# print out n's
+models$Combined$tidy$term
 ```
 
 
