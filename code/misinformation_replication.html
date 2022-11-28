@@ -4247,7 +4247,512 @@ Control
 </tfoot>
 </table>
 <pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Mean response estimates, evaluation&#39;, 
-             output = &#39;../tables/evaluated_estimates.tex&#39;)</code></pre>
+             output = &#39;../tables/evaluated_estimates.tex&#39;)
+
+
+#############
+# the new modelsummary
+rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
+                &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
+                r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\hline)&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+               )
+
+attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
+                            4,9,
+                            16)
+
+modelsummary(models, stars = TRUE, title = &#39;Mean response estimates, evaluation&#39;, add_rows = rows, escape = FALSE) </code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Mean response estimates, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-2} (lr){3-5} (lr){6-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Headline Factcheck
+</td>
+<td style="text-align:center;">
+-0.032
+</td>
+<td style="text-align:center;">
+-0.004
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+<td style="text-align:center;">
+-0.002
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+-0.014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.036)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Headline Related articles
+</td>
+<td style="text-align:center;">
+-0.054
+</td>
+<td style="text-align:center;">
+0.009
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+0.009
+</td>
+<td style="text-align:center;">
+-0.019
+</td>
+<td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
+-0.021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Respondent Accuracy
+</td>
+<td style="text-align:center;">
+0.060*
+</td>
+<td style="text-align:center;">
+-0.019*
+</td>
+<td style="text-align:center;">
+-0.020*
+</td>
+<td style="text-align:center;">
+-0.025**
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+0.005
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.032)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Respondent Facebook tips
+</td>
+<td style="text-align:center;">
+0.046+
+</td>
+<td style="text-align:center;">
+-0.032**
+</td>
+<td style="text-align:center;">
+-0.031**
+</td>
+<td style="text-align:center;">
+-0.027**
+</td>
+<td style="text-align:center;">
+-0.016
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+<td style="text-align:center;">
+-0.021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Respondent Optimal
+</td>
+<td style="text-align:center;">
+0.072*
+</td>
+<td style="text-align:center;">
+-0.040***
+</td>
+<td style="text-align:center;">
+-0.038***
+</td>
+<td style="text-align:center;">
+-0.032***
+</td>
+<td style="text-align:center;">
+-0.019
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.034)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.010)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Control
+</td>
+<td style="text-align:center;">
+-0.391
+</td>
+<td style="text-align:center;">
+0.441
+</td>
+<td style="text-align:center;">
+0.396
+</td>
+<td style="text-align:center;">
+0.368
+</td>
+<td style="text-align:center;">
+0.651
+</td>
+<td style="text-align:center;">
+0.561
+</td>
+<td style="text-align:center;">
+0.593
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.027)
+</td>
+<td style="text-align:center;">
+(0.009)
+</td>
+<td style="text-align:center;">
+(0.008)
+</td>
+<td style="text-align:center;">
+(0.008)
+</td>
+<td style="text-align:center;">
+(0.008)
+</td>
+<td style="text-align:center;">
+(0.009)
+</td>
+<td style="text-align:center;">
+(0.009)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Mean response estimates, evaluation&#39;, 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c(&#39;Headline\nFactcheck&#39; = r&#39;(\hspace{1em}Factcheck)&#39;,
+                             &#39;Headline\nRelated articles&#39; = r&#39;(\hspace{1em}Related articles)&#39;,
+                             &#39;Respondent\nAccuracy&#39; = r&#39;(\hspace{1em}Accuracy)&#39;,
+                             &#39;Respondent\nFacebook tips&#39; = r&#39;(\hspace{1em}Facebook tips)&#39;,
+                             &#39;Respondent\nOptimal&#39; = r&#39;(\hspace{1em}Optimal)&#39;,
+                             &#39;Control&#39; = r&#39;(\hspace{1em}Control mean)&#39;),
+             output = &#39;../tables/evaluated_estimates.tex&#39;)
+
+# print out n&#39;s
+models$Combined$tidy$term</code></pre>
+<pre><code>## [1] &quot;Headline\nFactcheck&quot;        &quot;Headline\nRelated articles&quot;
+## [3] &quot;Respondent\nAccuracy&quot;       &quot;Respondent\nFacebook tips&quot; 
+## [5] &quot;Respondent\nOptimal&quot;        &quot;Control&quot;</code></pre>
 <div id="control-heterogeneity-tables" class="section level3" number="3.4.1">
 <h3><span class="header-section-number">3.4.1</span> Control
 heterogeneity tables</h3>
@@ -5367,7 +5872,8 @@ rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&#39;(\multicolumn{2}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\multicolumn{2}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+                r&#39;(\multicolumn{2}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
                )
 
 attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
@@ -5375,7 +5881,7 @@ attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
                             12,17,
                             20,25,
                             28,33,
-                            36)
+                            36,41)
 
 modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;, add_rows = rows, escape = FALSE) </code></pre>
 <table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
@@ -6361,6 +6867,25 @@ Scientific beliefs index × Above median (n = 5006)
 </tr>
 <tr>
 <td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Scientific beliefs index × Difference
 </td>
 <td style="text-align:center;">
@@ -6425,20 +6950,20 @@ Scientific beliefs index × Difference
              title = &#39;Heterogeneity under control, evaluation&#39;, 
              add_rows = rows,
              escape = FALSE,
-             coef_rename = c(&#39;Age: Below median (n = 6104)&#39; = r&#39;(\hspace{1em} Below Median)&#39;,
-                             &#39;Age: Above median (n = 6030)&#39; = r&#39;(\hspace{1em} Above Median)&#39;,
+             coef_rename = c(&#39;Age: Below median (n = 5412)&#39; = r&#39;(\hspace{1em} Below Median)&#39;,
+                             &#39;Age: Above median (n = 5271)&#39; = r&#39;(\hspace{1em} Above Median)&#39;,
                              &#39;Age: Difference&#39; = r&#39;(\hspace{1em} Difference)&#39;,
-                             &#39;Male:  Not male (n = 5752)&#39; = r&#39;(\hspace{1em} Not male)&#39;,
-                             &#39;Male: Male (n = 6382)&#39; = r&#39;(\hspace{1em} Male)&#39;,
+                             &#39;Male:  Not male (n = 5050)&#39; = r&#39;(\hspace{1em} Not male)&#39;,
+                             &#39;Male: Male (n = 5633)&#39; = r&#39;(\hspace{1em} Male)&#39;,
                              &#39;Male: Difference&#39; = r&#39;(\hspace{1em} Difference )&#39;,
-                             &#39;Political Allegiance:  Not aligned (n = 8609)&#39; = r&#39;(\hspace{1em} Not aligned)&#39;,
-                             &#39;Political Allegiance: Aligned w/ ruling party (n = 3525)&#39; = r&#39;(\hspace{1em} Aligned w/ ruling party)&#39;,
+                             &#39;Political Allegiance:  Not aligned (n = 7570)&#39; = r&#39;(\hspace{1em} Not aligned)&#39;,
+                             &#39;Political Allegiance: Aligned w/ ruling party (n = 3113)&#39; = r&#39;(\hspace{1em} Aligned)&#39;,
                              &#39;Political Allegiance: Difference&#39; = r&#39;(\hspace{1em} Difference  )&#39;,
-                             &#39;Digital literacy index: Below median (n = 6186)&#39; = r&#39;(\hspace{1em} Below median )&#39;,
-                             &#39;Digital literacy index: Above median (n = 5948)&#39; = r&#39;(\hspace{1em} Above median )&#39;,
+                             &#39;Digital literacy index: Below median (n = 5443)&#39; = r&#39;(\hspace{1em} Below median )&#39;,
+                             &#39;Digital literacy index: Above median (n = 5240)&#39; = r&#39;(\hspace{1em} Above median )&#39;,
                              &#39;Digital literacy index: Difference&#39; = r&#39;(\hspace{1em}  Difference)&#39;,
-                             &#39;Scientific beliefs index: Below median (n = 6463)&#39; = r&#39;(\hspace{1em} Below median  )&#39;,
-                             &#39;Scientific beliefs index: Above median (n = 5671)&#39; = r&#39;(\hspace{1em} Above median  )&#39;,
+                             &#39;Scientific beliefs index: Below median (n = 5677)&#39; = r&#39;(\hspace{1em} Below median  )&#39;,
+                             &#39;Scientific beliefs index: Above median (n = 5006)&#39; = r&#39;(\hspace{1em} Above median  )&#39;,
                              &#39;Scientific beliefs index: Difference&#39; = r&#39;(\hspace{1em} Difference   )&#39;),
              output = &#39;../tables/heterogeneity_control.tex&#39;)
 
@@ -6765,6 +7290,7 @@ models &lt;- lapply(models, function(x){
   x
 })
 
+################
 modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;)</code></pre>
 <table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
 <caption>
@@ -7574,7 +8100,1135 @@ Scientific beliefs index × Difference
 </tfoot>
 </table>
 <pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, 
-             output = &#39;../tables/heterogeneity_treatment.tex&#39;)</code></pre>
+             output = &#39;../tables/heterogeneity_treatment.tex&#39;)
+
+#############
+# the new modelsummary
+rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
+                &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
+                r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+
+                r&#39;(\multicolumn{2}{l}{\textbf{Age}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Gender}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Political allegiance}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Digital literacy index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{2}{l}{\textbf{Scientific knowledge index}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&quot;(\cmidrule(lr){2-8})&quot;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+               )
+
+attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
+                            4,9,
+                            12,17,
+                            20,25,
+                            28,33,
+                            36,41)
+
+modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, add_rows = rows, escape = FALSE) </code></pre>
+<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
+<caption>
+Heterogeneity under pooled respondent treatment, evaluation
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+Combined
+</th>
+<th style="text-align:center;">
+False: Any sharing
+</th>
+<th style="text-align:center;">
+False: Messenger
+</th>
+<th style="text-align:center;">
+False: Timeline
+</th>
+<th style="text-align:center;">
+True: Any sharing
+</th>
+<th style="text-align:center;">
+True: Messenger
+</th>
+<th style="text-align:center;">
+True: Timeline
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-2} (lr){3-5} (lr){6-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Below median (n = 5412)
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+-0.019
+</td>
+<td style="text-align:center;">
+-0.021
+</td>
+<td style="text-align:center;">
+-0.017
+</td>
+<td style="text-align:center;">
+-0.026+
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.034*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.039)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Above median (n = 5271)
+</td>
+<td style="text-align:center;">
+0.104*
+</td>
+<td style="text-align:center;">
+-0.032*
+</td>
+<td style="text-align:center;">
+-0.030*
+</td>
+<td style="text-align:center;">
+-0.035**
+</td>
+<td style="text-align:center;">
+0.009
+</td>
+<td style="text-align:center;">
+0.020
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.045)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Age × Difference
+</td>
+<td style="text-align:center;">
+0.102+
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.019
+</td>
+<td style="text-align:center;">
+0.035+
+</td>
+<td style="text-align:center;">
+0.040*
+</td>
+<td style="text-align:center;">
+0.037+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.060)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male ×  Not male (n = 5050)
+</td>
+<td style="text-align:center;">
+0.038
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.024+
+</td>
+<td style="text-align:center;">
+-0.020
+</td>
+<td style="text-align:center;">
+-0.025+
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+<td style="text-align:center;">
+-0.030*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Male (n = 5633)
+</td>
+<td style="text-align:center;">
+0.066
+</td>
+<td style="text-align:center;">
+-0.030*
+</td>
+<td style="text-align:center;">
+-0.026*
+</td>
+<td style="text-align:center;">
+-0.031*
+</td>
+<td style="text-align:center;">
+0.006
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+<td style="text-align:center;">
+-0.004
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Male × Difference
+</td>
+<td style="text-align:center;">
+0.029
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+-0.003
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+0.031
+</td>
+<td style="text-align:center;">
+0.007
+</td>
+<td style="text-align:center;">
+0.026
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.059)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance ×  Not aligned (n = 7570)
+</td>
+<td style="text-align:center;">
+0.095**
+</td>
+<td style="text-align:center;">
+-0.034**
+</td>
+<td style="text-align:center;">
+-0.030**
+</td>
+<td style="text-align:center;">
+-0.039***
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+<td style="text-align:center;">
+-0.014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.035)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.011)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Aligned w/ ruling party (n = 3113)
+</td>
+<td style="text-align:center;">
+-0.049
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+<td style="text-align:center;">
+-0.013
+</td>
+<td style="text-align:center;">
+0.005
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+-0.022
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.055)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.017)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Political Allegiance × Difference
+</td>
+<td style="text-align:center;">
+-0.144*
+</td>
+<td style="text-align:center;">
+0.029
+</td>
+<td style="text-align:center;">
+0.017
+</td>
+<td style="text-align:center;">
+0.044*
+</td>
+<td style="text-align:center;">
+-0.004
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.065)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+<td style="text-align:center;">
+(0.021)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Below median (n = 5443)
+</td>
+<td style="text-align:center;">
+0.056
+</td>
+<td style="text-align:center;">
+-0.041**
+</td>
+<td style="text-align:center;">
+-0.039**
+</td>
+<td style="text-align:center;">
+-0.035**
+</td>
+<td style="text-align:center;">
+-0.025+
+</td>
+<td style="text-align:center;">
+-0.010
+</td>
+<td style="text-align:center;">
+-0.026*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Above median (n = 5240)
+</td>
+<td style="text-align:center;">
+0.049
+</td>
+<td style="text-align:center;">
+-0.009
+</td>
+<td style="text-align:center;">
+-0.011
+</td>
+<td style="text-align:center;">
+-0.016
+</td>
+<td style="text-align:center;">
+0.008
+</td>
+<td style="text-align:center;">
+0.011
+</td>
+<td style="text-align:center;">
+-0.005
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.042)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Digital literacy index × Difference
+</td>
+<td style="text-align:center;">
+-0.007
+</td>
+<td style="text-align:center;">
+0.033+
+</td>
+<td style="text-align:center;">
+0.028
+</td>
+<td style="text-align:center;">
+0.019
+</td>
+<td style="text-align:center;">
+0.033+
+</td>
+<td style="text-align:center;">
+0.021
+</td>
+<td style="text-align:center;">
+0.021
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.060)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Below median (n = 5677)
+</td>
+<td style="text-align:center;">
+0.094*
+</td>
+<td style="text-align:center;">
+-0.043**
+</td>
+<td style="text-align:center;">
+-0.047***
+</td>
+<td style="text-align:center;">
+-0.042***
+</td>
+<td style="text-align:center;">
+-0.027*
+</td>
+<td style="text-align:center;">
+-0.012
+</td>
+<td style="text-align:center;">
+-0.033*
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.040)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.012)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Above median (n = 5006)
+</td>
+<td style="text-align:center;">
+0.006
+</td>
+<td style="text-align:center;">
+-0.006
+</td>
+<td style="text-align:center;">
+-0.001
+</td>
+<td style="text-align:center;">
+-0.008
+</td>
+<td style="text-align:center;">
+0.012
+</td>
+<td style="text-align:center;">
+0.014
+</td>
+<td style="text-align:center;">
+0.004
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.044)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.013)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+<td style="text-align:center;">
+(0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Scientific beliefs index × Difference
+</td>
+<td style="text-align:center;">
+-0.087
+</td>
+<td style="text-align:center;">
+0.037+
+</td>
+<td style="text-align:center;">
+0.045*
+</td>
+<td style="text-align:center;">
+0.034+
+</td>
+<td style="text-align:center;">
+0.039*
+</td>
+<td style="text-align:center;">
+0.026
+</td>
+<td style="text-align:center;">
+0.037+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.060)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.018)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+<td style="text-align:center;">
+(0.020)
+</td>
+<td style="text-align:center;">
+(0.019)
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
+0.001
+</td>
+</tr>
+</tfoot>
+</table>
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c(&#39;Age: Below median (n = 5412)&#39; = r&#39;(\hspace{1em} Below Median)&#39;,
+                             &#39;Age: Above median (n = 5271)&#39; = r&#39;(\hspace{1em} Above Median)&#39;,
+                             &#39;Age: Difference&#39; = r&#39;(\hspace{1em} Difference)&#39;,
+                             &#39;Male:  Not male (n = 5050)&#39; = r&#39;(\hspace{1em} Not male)&#39;,
+                             &#39;Male: Male (n = 5633)&#39; = r&#39;(\hspace{1em} Male)&#39;,
+                             &#39;Male: Difference&#39; = r&#39;(\hspace{1em} Difference )&#39;,
+                             &#39;Political Allegiance:  Not aligned (n = 7570)&#39; = r&#39;(\hspace{1em} Not aligned)&#39;,
+                             &#39;Political Allegiance: Aligned w/ ruling party (n = 3113)&#39; = r&#39;(\hspace{1em} Aligned)&#39;,
+                             &#39;Political Allegiance: Difference&#39; = r&#39;(\hspace{1em} Difference  )&#39;,
+                             &#39;Digital literacy index: Below median (n = 5443)&#39; = r&#39;(\hspace{1em} Below median )&#39;,
+                             &#39;Digital literacy index: Above median (n = 5240)&#39; = r&#39;(\hspace{1em} Above median )&#39;,
+                             &#39;Digital literacy index: Difference&#39; = r&#39;(\hspace{1em}  Difference)&#39;,
+                             &#39;Scientific beliefs index: Below median (n = 5677)&#39; = r&#39;(\hspace{1em} Below median  )&#39;,
+                             &#39;Scientific beliefs index: Above median (n = 5006)&#39; = r&#39;(\hspace{1em} Above median  )&#39;,
+                             &#39;Scientific beliefs index: Difference&#39; = r&#39;(\hspace{1em} Difference   )&#39;),
+             output = &#39;../tables/heterogeneity_treatment.tex&#39;)
+
+# print out n&#39;s
+models$Combined$tidy$term</code></pre>
+<pre><code>##  [1] &quot;Age: Below median (n = 5412)&quot;                            
+##  [2] &quot;Age: Above median (n = 5271)&quot;                            
+##  [3] &quot;Age: Difference&quot;                                         
+##  [4] &quot;Male:  Not male (n = 5050)&quot;                              
+##  [5] &quot;Male: Male (n = 5633)&quot;                                   
+##  [6] &quot;Male: Difference&quot;                                        
+##  [7] &quot;Political Allegiance:  Not aligned (n = 7570)&quot;           
+##  [8] &quot;Political Allegiance: Aligned w/ ruling party (n = 3113)&quot;
+##  [9] &quot;Political Allegiance: Difference&quot;                        
+## [10] &quot;Digital literacy index: Below median (n = 5443)&quot;         
+## [11] &quot;Digital literacy index: Above median (n = 5240)&quot;         
+## [12] &quot;Digital literacy index: Difference&quot;                      
+## [13] &quot;Scientific beliefs index: Below median (n = 5677)&quot;       
+## [14] &quot;Scientific beliefs index: Above median (n = 5006)&quot;       
+## [15] &quot;Scientific beliefs index: Difference&quot;</code></pre>
 <div id="by-treatment-type" class="section level5" number="3.4.2.0.1">
 <h5><span class="header-section-number">3.4.2.0.1</span> By treatment
 type</h5>

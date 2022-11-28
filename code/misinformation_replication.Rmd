@@ -915,6 +915,40 @@ models <- lapply(models, function(x){
 modelsummary(models, stars = TRUE, title = 'Mean response estimates, evaluation')
 modelsummary(models, stars = TRUE,  title = 'Mean response estimates, evaluation', 
              output = '../tables/evaluated_estimates.tex')
+
+
+#############
+# the new modelsummary
+rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+                '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
+                '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+                r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})', '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\multicolumn{2}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\hline)', '', '', '', '', '', '', ''
+               )
+
+attr(rows, 'position') <- c(1,2,3,
+                            4,9,
+                            16)
+
+modelsummary(models, stars = TRUE, title = 'Mean response estimates, evaluation', add_rows = rows, escape = FALSE) 
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Mean response estimates, evaluation', 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c('Headline\nFactcheck' = r'(\hspace{1em}Factcheck)',
+                             'Headline\nRelated articles' = r'(\hspace{1em}Related articles)',
+                             'Respondent\nAccuracy' = r'(\hspace{1em}Accuracy)',
+                             'Respondent\nFacebook tips' = r'(\hspace{1em}Facebook tips)',
+                             'Respondent\nOptimal' = r'(\hspace{1em}Optimal)',
+                             'Control' = r'(\hspace{1em}Control mean)'), 
+             output = '../tables/evaluated_estimates.tex')
+
+# print out n's
+models$Combined$tidy$term
 ```
 
 ### Control heterogeneity tables
@@ -1270,7 +1304,7 @@ modelsummary(models,
                              'Male: Male (n = 5633)' = r'(\hspace{1em} Male)',
                              'Male: Difference' = r'(\hspace{1em} Difference )',
                              'Political Allegiance:  Not aligned (n = 7570)' = r'(\hspace{1em} Not aligned)',
-                             'Political Allegiance: Aligned w/ ruling party (n = 3113)' = r'(\hspace{1em} Aligned w/ ruling party)',
+                             'Political Allegiance: Aligned w/ ruling party (n = 3113)' = r'(\hspace{1em} Aligned)',
                              'Political Allegiance: Difference' = r'(\hspace{1em} Difference  )',
                              'Digital literacy index: Below median (n = 5443)' = r'(\hspace{1em} Below median )',
                              'Digital literacy index: Above median (n = 5240)' = r'(\hspace{1em} Above median )',
@@ -1650,7 +1684,7 @@ modelsummary(models,
                              'Male: Male (n = 5633)' = r'(\hspace{1em} Male)',
                              'Male: Difference' = r'(\hspace{1em} Difference )',
                              'Political Allegiance:  Not aligned (n = 7570)' = r'(\hspace{1em} Not aligned)',
-                             'Political Allegiance: Aligned w/ ruling party (n = 3113)' = r'(\hspace{1em} Aligned w/ ruling party)',
+                             'Political Allegiance: Aligned w/ ruling party (n = 3113)' = r'(\hspace{1em} Aligned)',
                              'Political Allegiance: Difference' = r'(\hspace{1em} Difference  )',
                              'Digital literacy index: Below median (n = 5443)' = r'(\hspace{1em} Below median )',
                              'Digital literacy index: Above median (n = 5240)' = r'(\hspace{1em} Above median )',
