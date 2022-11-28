@@ -15,6 +15,8 @@ output:
 set.seed(60637)
 library(dplyr)
 library(readr)
+library(grf)
+library(dataMaid)
 # source('utils.R')
 
 dir.create(file.path('..', 'tables'), showWarnings = FALSE)
@@ -37,7 +39,7 @@ df <- suppressWarnings(read_csv(INPUT_FILENAME))
 ## Variable encoding
 
 ```{r variables}
-df <- df %>% 
+df <- df |> 
   mutate_if(is.character, tolower)
 
 df <- within(df, {
@@ -514,71 +516,71 @@ df <- within(df, {
 
 ```{r click_through_rates}
 df <- 
-  df %>% 
+  df |> 
   # true click through rate
-  mutate(true_any = post_true_any + pre_true_any) %>% 
+  mutate(true_any = post_true_any + pre_true_any) |> 
   
-  mutate(share_TB1 = coalesce(share_TB1, 0)) %>% 
-  mutate(share_TB2 = coalesce(share_TB2, 0)) %>% 
-  mutate(share_TB3 = coalesce(share_TB3, 0)) %>% 
-  mutate(share_TB4 = coalesce(share_TB4, 0)) %>% 
-  mutate(share_TB5 = coalesce(share_TB5, 0)) %>% 
+  mutate(share_TB1 = coalesce(share_TB1, 0)) |> 
+  mutate(share_TB2 = coalesce(share_TB2, 0)) |> 
+  mutate(share_TB3 = coalesce(share_TB3, 0)) |> 
+  mutate(share_TB4 = coalesce(share_TB4, 0)) |> 
+  mutate(share_TB5 = coalesce(share_TB5, 0)) |> 
   
-  mutate(share_TK1 = coalesce(share_TK1, 0)) %>% 
-  mutate(share_TK2 = coalesce(share_TK2, 0)) %>% 
-  mutate(share_TK3 = coalesce(share_TK3, 0)) %>% 
-  mutate(share_TK4 = coalesce(share_TK4, 0)) %>% 
-  mutate(share_TK5 = coalesce(share_TK5, 0)) %>% 
-  mutate(share_TK6 = coalesce(share_TK6, 0)) %>% 
+  mutate(share_TK1 = coalesce(share_TK1, 0)) |> 
+  mutate(share_TK2 = coalesce(share_TK2, 0)) |> 
+  mutate(share_TK3 = coalesce(share_TK3, 0)) |> 
+  mutate(share_TK4 = coalesce(share_TK4, 0)) |> 
+  mutate(share_TK5 = coalesce(share_TK5, 0)) |> 
+  mutate(share_TK6 = coalesce(share_TK6, 0)) |> 
   
-  mutate(share_TN1 = coalesce(share_TN1, 0)) %>% 
-  mutate(share_TN2 = coalesce(share_TN2, 0)) %>% 
-  mutate(share_TN3 = coalesce(share_TN3, 0)) %>% 
-  mutate(share_TN4 = coalesce(share_TN4, 0)) %>% 
-  mutate(share_TN6 = coalesce(share_TN6, 0)) %>% 
+  mutate(share_TN1 = coalesce(share_TN1, 0)) |> 
+  mutate(share_TN2 = coalesce(share_TN2, 0)) |> 
+  mutate(share_TN3 = coalesce(share_TN3, 0)) |> 
+  mutate(share_TN4 = coalesce(share_TN4, 0)) |> 
+  mutate(share_TN6 = coalesce(share_TN6, 0)) |> 
 
   mutate(true_shared = share_TB1 + share_TB2 + share_TB3 + share_TB4 + share_TB5 +
                        share_TK1 + share_TK2 + share_TK3 + share_TK4 + share_TK5 + share_TK6 +
-                       share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) %>% 
+                       share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) |> 
   
-  mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) %>% 
+  mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) |> 
   
   # false click through rate
-  mutate(link_FK2 = coalesce(link_FK2, 0)) %>% 
-  mutate(link_FK3 = coalesce(link_FK3, 0)) %>% 
-  mutate(link_FK4 = coalesce(link_FK4, 0)) %>% 
-  mutate(link_FK5 = coalesce(link_FK5, 0)) %>% 
-  mutate(link_FK6 = coalesce(link_FK6, 0)) %>% 
-  mutate(link_FK7 = coalesce(link_FK7, 0)) %>% 
-  mutate(link_FK8 = coalesce(link_FK8, 0)) %>% 
-  mutate(link_FK9 = coalesce(link_FK9, 0)) %>% 
-  mutate(link_FK10 = coalesce(link_FK10, 0)) %>% 
-  mutate(link_FK11 = coalesce(link_FK11, 0)) %>% 
-  mutate(link_FK12 = coalesce(link_FK12, 0)) %>% 
-  mutate(link_FK13 = coalesce(link_FK13, 0)) %>% 
+  mutate(link_FK2 = coalesce(link_FK2, 0)) |> 
+  mutate(link_FK3 = coalesce(link_FK3, 0)) |> 
+  mutate(link_FK4 = coalesce(link_FK4, 0)) |> 
+  mutate(link_FK5 = coalesce(link_FK5, 0)) |> 
+  mutate(link_FK6 = coalesce(link_FK6, 0)) |> 
+  mutate(link_FK7 = coalesce(link_FK7, 0)) |> 
+  mutate(link_FK8 = coalesce(link_FK8, 0)) |> 
+  mutate(link_FK9 = coalesce(link_FK9, 0)) |> 
+  mutate(link_FK10 = coalesce(link_FK10, 0)) |> 
+  mutate(link_FK11 = coalesce(link_FK11, 0)) |> 
+  mutate(link_FK12 = coalesce(link_FK12, 0)) |> 
+  mutate(link_FK13 = coalesce(link_FK13, 0)) |> 
   
-  mutate(link_FN1 = coalesce(link_FN1, 0)) %>% 
-  mutate(link_FN2 = coalesce(link_FN2, 0)) %>% 
-  mutate(link_FN3 = coalesce(link_FN3, 0)) %>% 
-  mutate(link_FN4 = coalesce(link_FN4, 0)) %>% 
-  mutate(link_FN5 = coalesce(link_FN5, 0)) %>% 
-  mutate(link_FN6 = coalesce(link_FN6, 0)) %>% 
-  mutate(link_FN7 = coalesce(link_FN7, 0)) %>% 
-  mutate(link_FN8 = coalesce(link_FN8, 0)) %>% 
-  mutate(link_FN9 = coalesce(link_FN9, 0)) %>% 
-  mutate(link_FN10 = coalesce(link_FN10, 0)) %>% 
-  mutate(link_FN11 = coalesce(link_FN11, 0)) %>% 
-  mutate(link_FN12 = coalesce(link_FN12, 0)) %>% 
-  mutate(link_FN13 = coalesce(link_FN13, 0)) %>% 
-  mutate(link_FN14 = coalesce(link_FN14, 0)) %>% 
-  mutate(link_FN15 = coalesce(link_FN15, 0)) %>% 
-  mutate(link_FN16 = coalesce(link_FN16, 0)) %>% 
+  mutate(link_FN1 = coalesce(link_FN1, 0)) |> 
+  mutate(link_FN2 = coalesce(link_FN2, 0)) |> 
+  mutate(link_FN3 = coalesce(link_FN3, 0)) |> 
+  mutate(link_FN4 = coalesce(link_FN4, 0)) |> 
+  mutate(link_FN5 = coalesce(link_FN5, 0)) |> 
+  mutate(link_FN6 = coalesce(link_FN6, 0)) |> 
+  mutate(link_FN7 = coalesce(link_FN7, 0)) |> 
+  mutate(link_FN8 = coalesce(link_FN8, 0)) |> 
+  mutate(link_FN9 = coalesce(link_FN9, 0)) |> 
+  mutate(link_FN10 = coalesce(link_FN10, 0)) |> 
+  mutate(link_FN11 = coalesce(link_FN11, 0)) |> 
+  mutate(link_FN12 = coalesce(link_FN12, 0)) |> 
+  mutate(link_FN13 = coalesce(link_FN13, 0)) |> 
+  mutate(link_FN14 = coalesce(link_FN14, 0)) |> 
+  mutate(link_FN15 = coalesce(link_FN15, 0)) |> 
+  mutate(link_FN16 = coalesce(link_FN16, 0)) |> 
   
   mutate(false_clicked = link_FK2 + link_FK3 + link_FK4 + link_FK5 + link_FK6 + link_FK7 +
                        link_FK8 + link_FK9 + link_FK10 + link_FK11 + link_FK12 + link_FK13 +
                        link_FN1 + link_FN2 + link_FN3 + link_FN4 + link_FN5 + link_FN6 +
                        link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
-                       link_FN13 + link_FN14 + link_FN15 + link_FN16) %>% 
+                       link_FN13 + link_FN14 + link_FN15 + link_FN16) |> 
   
   mutate(false_click_through_rate = coalesce(false_clicked / 4, 0))
 
@@ -662,7 +664,7 @@ transformed_cols <- c('post_false', 'post_true',
                       'post_true_timeline_prop', 'post_true_send_prop',
                       'post_false_timeline_prop', 'post_false_send_prop')
 
-df_treat <- df %>% filter(!is.na(treatment_r)) %>% filter(!is.na(Y))
+df_treat <- df |> filter(!is.na(treatment_r)) |> filter(!is.na(Y))
 df_treat['W'] <- sapply(1:nrow(df_treat), 
                         function(i) paste0('H_', df_treat['treatment_h'][i, ], '_R_',
                                            df_treat['treatment_r'][i, ]))
@@ -679,17 +681,91 @@ df_treat$W <- relevel(df_treat$W, ref = 'H_control_R_control')
 
 ```
 
-```{r column_names}
-
-
-```
-
 **filter out infeasible response data**
 ```{r predictions}
+W_forest <- readRDS('objects/policy_objects/W_forest.rds')
+multi_forest <- readRDS('objects/policy_objects/multi_forest.rds')
+Y_forest <- readRDS('objects/policy_objects/Y_forest.rds')
+predict_cols <- c('male', 
+                  'age', 
+                  'age_flag',
+                  'age_check_flag',
+                  'ed', 'ed_flag', 
+                  'urban',
+                  'rel_christian', 'rel_muslim',
+                  'denom_pentecostal', 
+                  'religiosity', 'religiosity_flag',
+                  'locus', 'locus_flag',
+                  'science', 'science_flag',
+                  'dli',
+                  'fb_post', 'fb_post_flag',
+                  'fb_msg', 'fb_msg_flag',
+                  'crt',
+                  'hhi', 'hhi_flag',
+                  'cash',
+                  'hh', 'hh_flag',
+                  'pol',
+                  'cov_concern', 'cov_concern_flag',
+                  'cov_efficacy', 'cov_efficacy_flag',
+                  'nigeria', 
+                  'strat_send_false0', 'strat_send_false1', 'strat_send_false2', 
+                  'strat_send_true0', 'strat_send_true1', 'strat_send_true2', 
+                  'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
+                  'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
+
+xs <- as.matrix(df_treat[, predict_cols])
+# Include headline as context
+xs_h <- cbind(xs, 
+              model.matrix(lm(Y~ treatment_h-1, data = df_treat)))
+# Predict when headline == control
+xs_h_new <- xs_h
+treat_cols <- grepl(pattern = 'treatment', colnames(xs_h))
+xs_h_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
+                                 nrow = nrow(df_treat), 
+                                 ncol = sum(treat_cols), byrow = TRUE)
+
+
+h2 <- which(df_treat$batch == 5)
+W_levels <- levels(df_treat$W)
+# Decompose treatment levels into separate factors
+WH_levels <- unique(sub('_R_.*', '', W_levels))
+WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
+
+# Identify treatment locations where each respective factor level is represented
+WH_idx <- lapply(WH_levels, function(x) grep(x, W_levels))
+
+# 2a. Predict m(x) = E[Y|X]
+Y_hat_test <- predict(Y_forest, xs_h_new[h2,])$predictions[,1]
+# 2b. Predict W.hat = E[W|X] 
+W_hat_test <- predict(W_forest, xs_h_new[h2,])$predictions
+# 2c. Predict baseline, E[Y(k) | X = x], and tau_k(X) = E[Y(k') - Y(k) | X = x]; 
+# here accuracy is baseline, 
+tau_hat_test <- predict(multi_forest, xs_h_new[h2,])$predictions[,,]
+Y_hat_baseline_test <- Y_hat_test - rowSums(W_hat_test[, -1, drop = FALSE] * tau_hat_test)
+
+# 3. combine to get mu_k(X) on test data (and re-order)
+muk_test <- cbind(Y_hat_baseline_test, Y_hat_baseline_test + tau_hat_test)[,c(2, 1, 3:8)]
+
+
+levels_implement <- c(2,4,7,8)
+wopt_multi_forest <- WH_idx[[1]][levels_implement[apply(
+  muk_test[,levels_implement], 1, which.max
+)]]
+
 
 prev_nrow <- nrow(df_treat)
+df_holdout <- df_treat |> 
+  filter(batch == 5 & probs_0 ==0.025)
 
-df_treat <- df_treat %>% 
+df_treat <- df_treat |> 
+  mutate(optimal0 = c(rep(1, n()-length(h2)), wopt_multi_forest),
+         opt_col = paste0('probs_', optimal0-1)) |>
+  rowwise() |>
+  mutate(optimal_probs = get(opt_col)) |>
+  ungroup() |>
+  mutate(optimal0 = case_when(batch !=5 ~ NA_real_,
+                             TRUE ~ optimal0)) |>
+  filter(optimal_probs!=0) |> 
   filter( (batch != 5) | ((probs_0 %in% c(0.025, 0.1666666667))),
   !(batch == 5 & probs_0==0.025),
   Y >= -4 & Y <= 2,
@@ -699,7 +775,7 @@ df_treat <- df_treat %>%
   pre_send_false >= 0 & pre_send_false <= 2, 
   post_timeline_true >= 0 & post_timeline_true <= 2,
   post_timeline_false >= 0 & post_timeline_false <= 2, 
-  seen_false < 6 & seen_true < 6) %>% 
+  seen_false < 6 & seen_true < 6) |> 
   mutate(ID = as.numeric(factor(ID)))
 
 after_nrow <- nrow(df_treat)
@@ -856,6 +932,9 @@ attr(df_treat$true_click_through_rate, "shortDescription") <- "Click through rat
 
 attr(df_treat$false_click_through_rate, "shortDescription") <- "Click through rate of the sharing button for false stimuli: record the proportion of the links that correct the misinformation in the false stimuli that the subject shares among all the false stimuli that the subject saw (i.e. the denominator is 4); float between 0 and 1."
 
+
+attr(df_treat$optimal0, "shortDescription") <- "Original optimal assignment policy."
+
 ```
 
 
@@ -863,7 +942,7 @@ attr(df_treat$false_click_through_rate, "shortDescription") <- "Click through ra
 ## Attrition
 
 ```{r attrition}
-df_treat <- df_treat %>% 
+df_treat <- df_treat |> 
   mutate(last_response = case_when(!(is.na(dv_send_post8) & is.na(dv_timeline_post8)) ~ 8,
                                    !(is.na(dv_send_post7) & is.na(dv_timeline_post7)) ~ 7,
                                    !(is.na(dv_send_post6) & is.na(dv_timeline_post6)) ~ 6,
@@ -1129,11 +1208,17 @@ df_treat$news_other_trust[!df_treat$news_other_trust %in% trust_lst] <- 'other'
 CLEANED_FILENAME <- paste0('cleaned-data_', 
                            Sys.Date())
 
-write_csv(cbind(df_treat[, c('ID', 'Y', 'W', context_cols, paste0('probs_', 0:39))]), 
+write_csv(cbind(df_treat[, c('ID', 'Y', 'W', 'optimal0', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.csv'))
 
-write_rds(cbind(df_treat[, c('ID','Y', 'W', context_cols, paste0('probs_', 0:39))]), 
+write_rds(cbind(df_treat[, c('ID','Y', 'W', 'optimal0', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.rds'))
+
+
+# CLEANED_FILENAME <- paste0('cleaned-holdout-data_', 
+#                            Sys.Date())
+# write_rds(cbind(df_holdout[, c('ID','Y', 'W', context_cols, paste0('probs_', 0:39))]), 
+#           paste0('../data/', CLEANED_FILENAME,'.rds'))
 
 ```
 
@@ -1141,7 +1226,7 @@ write_rds(cbind(df_treat[, c('ID','Y', 'W', context_cols, paste0('probs_', 0:39)
 # Codebook: only need to do this once per cleaned dataset
 makeCodebook(df_treat[, c('Y', 'W', context_cols)], replace = TRUE, 
              reportTitle = 'Cleaned Data Codebook',
-             file = '../data/codebook_df_treat_cleaned_main_evaluation.Rmd')
+             file = '../data/infodemic_codebook.Rmd')
 ```
 
 # Extraneous

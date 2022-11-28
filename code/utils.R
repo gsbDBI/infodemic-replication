@@ -351,7 +351,7 @@ aw_scores_eval <- function(xs, yobs, ws, optimal_assignment, what = NULL,
   
   # get scores of treatment effects
   scores_mcf <- get_scores(mcf)
-  scores_mcf[,,1][, 5] <- scores_mcf[,,1][cbind(1:nrow(xs), 
+  scores_mcf[,,1][, length(unique(ws))-1] <- scores_mcf[,,1][cbind(1:nrow(xs), 
                                                 optimal_assignment-1)]
   
   # get score for control condition
@@ -1077,7 +1077,7 @@ find_est <- function(scores) {
                                    p.value.upper = pt(estimate/std.error, df = length(x)-1, lower = FALSE),
                                    # two-sided p-value
                                    p.value.twosided = 2*(pt(abs(estimate/std.error), df = length(x)-1, lower = FALSE))))
-                                   })))
+                        })))
 }
 
 
@@ -1249,13 +1249,13 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     mutate(info = paste0(estimate, "\n(", se, ")"))
   
   
-    ggplot(table_dat,
-           aes(x = leaf, y = covariate)) +
+  ggplot(table_dat,
+         aes(x = leaf, y = covariate)) +
     # Add coloring
     geom_tile(aes(fill = standardized)
-                , alpha = 0.9
+              , alpha = 0.9
     )  +
-      geom_tile(data = table_dat[which(table_dat$leaf == 'Difference')], 
+    geom_tile(data = table_dat[which(table_dat$leaf == 'Difference')], 
               aes(x = leaf, y = covariate),
               color = cbPalette[1],
               lwd = 1.5,
@@ -2313,10 +2313,10 @@ hte_tab_diff_scores_any <- function(value1, value0, type,
     
     plot_dat$Scores <- sub(" scores.*", "", coef_newnames[1:length(plot_dat$term)])
     plot_dat$Group <- paste0('Respondents for whom\n',
-      gsub(".* scores[a-z]*[a-z]*,\\n|.* scores [a-z]* [a-z]*, ", "", 
-                                                    coef_newnames[1:length(plot_dat$term)]))
+                             gsub(".* scores[a-z]*[a-z]*,\\n|.* scores [a-z]* [a-z]*, ", "", 
+                                  coef_newnames[1:length(plot_dat$term)]))
     plot_dat$term <- coef_newnames[1:length(plot_dat$term)]
-
+    
     # PLOT    
     ggplot(plot_dat, aes(x = estimate, moe = std.error, y = Scores)) +
       stat_gradientinterval(aes(y = Scores, 
@@ -2463,4 +2463,256 @@ relabel_covariates <- function(covariate_names){
   return(covariate_names)
 }
 
+
+# # Bandit Contextual Inference Functions ####
+# 
+# aw_estimate <- function(scores, policy, evalwts=NULL){  
+#   # Estimate policy value via non-contextual adaptive weighting.
+#   # 
+#   # INPUT
+#   #     - scores: AIPW score, shape [A, K]
+#   #     - policy: policy matrix pi(X_i, w), shape [A, K]
+#   #     - evalwts: non-contextual adaptive weights h_i, shape [A]
+#   # OUTPUT
+#   #     - estimated policy value.
+#   if(is.null(evalwts)){
+#     evalwts <- matrix(1, ncol = ncol(scores), nrow = nrow(scores))  
+#   }
+#   
+#   return(sum(evalwts*rowSums(scores * policy))/sum(evalwts)) 
+# }
+# 
+# 
+# aw_var <- function(scores, estimate, policy, evalwts=NULL){ 
+#   # Variance of policy value estimator via non-contextual adaptive weighting.
+#   # 
+#   # INPUT
+#   #     - scores: AIPW score, shape [A, K]
+#   #     - estimate: policy value estimate
+#   #     - policy: policy matrix pi(X_i, w), shape [A, K]
+#   #     - evalwts: non-contextual adaptive weights h_i, shape [A, 1]
+#   # OUTPUT
+#   #     - variance of policy value estimate
+#   # 
+#   # var =  sum[i=0 to A] h[i]^2 * (sum[w] scores[i, w] * policy[i, w] - estimate)^2 
+#   #   __________________________________________________________________________
+#   #                       (sum[i=0 to A] h[i])^2
+#   
+#   if(is.null(evalwts)){
+#     evalwts <- matrix(1, ncol = ncol(scores)) 
+#   }
+#   
+#   return(sum((rowSums(policy * scores)-estimate)^2*evalwts^2)/sum(evalwts)^2) 
+# }
+# 
+# 
+# estimate <- function(w, gammahat, policy){
+#   # Return estimate and variance of policy evaluation via non-contextual weighting.
+#   # 
+#   # INPUT
+#   #     - w: non-contextual weights of shape [A]
+#   #     - gammahat: AIPW score of shape [A, K]
+#   #     - policy: policy matrix pi(X_i, w), shape [A, K]
+#   # 
+#   # OUTPUT
+#   #     - vector (estimate, var)
+#   estimate <- aw_estimate(gammahat, policy, w)
+#   var <- aw_var(gammahat, estimate, policy, w)
+#   
+#   return(c(`estimate` = estimate, `var` = var)) 
+# }
+# 
+# calculate_continuous_X_statistics <- function(h, gammahat, policy){
+#   # Return estimate and variance of policy evaluation via contextual weighting.
+#   # 
+#   # INPUT
+#   # - h: adaptive weights h_i(X_s) of size (A, A) 
+#   # - gammahat: AIPW score of shape [A, K]
+#   # - policy: policy matrix pi(X_i, w), shape [A, K]
+#   # 
+#   # OUTPUT:
+#   #   - vector (estimate, var)
+#   A <- dim(h)[1] 
+#   Z <- colSums(h)  # size (A) \sum_{s=1}^A h_s(X_i)
+#   gamma_policy <- rowSums(gammahat * policy)
+#   hi_Xi_Z <- h[cbind(1:A, 1:A)]
+#   hi_Xi_Z[Z > 1e-6] <- hi_Xi_Z[Z > 1e-6] / Z[Z > 1e-6]  # size (A), h_i(X_i) / Z(X_i)
+#   B <- hi_Xi_Z * gamma_policy
+#   h_Z <- h
+#   h_Z[, Z > 1e-6] <- sweep(h_Z[, Z > 1e-6], 2, Z[Z > 1e-6], `/`)
+#   
+#   estimate <- sum(B)
+#   var <- sum((B - colSums(h_Z*B))^2)
+#   
+#   return(c(`estimate` = estimate, `var` = var))
+# }
+# 
+# output_estimates <- function(policy0 = NULL, 
+#                              policy1, 
+#                              contrasts = 'combined',
+#                              gammahat, 
+#                              contextual_probs, 
+#                              uniform = TRUE,
+#                              non_contextual_minvar = TRUE,
+#                              contextual_minvar = TRUE,
+#                              non_contextual_stablevar = TRUE,
+#                              contextual_stablevar = TRUE){
+#   # policy0: A * K control policy matrix for contrast evaluation, with probabilities under control
+#   ## when policy0 = NULL, the function is estimating the value Q(w) of a single arm w
+#   ## when policy0 doesn't equal to NULL, the function is estimating treatment effects of policies as compared to control \delta(w_1, w_2), using the difference in AIPW scores as the unbiased scoring rule for \delta (w_1, w_2)
+#   # policy1: list of A * K counterfactual treatment policy matrices for evaluation, with assignment probabilities under each policy 
+#   # contrasts: define the approach to estimate treatment effects. 'combined' indicates the first approach -- the difference in AIPW scores as the unbiased scoring rule for \delta (w_1, w_2); 'separate' indicates the second approach -- \delta ^ hat (w_1, w_2) = Q ^ hat (w_1) - Q ^ hat (w_2)
+#   # gammahat: scores matrix
+#   # contextual_probs: A * A * K matrix for contextual probabilities, with dimensions representing, time, contexts, treatment arms
+#   # uniform: logical, estimate uniform weights
+#   # non_contextual_minvar: logical, estimate non-contextual minvar weights
+#   # contextual_minvar: logical, estimate contextual minvar weights
+#   # non_contextual_stablevar: logical, estimate non-contextual stablevar weights
+#   # contextual_stablevar: logical, estimate contextual stablevar weights
+#   if(contrasts == 'combined'){
+#     # Now we are using the first approach: use the difference in AIPW scores as the unbiased scoring rule for \delta (w_1, w_2)
+#     A <- nrow(gammahat)
+#     
+#     results <-{
+#       out_mat <- matrix(NA, ncol = 2, nrow = 6)
+#       colnames(out_mat) <- c('estimate', 'std.error')
+#       rownames(out_mat) <- c('uniform',
+#                              'non_contextual_minvar',
+#                              'contextual_minvar',
+#                              'non_contextual_stablevar',
+#                              'contextual_stablevar')
+#       out_mat
+#     }
+#     
+#     if(is.null(policy0)){
+#       policy0 <- matrix(0, nrow = A, ncol = ncol(gammahat))
+#     }
+#     
+#     
+#     policy <- policy1 - policy0
+#     
+#     # Reciprocal of interior of (10) in Zhan et al. 2021
+#     mask <- matrix(1, nrow = A, ncol = A)
+#     
+#     for(i in 2:A){
+#       mask[i, i:A] <- 0
+#     }
+#     
+#     all_condVars <- sapply(1:A, 
+#                            function(x) rowSums(sweep(1/contextual_probs[,x,], 
+#                                                      MARGIN = 2, policy[x,]^2, `*`)))
+#     all_condVars_inverse <- matrix(0, 
+#                                    ncol = A, 
+#                                    nrow = A)
+#     all_condVars_inverse[all_condVars > 1e-6] <- 1 / all_condVars[all_condVars > 1e-6]
+#     expected_condVars <- rowSums(all_condVars * mask)/rowSums(mask)
+#     
+#     expected_condVars_inverse <- expected_condVars
+#     expected_condVars_inverse[] <- 0
+#     expected_condVars_inverse[expected_condVars > 1e-6] <- 1 / expected_condVars[expected_condVars > 1e-6]
+#     
+#     if(uniform){
+#       # AIPW (uniform weights)
+#       result <- estimate(matrix(1:A, ncol = 1), gammahat, policy)
+#       result['std.error'] <- sqrt(result['var'])
+#       results['uniform',] <- result[c('estimate', 'std.error')]
+#     }
+#     
+#     if(non_contextual_minvar){
+#       # non-contextual minvar (propscore expected)
+#       result <- estimate(expected_condVars_inverse, 
+#                          gammahat, policy)
+#       result['std.error'] <- sqrt(result['var'])
+#       results['non_contextual_minvar',] <- result[c('estimate', 'std.error')]
+#     }
+#     
+#     if(contextual_minvar){
+#       # contextual minvar (propscore X)
+#       result <- calculate_continuous_X_statistics(all_condVars_inverse,
+#                                                   gammahat, policy)
+#       result['std.error'] <- sqrt(result['var'])
+#       results['contextual_minvar',] <- result[c('estimate', 'std.error')]
+#     }
+#     
+#     if(non_contextual_stablevar){
+#       # non-contextual stablevar (lvdl expected)
+#       result <- estimate(sqrt(expected_condVars_inverse), 
+#                          gammahat, policy)
+#       result['std.error'] <- sqrt(result['var'])
+#       results['non_contextual_stablevar',] <- result[c('estimate', 'std.error')]
+#     }
+#     if(contextual_stablevar){
+#       # contextual stablevar (ldvl X)
+#       result <- calculate_continuous_X_statistics(sqrt(all_condVars_inverse), 
+#                                                   gammahat, policy)
+#       result['std.error'] <- sqrt(result['var'])
+#       results['contextual_stablevar',] <- result[c('estimate', 'std.error')]
+#     }
+#     return(results)
+#     
+#     # The second approach takes asymptotically normal inference about \delta(w_1, w_2): \delta ^ hat (w_1, w_2) = Q ^ hat (w_1) - Q ^ hat (w_2)
+#   } else if (contrasts == 'separate'){
+#     out_full0 <- out_full[[1]]
+#     out_full1 <- out_full
+#     out_full1[[1]] <- NULL 
+#     out_full_te2 <- lapply(out_full1, function(x){
+#       # estimate the difference in means
+#       x_mean <- x[,'estimate'] - out_full0[,'estimate'] 
+#       # estimate the variance
+#       x_var <- sqrt(x[,"std.error"]^2 + out_full0[,"std.error"]^2) # Calculate the standard error. Function (24) in Zhan et al. 2021
+#       cbind('mean' = x_mean, 'std.error' = x_var)
+#     })
+#     return(out_full_te2)
+#   }
+# }
+# 
+# # Two-point allocation scheme
+# stick_breaking <- function(Z){
+#   # Stick breaking algorithm in stable-var weights calculation
+#   #
+#   # Input
+#   #   Z: input array of shape [A, K]
+#   # Output
+#   #   weights: stick_breaking weights of shape [A, K]
+#   weights <- array(0, dim = c(A, K))
+#   weight_sum <- array(0, dim = c(1, K))
+#   for (a in weights[A]) {
+#     weights[a] <- Z[a] * (1 - weight_sum)
+#     weight_sum <- weight_sum + weights[a]
+#   }
+#   return(weights)
+# }
+# 
+# # Compute two-point weights
+# 
+# ## Clip lamb values between a minimum x and maximum y
+# ifelse_clip <- function(lamb, x, y) {
+#   ifelse(lamb <= x,  x, ifelse(lamb >= y, y, lamb))
+# }
+# 
+# twopoint_stable_var_ratio <- function(e, alpha){
+#   a <-  c(length(A+1), 1)
+#   # bad arm, e small
+#   # this rearranging of the formula in the paper seems to be slightly more
+#   # numerically accurate. the exact formula in the paper occasionally produces 
+#   # weights that are just a little over 1 (which is impossible).
+#   bad_lambda <- (1 - alpha) / ((1 - alpha) + A*(a/A)^alpha - a)
+#   
+#   # good arm, e large 
+#   good_lambda = 1 / (1 + A - a)                        
+#   
+#   stopifnot(bad_lambda + 1e-7 >= good_lambda) # the 1e-7 is for numerical issues
+#   
+#   # weighted average of both
+#   lamb = (1 - e) * bad_lambda + e * good_lambda
+#   
+#   # Sometimes, due to numerical issues the lambdas end up very slightly above 1.
+#   # This clipping ensures that everyting is okay.
+#   stopifnot(lamb >= 0)
+#   stopifnot(lamb <= 1 + 1e-8)
+#   lamb = ifelse_clip(lamb, 0, 1)
+#   return(lamb)
+# }
+# 
+# 
 

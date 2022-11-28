@@ -83,25 +83,24 @@ parsing_failures
 dfprob <- df[parsing_failures$row, ]
 
 # Filter out irrelevant/testing responses. 
-
-df <- df %>% filter(tolower(consent_response) %in% 'yes', #consented
+df <- df |> filter(tolower(consent_response) %in% 'yes', #consented
                     !is.na(treatment_r), # received treatment
                     date(`signed up`)>'2021-2-26', # after testing
                     # no researchers
                     !(`last name` %in% c('Rosenzweig', 'Offer-Westort', 'Ruiz', 'Li')
                       & `first name` %in% c('Leah', 'Molly', 'Ricardo', 'James')),
                     # user with error
-                    !`messenger user id` %in% c(4106556386022673)) %>% 
+                    !`messenger user id` %in% c(4106556386022673)) |> 
   mutate(across(c(cv_hhold, crt_1, crt_2, crt_3, age_check), as.numeric))
 
-df_evaluation <- df_evaluation %>% filter(tolower(consent_response) %in% 'yes', #consented
+df_evaluation <- df_evaluation |> filter(tolower(consent_response) %in% 'yes', #consented
                                           !is.na(treatment_r), # received treatment
                                           date(`signed up`)>'2021-2-26', # after testing
                                           # no researchers
                                           !(`last name` %in% c('Rosenzweig', 'Offer-Westort', 'Ruiz', 'Li')
                                             & `first name` %in% c('Leah', 'Molly', 'Ricardo', 'James')),
                                           # Not in learning split
-                                          !(`messenger user id` %in% df$`messenger user id`))%>% 
+                                          !(`messenger user id` %in% df$`messenger user id`))|> 
   mutate(across(c(cv_hhold, crt_1, crt_2, crt_3, age_check, duplicates_1), as.numeric),
          across(c(cov_tf_3, messenger_post_3, digital_phishing, timeline_post2_4, cov_tf_2, timeline_post_4,
                   cv_religion_other), as.character))
@@ -113,28 +112,27 @@ dff <- bind_rows(
   .id = 'split'
 )
 
-df_gsfull <- df_gsfull %>% 
+df_gsfull <- df_gsfull |> 
   filter(!duplicated(user_id)) # keep first response
 
-df_gs <- df_gs %>% 
-  # filter(`messenger user id` %in% df_gsfull$user_id) %>%  # keep only final data
-  filter(!duplicated(`messenger user id`, fromLast=FALSE)) %>%  # keep first probability
-  arrange(match(`messenger user id`, df_gsfull$user_id)) %>%  # order as in full data set
+df_gs <- df_gs |> 
+  # filter(`messenger user id` %in% df_gsfull$user_id) |>  # keep only final data
+  filter(!duplicated(`messenger user id`, fromLast=FALSE)) |>  # keep first probability
+  arrange(match(`messenger user id`, df_gsfull$user_id)) |>  # order as in full data set
   mutate(ID = as.numeric(factor(`messenger user id`, 
                                 levels = `messenger user id`)))
 
 # save treatment probabilities
-df <- dff %>% 
-  inner_join(., df_gs, by = c('messenger user id')) %>% 
-  bind_rows(., 
-            filter(dff, (`messenger user id` %in% idsoi))) %>% 
-  unique() %>% 
-  arrange(ID) %>% 
+df <- dff |> 
+  inner_join(df_gs, by = c('messenger user id')) |> 
+  bind_rows(filter(dff, (`messenger user id` %in% idsoi))) |> 
+  unique() |> 
+  arrange(ID) |> 
   mutate(ID = seq_along(ID))
 
 
 # when treatment is not assigned by server, use balanced probabilities
-df <- df %>% 
+df <- df |> 
   mutate_at(vars(paste0(paste0('probs_', 0:39))), 
             funs(case_when((is.na(treatment_on_time) | treatment_on_time !=1) ~ 1/40,
                            TRUE ~ .)))
@@ -156,7 +154,7 @@ batch5 <- df$ID[which(df$`messenger user id` == 3926303810741472)]
 # Revised fifth batch
 batch5r <- df$ID[which(df$`messenger user id` == 5637321389672841)]
 
-df <- df %>% 
+df <- df |> 
   mutate(batch = case_when(
     ID < batch2 ~ 1,
     ID < batch3 ~ 2,
@@ -171,11 +169,11 @@ df$batch[which(df$probs_0==0.25)] <- 5
 df$batch[which((df$batch == 5) & (df$probs_0 !=0.25) )] <- 4
 df$batch[which(df$split == 'learning' & df$batch == 6)] <- 4
 
-df <- df %>%
-  filter(batch !=5) %>% 
+df <- df |>
+  filter(batch !=5) |> 
   mutate(batch = case_when(batch ==6 ~ 5,
-                           TRUE ~ batch)) %>% 
-  arrange(batch) %>%
+                           TRUE ~ batch)) |> 
+  arrange(batch) |>
   mutate(ID = seq_along(ID))
 
 
@@ -190,8 +188,8 @@ keys <- sample(length(ids))
 df$ID <- keys[match(df$`messenger user id`, ids)]
 
 
-df <- df %>% 
-  filter(!duplicated(phone)) %>% 
+df <- df |> 
+  filter(!duplicated(phone)) |> 
   mutate(ID = seq_along(ID))
 
 df <-
@@ -209,6 +207,9 @@ df <-
   ), ]
 
 # replace any instances of phone numbers
+probs <- df |> select(paste0('probs_', 0:39))
+df <- df |> 
+  select(!paste0('probs_', 0:39))
 df <- data.frame(lapply(df, function(x) {
   gsub(
     '0[6-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?|2[5|3]4[0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?',
@@ -216,6 +217,7 @@ df <- data.frame(lapply(df, function(x) {
     x
   )
 }))
+df <- cbind(df, probs)
 
 NA_cols <- colnames(df)[sapply(df, function(x)all(is.na(x)))]
 df <- df[,!colnames(df)%in%NA_cols]
