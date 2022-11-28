@@ -3897,367 +3897,19 @@ models &lt;- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = &#39;Mean response estimates, evaluation&#39;)</code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Mean response estimates, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Combined
-</th>
-<th style="text-align:center;">
-False: Any sharing
-</th>
-<th style="text-align:center;">
-False: Messenger
-</th>
-<th style="text-align:center;">
-False: Timeline
-</th>
-<th style="text-align:center;">
-True: Any sharing
-</th>
-<th style="text-align:center;">
-True: Messenger
-</th>
-<th style="text-align:center;">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Headline Factcheck
-</td>
-<td style="text-align:center;">
--0.032
-</td>
-<td style="text-align:center;">
--0.004
-</td>
-<td style="text-align:center;">
--0.005
-</td>
-<td style="text-align:center;">
--0.002
-</td>
-<td style="text-align:center;">
--0.003
-</td>
-<td style="text-align:center;">
-0.000
-</td>
-<td style="text-align:center;">
--0.014
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.036)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Headline Related articles
-</td>
-<td style="text-align:center;">
--0.054
-</td>
-<td style="text-align:center;">
-0.009
-</td>
-<td style="text-align:center;">
--0.001
-</td>
-<td style="text-align:center;">
-0.009
-</td>
-<td style="text-align:center;">
--0.019
-</td>
-<td style="text-align:center;">
--0.012
-</td>
-<td style="text-align:center;">
--0.021
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Respondent Accuracy
-</td>
-<td style="text-align:center;">
-0.060*
-</td>
-<td style="text-align:center;">
--0.019*
-</td>
-<td style="text-align:center;">
--0.020*
-</td>
-<td style="text-align:center;">
--0.025**
-</td>
-<td style="text-align:center;">
--0.001
-</td>
-<td style="text-align:center;">
-0.005
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.032)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Respondent Facebook tips
-</td>
-<td style="text-align:center;">
-0.046+
-</td>
-<td style="text-align:center;">
--0.032**
-</td>
-<td style="text-align:center;">
--0.031**
-</td>
-<td style="text-align:center;">
--0.027**
-</td>
-<td style="text-align:center;">
--0.016
-</td>
-<td style="text-align:center;">
--0.005
-</td>
-<td style="text-align:center;">
--0.021
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Respondent Optimal
-</td>
-<td style="text-align:center;">
-0.072*
-</td>
-<td style="text-align:center;">
--0.040***
-</td>
-<td style="text-align:center;">
--0.038***
-</td>
-<td style="text-align:center;">
--0.032***
-</td>
-<td style="text-align:center;">
--0.019
-</td>
-<td style="text-align:center;">
--0.013
-</td>
-<td style="text-align:center;">
--0.021
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.034)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Control
-</td>
-<td style="text-align:center;">
--0.391
-</td>
-<td style="text-align:center;">
-0.441
-</td>
-<td style="text-align:center;">
-0.396
-</td>
-<td style="text-align:center;">
-0.368
-</td>
-<td style="text-align:center;">
-0.651
-</td>
-<td style="text-align:center;">
-0.561
-</td>
-<td style="text-align:center;">
-0.593
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.027)
-</td>
-<td style="text-align:center;">
-(0.009)
-</td>
-<td style="text-align:center;">
-(0.008)
-</td>
-<td style="text-align:center;">
-(0.008)
-</td>
-<td style="text-align:center;">
-(0.008)
-</td>
-<td style="text-align:center;">
-(0.009)
-</td>
-<td style="text-align:center;">
-(0.009)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Mean response estimates, evaluation&#39;, 
-             output = &#39;../tables/evaluated_estimates.tex&#39;)
+#modelsummary(models, stars = TRUE, title = &#39;Mean response estimates, evaluation&#39;)
+#modelsummary(models, stars = TRUE,  title = &#39;Mean response estimates, evaluation&#39;, 
+#             output = &#39;../tables/evaluated_estimates.tex&#39;)
 
 
 #############
 # the new modelsummary
-rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows &lt;- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
                 &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
                 r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\multicolumn{2}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
-                r&#39;(\multicolumn{2}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{3}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{3}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
                 r&#39;(\hline)&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
                )
 
@@ -4745,7 +4397,7 @@ Control
                              &#39;Respondent\nAccuracy&#39; = r&#39;(\hspace{1em}Accuracy)&#39;,
                              &#39;Respondent\nFacebook tips&#39; = r&#39;(\hspace{1em}Facebook tips)&#39;,
                              &#39;Respondent\nOptimal&#39; = r&#39;(\hspace{1em}Optimal)&#39;,
-                             &#39;Control&#39; = r&#39;(\hspace{1em}Control mean)&#39;),
+                             &#39;Control&#39; = r&#39;(\hspace{1em}Control mean)&#39;), 
              output = &#39;../tables/evaluated_estimates.tex&#39;)
 
 # print out n&#39;s
@@ -5043,823 +4695,16 @@ models &lt;- lapply(models, function(x){
   x
 })
 
-#############
 # the original modelsummary
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) </code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Heterogeneity under control, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Combined
-</th>
-<th style="text-align:center;">
-False: Any sharing
-</th>
-<th style="text-align:center;">
-False: Messenger
-</th>
-<th style="text-align:center;">
-False: Timeline
-</th>
-<th style="text-align:center;">
-True: Any sharing
-</th>
-<th style="text-align:center;">
-True: Messenger
-</th>
-<th style="text-align:center;">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Age × Below median (n = 5412)
-</td>
-<td style="text-align:center;">
--0.484
-</td>
-<td style="text-align:center;">
-0.457
-</td>
-<td style="text-align:center;">
-0.413
-</td>
-<td style="text-align:center;">
-0.374
-</td>
-<td style="text-align:center;">
-0.632
-</td>
-<td style="text-align:center;">
-0.548
-</td>
-<td style="text-align:center;">
-0.562
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Above median (n = 5271)
-</td>
-<td style="text-align:center;">
--0.295
-</td>
-<td style="text-align:center;">
-0.425
-</td>
-<td style="text-align:center;">
-0.380
-</td>
-<td style="text-align:center;">
-0.361
-</td>
-<td style="text-align:center;">
-0.670
-</td>
-<td style="text-align:center;">
-0.575
-</td>
-<td style="text-align:center;">
-0.624
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.040)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Difference
-</td>
-<td style="text-align:center;">
-0.189***
-</td>
-<td style="text-align:center;">
--0.032+
-</td>
-<td style="text-align:center;">
--0.033*
-</td>
-<td style="text-align:center;">
--0.012
-</td>
-<td style="text-align:center;">
-0.038*
-</td>
-<td style="text-align:center;">
-0.028
-</td>
-<td style="text-align:center;">
-0.062***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.054)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male ×  Not male (n = 5050)
-</td>
-<td style="text-align:center;">
--0.356
-</td>
-<td style="text-align:center;">
-0.400
-</td>
-<td style="text-align:center;">
-0.362
-</td>
-<td style="text-align:center;">
-0.327
-</td>
-<td style="text-align:center;">
-0.611
-</td>
-<td style="text-align:center;">
-0.512
-</td>
-<td style="text-align:center;">
-0.543
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Male (n = 5633)
-</td>
-<td style="text-align:center;">
--0.422
-</td>
-<td style="text-align:center;">
-0.478
-</td>
-<td style="text-align:center;">
-0.427
-</td>
-<td style="text-align:center;">
-0.404
-</td>
-<td style="text-align:center;">
-0.687
-</td>
-<td style="text-align:center;">
-0.605
-</td>
-<td style="text-align:center;">
-0.637
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.038)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Difference
-</td>
-<td style="text-align:center;">
--0.067
-</td>
-<td style="text-align:center;">
-0.077***
-</td>
-<td style="text-align:center;">
-0.066***
-</td>
-<td style="text-align:center;">
-0.078***
-</td>
-<td style="text-align:center;">
-0.076***
-</td>
-<td style="text-align:center;">
-0.092***
-</td>
-<td style="text-align:center;">
-0.095***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.053)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance ×  Not aligned (n = 7570)
-</td>
-<td style="text-align:center;">
--0.333
-</td>
-<td style="text-align:center;">
-0.415
-</td>
-<td style="text-align:center;">
-0.366
-</td>
-<td style="text-align:center;">
-0.340
-</td>
-<td style="text-align:center;">
-0.629
-</td>
-<td style="text-align:center;">
-0.537
-</td>
-<td style="text-align:center;">
-0.563
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.032)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.010)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Aligned w/ ruling party (n = 3113)
-</td>
-<td style="text-align:center;">
--0.532
-</td>
-<td style="text-align:center;">
-0.504
-</td>
-<td style="text-align:center;">
-0.469
-</td>
-<td style="text-align:center;">
-0.434
-</td>
-<td style="text-align:center;">
-0.704
-</td>
-<td style="text-align:center;">
-0.621
-</td>
-<td style="text-align:center;">
-0.664
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.050)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.015)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Difference
-</td>
-<td style="text-align:center;">
--0.199***
-</td>
-<td style="text-align:center;">
-0.089***
-</td>
-<td style="text-align:center;">
-0.103***
-</td>
-<td style="text-align:center;">
-0.094***
-</td>
-<td style="text-align:center;">
-0.075***
-</td>
-<td style="text-align:center;">
-0.084***
-</td>
-<td style="text-align:center;">
-0.100***
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.059)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Below median (n = 5443)
-</td>
-<td style="text-align:center;">
--0.536
-</td>
-<td style="text-align:center;">
-0.495
-</td>
-<td style="text-align:center;">
-0.448
-</td>
-<td style="text-align:center;">
-0.421
-</td>
-<td style="text-align:center;">
-0.674
-</td>
-<td style="text-align:center;">
-0.587
-</td>
-<td style="text-align:center;">
-0.620
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.038)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Above median (n = 5240)
-</td>
-<td style="text-align:center;">
--0.240
-</td>
-<td style="text-align:center;">
-0.385
-</td>
-<td style="text-align:center;">
-0.343
-</td>
-<td style="text-align:center;">
-0.313
-</td>
-<td style="text-align:center;">
-0.627
-</td>
-<td style="text-align:center;">
-0.535
-</td>
-<td style="text-align:center;">
-0.564
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.037)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Difference
-</td>
-<td style="text-align:center;">
-0.296***
-</td>
-<td style="text-align:center;">
--0.110***
-</td>
-<td style="text-align:center;">
--0.106***
-</td>
-<td style="text-align:center;">
--0.108***
-</td>
-<td style="text-align:center;">
--0.048**
-</td>
-<td style="text-align:center;">
--0.052**
-</td>
-<td style="text-align:center;">
--0.056**
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.053)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Below median (n = 5677)
-</td>
-<td style="text-align:center;">
--0.445
-</td>
-<td style="text-align:center;">
-0.458
-</td>
-<td style="text-align:center;">
-0.414
-</td>
-<td style="text-align:center;">
-0.385
-</td>
-<td style="text-align:center;">
-0.658
-</td>
-<td style="text-align:center;">
-0.563
-</td>
-<td style="text-align:center;">
-0.597
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.036)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Above median (n = 5006)
-</td>
-<td style="text-align:center;">
--0.330
-</td>
-<td style="text-align:center;">
-0.422
-</td>
-<td style="text-align:center;">
-0.377
-</td>
-<td style="text-align:center;">
-0.347
-</td>
-<td style="text-align:center;">
-0.643
-</td>
-<td style="text-align:center;">
-0.559
-</td>
-<td style="text-align:center;">
-0.587
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.040)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Difference
-</td>
-<td style="text-align:center;">
-0.115*
-</td>
-<td style="text-align:center;">
--0.036*
-</td>
-<td style="text-align:center;">
--0.036*
-</td>
-<td style="text-align:center;">
--0.038*
-</td>
-<td style="text-align:center;">
--0.015
-</td>
-<td style="text-align:center;">
--0.004
-</td>
-<td style="text-align:center;">
--0.010
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.054)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.016)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under control, evaluation&#39;, 
-             output = &#39;../tables/heterogeneity_control.tex&#39;)
+#modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under control, evaluation&#39;) 
+
+#modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under control, evaluation&#39;, 
+#             output = &#39;../tables/heterogeneity_control.tex&#39;)
 
 
 #############
 # the new modelsummary
-rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows &lt;- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
                 &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
                  r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8} \multicolumn{4}{l}{\textbf{Overall control mean}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
@@ -7290,821 +6135,13 @@ models &lt;- lapply(models, function(x){
   x
 })
 
-################
-modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;)</code></pre>
-<table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
-<caption>
-Heterogeneity under pooled respondent treatment, evaluation
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Combined
-</th>
-<th style="text-align:center;">
-False: Any sharing
-</th>
-<th style="text-align:center;">
-False: Messenger
-</th>
-<th style="text-align:center;">
-False: Timeline
-</th>
-<th style="text-align:center;">
-True: Any sharing
-</th>
-<th style="text-align:center;">
-True: Messenger
-</th>
-<th style="text-align:center;">
-True: Timeline
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Age × Below median (n = 5412)
-</td>
-<td style="text-align:center;">
-0.002
-</td>
-<td style="text-align:center;">
--0.019
-</td>
-<td style="text-align:center;">
--0.021
-</td>
-<td style="text-align:center;">
--0.017
-</td>
-<td style="text-align:center;">
--0.026+
-</td>
-<td style="text-align:center;">
--0.020
-</td>
-<td style="text-align:center;">
--0.034*
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.039)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Above median (n = 5271)
-</td>
-<td style="text-align:center;">
-0.104*
-</td>
-<td style="text-align:center;">
--0.032*
-</td>
-<td style="text-align:center;">
--0.030*
-</td>
-<td style="text-align:center;">
--0.035**
-</td>
-<td style="text-align:center;">
-0.009
-</td>
-<td style="text-align:center;">
-0.020
-</td>
-<td style="text-align:center;">
-0.003
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.045)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Age × Difference
-</td>
-<td style="text-align:center;">
-0.102+
-</td>
-<td style="text-align:center;">
--0.013
-</td>
-<td style="text-align:center;">
--0.009
-</td>
-<td style="text-align:center;">
--0.019
-</td>
-<td style="text-align:center;">
-0.035+
-</td>
-<td style="text-align:center;">
-0.040*
-</td>
-<td style="text-align:center;">
-0.037+
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.060)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male ×  Not male (n = 5050)
-</td>
-<td style="text-align:center;">
-0.038
-</td>
-<td style="text-align:center;">
--0.020
-</td>
-<td style="text-align:center;">
--0.024+
-</td>
-<td style="text-align:center;">
--0.020
-</td>
-<td style="text-align:center;">
--0.025+
-</td>
-<td style="text-align:center;">
--0.003
-</td>
-<td style="text-align:center;">
--0.030*
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.042)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Male (n = 5633)
-</td>
-<td style="text-align:center;">
-0.066
-</td>
-<td style="text-align:center;">
--0.030*
-</td>
-<td style="text-align:center;">
--0.026*
-</td>
-<td style="text-align:center;">
--0.031*
-</td>
-<td style="text-align:center;">
-0.006
-</td>
-<td style="text-align:center;">
-0.003
-</td>
-<td style="text-align:center;">
--0.004
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.042)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Male × Difference
-</td>
-<td style="text-align:center;">
-0.029
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-<td style="text-align:center;">
--0.003
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-<td style="text-align:center;">
-0.031
-</td>
-<td style="text-align:center;">
-0.007
-</td>
-<td style="text-align:center;">
-0.026
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.059)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance ×  Not aligned (n = 7570)
-</td>
-<td style="text-align:center;">
-0.095**
-</td>
-<td style="text-align:center;">
--0.034**
-</td>
-<td style="text-align:center;">
--0.030**
-</td>
-<td style="text-align:center;">
--0.039***
-</td>
-<td style="text-align:center;">
--0.008
-</td>
-<td style="text-align:center;">
-0.003
-</td>
-<td style="text-align:center;">
--0.014
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.035)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.011)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Aligned w/ ruling party (n = 3113)
-</td>
-<td style="text-align:center;">
--0.049
-</td>
-<td style="text-align:center;">
--0.005
-</td>
-<td style="text-align:center;">
--0.013
-</td>
-<td style="text-align:center;">
-0.005
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-<td style="text-align:center;">
--0.008
-</td>
-<td style="text-align:center;">
--0.022
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.055)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.017)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Political Allegiance × Difference
-</td>
-<td style="text-align:center;">
--0.144*
-</td>
-<td style="text-align:center;">
-0.029
-</td>
-<td style="text-align:center;">
-0.017
-</td>
-<td style="text-align:center;">
-0.044*
-</td>
-<td style="text-align:center;">
--0.004
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-<td style="text-align:center;">
--0.008
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.065)
-</td>
-<td style="text-align:center;">
-(0.021)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.021)
-</td>
-<td style="text-align:center;">
-(0.021)
-</td>
-<td style="text-align:center;">
-(0.021)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Below median (n = 5443)
-</td>
-<td style="text-align:center;">
-0.056
-</td>
-<td style="text-align:center;">
--0.041**
-</td>
-<td style="text-align:center;">
--0.039**
-</td>
-<td style="text-align:center;">
--0.035**
-</td>
-<td style="text-align:center;">
--0.025+
-</td>
-<td style="text-align:center;">
--0.010
-</td>
-<td style="text-align:center;">
--0.026*
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.042)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Above median (n = 5240)
-</td>
-<td style="text-align:center;">
-0.049
-</td>
-<td style="text-align:center;">
--0.009
-</td>
-<td style="text-align:center;">
--0.011
-</td>
-<td style="text-align:center;">
--0.016
-</td>
-<td style="text-align:center;">
-0.008
-</td>
-<td style="text-align:center;">
-0.011
-</td>
-<td style="text-align:center;">
--0.005
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.042)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Digital literacy index × Difference
-</td>
-<td style="text-align:center;">
--0.007
-</td>
-<td style="text-align:center;">
-0.033+
-</td>
-<td style="text-align:center;">
-0.028
-</td>
-<td style="text-align:center;">
-0.019
-</td>
-<td style="text-align:center;">
-0.033+
-</td>
-<td style="text-align:center;">
-0.021
-</td>
-<td style="text-align:center;">
-0.021
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.060)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Below median (n = 5677)
-</td>
-<td style="text-align:center;">
-0.094*
-</td>
-<td style="text-align:center;">
--0.043**
-</td>
-<td style="text-align:center;">
--0.047***
-</td>
-<td style="text-align:center;">
--0.042***
-</td>
-<td style="text-align:center;">
--0.027*
-</td>
-<td style="text-align:center;">
--0.012
-</td>
-<td style="text-align:center;">
--0.033*
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.040)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.012)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Above median (n = 5006)
-</td>
-<td style="text-align:center;">
-0.006
-</td>
-<td style="text-align:center;">
--0.006
-</td>
-<td style="text-align:center;">
--0.001
-</td>
-<td style="text-align:center;">
--0.008
-</td>
-<td style="text-align:center;">
-0.012
-</td>
-<td style="text-align:center;">
-0.014
-</td>
-<td style="text-align:center;">
-0.004
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.044)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.013)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-<td style="text-align:center;">
-(0.014)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Scientific beliefs index × Difference
-</td>
-<td style="text-align:center;">
--0.087
-</td>
-<td style="text-align:center;">
-0.037+
-</td>
-<td style="text-align:center;">
-0.045*
-</td>
-<td style="text-align:center;">
-0.034+
-</td>
-<td style="text-align:center;">
-0.039*
-</td>
-<td style="text-align:center;">
-0.026
-</td>
-<td style="text-align:center;">
-0.037+
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.060)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.018)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-<td style="text-align:center;">
-(0.020)
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt;
-0.001
-</td>
-</tr>
-</tfoot>
-</table>
-<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, 
-             output = &#39;../tables/heterogeneity_treatment.tex&#39;)
+#modelsummary(models, stars = TRUE, title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;)
+#modelsummary(models, stars = TRUE,  title = &#39;Heterogeneity under pooled respondent treatment, evaluation&#39;, 
+#             output = &#39;../tables/heterogeneity_treatment.tex&#39;)
 
 #############
 # the new modelsummary
-rows &lt;- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows &lt;- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
                 &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
                 r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
@@ -11638,7 +9675,31 @@ models &lt;- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = &#39;Policy heterogeneity across respondent treatments, evaluation&#39;)</code></pre>
+#modelsummary(models, stars = TRUE, title = &#39;Policy heterogeneity across respondent treatments, evaluation&#39;)
+#modelsummary(models, stars = TRUE,  title = &#39;Policy heterogeneity under pooled respondent treatment, evaluation&#39;, 
+#             output = &#39;../tables/heterogeneity_policy.tex&#39;)
+
+
+#############
+# the new modelsummary
+rows &lt;- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
+                &#39;&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{False}})&#39;, &#39;&#39;, &#39;&#39;, r&#39;({\textbf{True}})&#39;, &#39;&#39;,
+                &#39;&#39;, r&#39;(\textbf{Combined})&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;, &#39;Any sharing&#39;, &#39;Messenger&#39;, &#39;Timeline&#39;,
+                r&#39;(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Optimal assignment == Accuracy nudge (n = 4,967)}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\cmidrule(lr){2-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\multicolumn{4}{l}{\textbf{Optimal assignment == Facebook tips (n = 5,716)}} \rule{0pt}{1.2\normalbaselineskip})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\cmidrule(lr){2-8})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\hline)&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;,
+                r&#39;(\textbf{Grand Difference})&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;
+               )
+
+attr(rows, &#39;position&#39;) &lt;- c(1,2,3,
+                            4,9,
+                            12,17,
+                            20,21)
+
+modelsummary(models, stars = TRUE, title = &#39;Policy heterogeneity across respondent treatments, evaluation&#39;, add_rows = rows, escape = FALSE) </code></pre>
 <table style="NAborder-bottom: 0; width: auto !important; margin-left: auto; margin-right: auto;" class="table">
 <caption>
 Policy heterogeneity across respondent treatments, evaluation
@@ -11671,6 +9732,89 @@ True: Timeline
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+{}
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+<td style="text-align:center;">
+Any sharing
+</td>
+<td style="text-align:center;">
+Messenger
+</td>
+<td style="text-align:center;">
+Timeline
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(lr){2-2} (lr){3-5} (lr){6-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Accuracy nudge × Accuracy nudge
@@ -11775,6 +9919,25 @@ Accuracy nudge × Facebook tips
 </tr>
 <tr>
 <td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Accuracy nudge × Difference
 </td>
 <td style="text-align:center;">
@@ -11822,6 +9985,25 @@ Accuracy nudge × Difference
 </td>
 <td style="text-align:center;">
 (0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
 </td>
 </tr>
 <tr>
@@ -11928,6 +10110,25 @@ Facebook tips × Facebook tips
 </tr>
 <tr>
 <td style="text-align:left;">
+(lr){2-8}
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Facebook tips × Difference
 </td>
 <td style="text-align:center;">
@@ -11975,6 +10176,44 @@ Facebook tips × Difference
 </td>
 <td style="text-align:center;">
 (0.014)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
 </td>
 </tr>
 <tr>
@@ -12038,7 +10277,18 @@ Grand difference × Grand difference
 </tr>
 </tfoot>
 </table>
-<pre class="r"><code>modelsummary(models, stars = TRUE,  title = &#39;Policy heterogeneity under pooled respondent treatment, evaluation&#39;, 
+<pre class="r"><code>modelsummary(models, 
+             stars = TRUE,  
+             title = &#39;Policy heterogeneity under pooled respondent treatment, evaluation&#39;, 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c(&#39;Accuracy nudge: Accuracy nudge&#39; = r&#39;(\hspace{1em}Accuracy)&#39;,
+                             &#39;Accuracy nudge: Facebook tips&#39; = r&#39;(\hspace{1em}Facebook Tips)&#39;,
+                             &#39;Accuracy nudge: Difference&#39; = r&#39;(\hspace{1em}Difference)&#39;,
+                             &#39;Facebook tips: Accuracy nudge&#39; = r&#39;(\hspace{1em} Accuracy)&#39;,
+                             &#39;Facebook tips: Facebook tips&#39; = r&#39;(\hspace{1em} Facebook Tips)&#39;,
+                             &#39;Facebook tips: Difference&#39; = r&#39;(\hspace{1em} Difference)&#39;,
+                             &#39;Grand difference: Grand difference&#39; = &#39;&#39;), 
              output = &#39;../tables/heterogeneity_policy.tex&#39;)</code></pre>
 </div>
 </div>

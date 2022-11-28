@@ -912,19 +912,19 @@ models <- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = 'Mean response estimates, evaluation')
-modelsummary(models, stars = TRUE,  title = 'Mean response estimates, evaluation', 
-             output = '../tables/evaluated_estimates.tex')
+#modelsummary(models, stars = TRUE, title = 'Mean response estimates, evaluation')
+#modelsummary(models, stars = TRUE,  title = 'Mean response estimates, evaluation', 
+#             output = '../tables/evaluated_estimates.tex')
 
 
 #############
 # the new modelsummary
-rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows <- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
                 '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                 r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})', '', '', '', '', '', '', '',
-                r'(\multicolumn{2}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
-                r'(\multicolumn{2}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\multicolumn{3}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\multicolumn{3}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
                 r'(\hline)', '', '', '', '', '', '', ''
                )
 
@@ -1256,17 +1256,16 @@ models <- lapply(models, function(x){
   x
 })
 
-#############
 # the original modelsummary
-modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation') 
+#modelsummary(models, stars = TRUE, title = 'Heterogeneity under control, evaluation') 
 
-modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evaluation', 
-             output = '../tables/heterogeneity_control.tex')
+#modelsummary(models, stars = TRUE,  title = 'Heterogeneity under control, evaluation', 
+#             output = '../tables/heterogeneity_control.tex')
 
 
 #############
 # the new modelsummary
-rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows <- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
                 '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                  r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8} \multicolumn{4}{l}{\textbf{Overall control mean}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
@@ -1639,14 +1638,13 @@ models <- lapply(models, function(x){
   x
 })
 
-################
-modelsummary(models, stars = TRUE, title = 'Heterogeneity under pooled respondent treatment, evaluation')
-modelsummary(models, stars = TRUE,  title = 'Heterogeneity under pooled respondent treatment, evaluation', 
-             output = '../tables/heterogeneity_treatment.tex')
+#modelsummary(models, stars = TRUE, title = 'Heterogeneity under pooled respondent treatment, evaluation')
+#modelsummary(models, stars = TRUE,  title = 'Heterogeneity under pooled respondent treatment, evaluation', 
+#             output = '../tables/heterogeneity_treatment.tex')
 
 #############
 # the new modelsummary
-rows <- tribble(~term, ~Combined, ~a, ~b, ~c, ~d, ~e, ~f,
+rows <- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
                 '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
                 '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                 r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})', '', '', '', '', '', '', '',
@@ -2528,8 +2526,44 @@ models <- lapply(models, function(x){
   x
 })
 
-modelsummary(models, stars = TRUE, title = 'Policy heterogeneity across respondent treatments, evaluation')
-modelsummary(models, stars = TRUE,  title = 'Policy heterogeneity under pooled respondent treatment, evaluation', 
+#modelsummary(models, stars = TRUE, title = 'Policy heterogeneity across respondent treatments, evaluation')
+#modelsummary(models, stars = TRUE,  title = 'Policy heterogeneity under pooled respondent treatment, evaluation', 
+#             output = '../tables/heterogeneity_policy.tex')
+
+
+#############
+# the new modelsummary
+rows <- tribble(~term, ~Combined, ~FalseAnySharing, ~FalseMessenger, ~FalseTimeline, ~TrueAnySharing, ~TrueMessenger, ~TrueTimeline,
+                '', '', '', r'({\textbf{False}})', '', '', r'({\textbf{True}})', '',
+                '', r'(\textbf{Combined})', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+                r'(\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8})', '', '', '', '', '', '', '',
+                r'(\multicolumn{4}{l}{\textbf{Optimal assignment == Accuracy nudge (n = 4,967)}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\cmidrule(lr){2-8})', '', '', '', '', '', '', '',
+                r'(\multicolumn{4}{l}{\textbf{Optimal assignment == Facebook tips (n = 5,716)}} \rule{0pt}{1.2\normalbaselineskip})', '', '', '', '', '', '', '',
+                r'(\cmidrule(lr){2-8})', '', '', '', '', '', '', '',
+                r'(\hline)', '', '', '', '', '', '', '',
+                r'(\textbf{Grand Difference})', '', '', '', '', '', '', ''
+               )
+
+attr(rows, 'position') <- c(1,2,3,
+                            4,9,
+                            12,17,
+                            20,21)
+
+modelsummary(models, stars = TRUE, title = 'Policy heterogeneity across respondent treatments, evaluation', add_rows = rows, escape = FALSE) 
+
+modelsummary(models, 
+             stars = TRUE,  
+             title = 'Policy heterogeneity under pooled respondent treatment, evaluation', 
+             add_rows = rows,
+             escape = FALSE,
+             coef_rename = c('Accuracy nudge: Accuracy nudge' = r'(\hspace{1em}Accuracy)',
+                             'Accuracy nudge: Facebook tips' = r'(\hspace{1em}Facebook Tips)',
+                             'Accuracy nudge: Difference' = r'(\hspace{1em}Difference)',
+                             'Facebook tips: Accuracy nudge' = r'(\hspace{1em} Accuracy)',
+                             'Facebook tips: Facebook tips' = r'(\hspace{1em} Facebook Tips)',
+                             'Facebook tips: Difference' = r'(\hspace{1em} Difference)',
+                             'Grand difference: Grand difference' = ''), 
              output = '../tables/heterogeneity_policy.tex')
 
 ```
