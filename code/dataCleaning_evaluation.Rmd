@@ -420,7 +420,6 @@ df <- within(df, {
   strat_timeline_true2 = 1*(pre_timeline_true == 2)
   
   # Response to post-treatment stimuli
-  attrited = 1*(!(!is.na(dv_send_post8) & !is.na(dv_timeline_post8)))
   
   post_true = case_when((incomplete %in% 1) & !(!is.na(dv_send_post8) & !is.na(dv_timeline_post8)) ~ pre_true,
                         TRUE ~ ((substr(dv_stimulus_post5, 0, 1)%in%'t')*dv_5 +
@@ -510,6 +509,10 @@ df <- within(df, {
                                        TRUE ~ 0)
   post_false_send_prop = case_when(post_false_seen > 0 ~ post_false_send/ post_false_seen,
                                    TRUE ~ 0)
+  
+  # attrition
+  attrited = case_when( (post_true_seen == 0 | post_false_seen == 0) ~ 1,
+                        TRUE ~ 0)
 }
 )
 ```
@@ -538,10 +541,10 @@ df <-
   mutate(share_TN3 = coalesce(share_TN3, 0)) |> 
   mutate(share_TN4 = coalesce(share_TN4, 0)) |> 
   mutate(share_TN6 = coalesce(share_TN6, 0)) |> 
-
+  
   mutate(true_shared = share_TB1 + share_TB2 + share_TB3 + share_TB4 + share_TB5 +
-                       share_TK1 + share_TK2 + share_TK3 + share_TK4 + share_TK5 + share_TK6 +
-                       share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) |> 
+           share_TK1 + share_TK2 + share_TK3 + share_TK4 + share_TK5 + share_TK6 +
+           share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) |> 
   
   mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) |> 
   
@@ -577,12 +580,27 @@ df <-
   mutate(link_FN16 = coalesce(link_FN16, 0)) |> 
   
   mutate(false_clicked = link_FK2 + link_FK3 + link_FK4 + link_FK5 + link_FK6 + link_FK7 +
-                       link_FK8 + link_FK9 + link_FK10 + link_FK11 + link_FK12 + link_FK13 +
-                       link_FN1 + link_FN2 + link_FN3 + link_FN4 + link_FN5 + link_FN6 +
-                       link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
-                       link_FN13 + link_FN14 + link_FN15 + link_FN16) |> 
+           link_FK8 + link_FK9 + link_FK10 + link_FK11 + link_FK12 + link_FK13 +
+           link_FN1 + link_FN2 + link_FN3 + link_FN4 + link_FN5 + link_FN6 +
+           link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
+           link_FN13 + link_FN14 + link_FN15 + link_FN16) |> 
   
   mutate(false_click_through_rate = coalesce(false_clicked / 4, 0))
+
+# AB comparison data
+df <- within(df, {
+  hhi_AB = (
+    1 * (cv_radio %in% 'i/my household owns') +  #
+      1 * (cv_tv %in% 'i/my household owns') +  #
+      1 * (cv_moto %in% 'i/my household owns') +  #
+      1 * (cv_computer %in% 'i/my household owns') +  #
+      1 * (cv_bank %in% 'i/my household owns') +  #
+      1 * (cv_phone %in% 'i/my household owns'))
+  
+  pol_AB = 1 * (party %in% '1: jubilee') + 1 * (party %in% '1: apc')
+  pol_AB[which(is.na(pol_AB))] = 0
+}
+)
 
 ```
 
@@ -649,7 +667,7 @@ cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
           'true_click_through_rate',
           'false_click_through_rate',
           'batch'
-          )
+)
 
 context_cols <- cols[!cols %in% c('Y', 'W', 'user_id', 'time_stamp')]
 transformed_cols <- c('post_false', 'post_true',
@@ -764,18 +782,17 @@ df_treat <- df_treat |>
   mutate(optimal_probs = get(opt_col)) |>
   ungroup() |>
   mutate(optimal0 = case_when(batch !=5 ~ NA_real_,
-                             TRUE ~ optimal0)) |>
+                              TRUE ~ optimal0)) |>
   filter(optimal_probs!=0) |> 
-  filter( (batch != 5) | ((probs_0 %in% c(0.025, 0.1666666667))),
-  !(batch == 5 & probs_0==0.025),
-  Y >= -4 & Y <= 2,
-  post_true >= 0 & post_true <= 4,
-  post_false >= 0 & post_false <= 4, 
-  pre_send_true >= 0 & pre_send_true <= 2, 
-  pre_send_false >= 0 & pre_send_false <= 2, 
-  post_timeline_true >= 0 & post_timeline_true <= 2,
-  post_timeline_false >= 0 & post_timeline_false <= 2, 
-  seen_false < 6 & seen_true < 6) |> 
+  filter( (batch != 5) | ((probs_0 %in% c(0.1666666667))),
+          Y >= -4 & Y <= 2,
+          post_true >= 0 & post_true <= 4,
+          post_false >= 0 & post_false <= 4, 
+          pre_send_true >= 0 & pre_send_true <= 2, 
+          pre_send_false >= 0 & pre_send_false <= 2, 
+          post_timeline_true >= 0 & post_timeline_true <= 2,
+          post_timeline_false >= 0 & post_timeline_false <= 2, 
+          seen_false < 6 & seen_true < 6) |> 
   mutate(ID = as.numeric(factor(ID)))
 
 after_nrow <- nrow(df_treat)
@@ -1205,20 +1222,25 @@ df_treat$news_other_trust[!df_treat$news_other_trust %in% trust_lst] <- 'other'
 
 ```{r save}
 ## Cleaned data
+
+
+CLEANED_FILENAME <- paste0('cleaned-data-AB_',
+                           Sys.Date())
+write_rds(cbind(df_treat[, c('ID','Y', 'W', context_cols, 'pol_AB', 'hhi_AB', paste0('probs_', 0:39))]),
+          paste0('../data/', CLEANED_FILENAME,'.rds'))
+
 CLEANED_FILENAME <- paste0('cleaned-data_', 
                            Sys.Date())
-
 write_csv(cbind(df_treat[, c('ID', 'Y', 'W', 'optimal0', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.csv'))
 
 write_rds(cbind(df_treat[, c('ID','Y', 'W', 'optimal0', context_cols, paste0('probs_', 0:39))]), 
           paste0('../data/', CLEANED_FILENAME,'.rds'))
 
-
-# CLEANED_FILENAME <- paste0('cleaned-holdout-data_', 
-#                            Sys.Date())
-# write_rds(cbind(df_holdout[, c('ID','Y', 'W', context_cols, paste0('probs_', 0:39))]), 
-#           paste0('../data/', CLEANED_FILENAME,'.rds'))
+# save user count
+tmp <- read_csv('../data/user_count.csv')
+tmp <- cbind(tmp, final = c( table(df_treat$batch==5)[[1]], table(df_treat$batch==5)[[2]]))
+write.csv(tmp, '../data/user_count.csv', row.names = FALSE)
 
 ```
 

@@ -112,6 +112,9 @@ dff <- bind_rows(
   .id = 'split'
 )
 
+# save ids at this point
+current_ids <- dff$`messenger user id`
+
 df_gsfull <- df_gsfull |> 
   filter(!duplicated(user_id)) # keep first response
 
@@ -169,13 +172,16 @@ df$batch[which(df$probs_0==0.25)] <- 5
 df$batch[which((df$batch == 5) & (df$probs_0 !=0.25) )] <- 4
 df$batch[which(df$split == 'learning' & df$batch == 6)] <- 4
 
+
+write_csv(data.frame(id = df$`messenger user id`[which(df$batch == 5)]), 
+          '../data/dropped_batch_ids.csv')
+
 df <- df |>
   filter(batch !=5) |> 
   mutate(batch = case_when(batch ==6 ~ 5,
                            TRUE ~ batch)) |> 
   arrange(batch) |>
   mutate(ID = seq_along(ID))
-
 
 
 # Blind data ----
@@ -189,8 +195,15 @@ df$ID <- keys[match(df$`messenger user id`, ids)]
 
 
 df <- df |> 
-  filter(!duplicated(phone)) |> 
+  filter(!duplicated(phone, incomparables = NA), 
+         !(batch == 5 & probs_0==0.025)) |> 
   mutate(ID = seq_along(ID))
+
+write_csv(data.frame(id = current_ids[!(current_ids %in% df$`messenger user id`)]), 
+          '../data/other_dropped_ids.csv')
+
+write_csv(data.frame(id = df$`messenger user id`), 
+          '../data/kept_ids.csv')
 
 df <-
   df[, !(
