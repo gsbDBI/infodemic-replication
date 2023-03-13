@@ -214,6 +214,11 @@ df <- within(df, {
   cov_efficacy[which(is.na(cov_efficacy))] = 0
   cov_efficacy_flag = 1 * (cov_efficacy %in% 0)
   
+  # Pledge variables
+  pledge_public <- ifelse(!is.na(pledge_3a_post) & treatment_r == 'plege', 'public', 'private')
+  pledge_seen <- as.numeric(pledge_3a_seen)
+  pledge_post <- as.numeric(pledge_3a_post)
+  
   # Indicators for individual stimulus
   # False stimuli from respective countries
   stimf1 = (1 * (dv_stimulus_pre1 %in% 'fn1') + 1 * (dv_stimulus_pre2 %in% 'fn1') +
@@ -354,11 +359,13 @@ df <- within(df, {
                 (substr(dv_stimulus_pre2, 0, 1)%in%'t')*dv_2 +
                 (substr(dv_stimulus_pre3, 0, 1)%in%'t')*dv_3 +
                 (substr(dv_stimulus_pre4, 0, 1)%in%'t')*dv_4)
+  pre_true[which(pre_true>=5)] <- 4
   
   pre_false = ((substr(dv_stimulus_pre1, 0, 1)%in%'f')*dv_1 +
                  (substr(dv_stimulus_pre2, 0, 1)%in%'f')*dv_2 +
                  (substr(dv_stimulus_pre3, 0, 1)%in%'f')*dv_3 +
                  (substr(dv_stimulus_pre4, 0, 1)%in%'f')*dv_4)
+  pre_false[which(pre_false>=5)] <- 4
   
   pre_timeline_true = ((substr(dv_stimulus_pre1, 0, 1)%in%'t')*(dv_timeline_pre1 %in% 'yes') +
                          (substr(dv_stimulus_pre2, 0, 1)%in%'t')*(dv_timeline_pre2 %in% 'yes') +
@@ -456,6 +463,7 @@ df <- within(df, {
                      (substr(dv_stimulus_pre2, 0, 1)%in%'f')*(dv_2>0) +
                      (substr(dv_stimulus_pre3, 0, 1)%in%'f')*(dv_3>0) +
                      (substr(dv_stimulus_pre4, 0, 1)%in%'f')*(dv_4>0))
+  pre_false_any[which(pre_false_any>=3)] <- 2
   
   post_true_any = ((substr(dv_stimulus_post5, 0, 1)%in%'t')*(dv_5>0) +
                      (substr(dv_stimulus_post6, 0, 1)%in%'t')*(dv_6>0) +
@@ -637,6 +645,11 @@ cols <- c('Y', 'W', 'user_id', 'time_stamp', #not included in context variables
           'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
           'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2',
           'nigeria', 
+          
+          ### Plege information
+          'pledge_public',
+          'pledge_seen',
+          'pledge_post',
           
           ### Response to pre-treatment stimuli
           'pre_false',

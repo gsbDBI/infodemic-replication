@@ -498,9 +498,11 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
   
   # Extract the mean and standard deviation of each covariate per subgroup
   cov_means <- lapply(covariate_names, function(covariate) {
-    as.data.frame(cbind(
+    cm_df <- as.data.frame(cbind(
       t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~ 0 + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")]),
-      'leafDifference' = t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~  + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")])[,2]))
+      t(coef(summary(lm_robust(as.formula(paste0(covariate, " ~  + ", "leaf")), data = .df)))[,c("Estimate", "Std. Error")])[,-1]))
+    colnames(cm_df)[(length(unique(.df$leaf)) + 1):ncol(cm_df)] <- 'leafDifference'
+    cm_df
   })
   
   table <- lapply(seq_along(covariate_names), function(j) {
@@ -509,12 +511,11 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     .mean <- mean(.df[, covariate], na.rm = TRUE)
     .sd <- sd(.df[, covariate], na.rm = TRUE)
     m <- as.matrix(round(signif(cov_means[[j]], digits=4), 3))
-    .standardized <- (m["Estimate",1:2] - .mean) / .sd
-    .standardized_mean <- m["Estimate",3]/m["Std. Error",3]
+    .standardized <- (m["Estimate",1:length(unique(.df$leaf))] - .mean) /.sd
     return(data.frame(covariate = label, 
                       group = substring(colnames(m), 5),
                       estimate = m["Estimate",], se = m["Std. Error",], 
-                      standardized = c(.standardized, NA)))
+                      standardized = c(.standardized, rep(NA,  length(unique(.df$leaf)) -1))))
   })
   table <- rbindlist(table)
   
@@ -524,7 +525,7 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     .mean <- mean(.df[, covariate_name], na.rm = TRUE)
     .sd <- sd(.df[, covariate_name], na.rm = TRUE)
     m <- as.matrix(round(signif(cov_means[[j]], digits=4), 3))
-    .standardized <- (m["Estimate",1:2] - .mean) / .sd
+    .standardized <- (m["Estimate",1:length(unique(.df$leaf))] - .mean) / .sd
     .standardized
   })
   
@@ -556,7 +557,10 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
   
   table_dat <- table[covariate %in% head(gsub('`', '', covariate_labels)[ordering], n_top)] %>%
     mutate(info = paste0(unicode_minus(estimate), stars, "\n(", se, ")"))
-  
+
+  if(length(unique(.df$leaf))>2){
+    table_dat <- table_dat[which(table_dat$leaf!='Difference'),]
+  }  
   
   ggplot(table_dat,
          aes(x = leaf, y = covariate)) +
@@ -571,11 +575,27 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
               linetype = 1, 
               fill = NA) +
     scale_fill_gradientn(colours = c(cbPalette[3],
+                                     '#66bbeb',
+                                     '#77c3ed',
+                                     # '#88caef',
+                                     # '#99d2f1',
+                                     # '#aad9f4',
+                                     # '#bbe1f6',
+                                     # '#cce8f8',
+                                     # '#ddf0fa',
                                      '#FFFFFFFF',
+                                     # '#faebcc',
+                                     # '#f7e2b2',
+                                     # '#f5d899',
+                                     # '#f2cf7f',
+                                     # '#f0c566',
+                                     # '#edbb4c',
+                                     '#ebb232',
+                                     '#e8a819',
                                      cbPalette[2]), 
                          name = 'Standard deviation on\nnormalized distribution',
                          na.value = 'white',
-                         limits = c(-0.25, 0.25)) +
+                         limits = c(-0.3, 0.3)) +
     # add numerics
     geom_text(aes(label = info), size=2.5) +
     # reformat

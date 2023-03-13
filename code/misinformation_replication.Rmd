@@ -5,7 +5,7 @@ output:
     toc: true
     toc_float: true
     df_print: paged
-    code_folding: hide
+    code_folding: show
     number_sections: true
 ---
 
@@ -118,9 +118,11 @@ df_learn <- df_treat[which(df_treat$batch<5 & df_treat$attrited == 0),]
 
 # saved contextual probabilities 
 contextual_probs <- readRDS('objects/contextual_probabilities.RDS')
+contextual_probs <- contextual_probs[which(df_treat$batch<5 & df_treat$attrited == 0), 
+                                     which(df_treat$batch<5 & df_treat$attrited == 0), ]
 ```
 
-```{r attrition}
+```{r attrition, cache = TRUE, cache.lazy=FALSE}
 # Accounting for attrition
 uncens_prob <- probability_forest(X = as.matrix(df_eval[, c(context_cols, predv_cols)]),
                                   Y = as.factor(1*(df_eval$attrited == 0)))$predictions[which(df_eval$attrited == 0),]
@@ -1610,15 +1612,13 @@ cf.eval <- causal_forest(
   X = xs_eval[test_idx,], 
   Y = -df_eval$post_false_prop[test_idx], 
   W = 1*(ws_eval[test_idx]==4), 
-  W.hat = rowSums(treat_uncens_prob[test_idx, c(4), drop = FALSE])/rowSums(treat_uncens_prob[test_idx, c(4,5)]),
-  #W.hat = rowSums(probs_eval[test_idx, c(6), drop = FALSE])/rowSums(probs_eval[test_idx, c(6, 11)]),
-  #sample.weights = balwts_uncens[test_idx],
+  # W.hat = rowSums(treat_uncens_prob[test_idx, c(4), drop = FALSE])/rowSums(treat_uncens_prob[test_idx, c(4,5)]),
+  W.hat = rowSums(probs_eval[test_idx, c(6), drop = FALSE])/rowSums(probs_eval[test_idx, c(6, 11)]),
+  sample.weights = balwts_uncens[test_idx],
 )
 rate <- rank_average_treatment_effect(cf.eval, priority.cate, 
                                       q = seq(0.01, 1, by = 0.01))
 rate
-
-plot(rate)
 
 ggplot(rate$TOC, aes(x = q, y = estimate)) + 
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") + 
@@ -1938,11 +1938,11 @@ files <- list.files('../data',
                     full.names = TRUE)
 
 (INPUT_FILENAME <- files[which.max(file.info(files)$mtime)])
-df_treat <- readRDS(INPUT_FILENAME)
+df_fb <- readRDS(INPUT_FILENAME)
 
 # Use AB recoded versions of hhi pol
-df_treat$hhi <- df_treat$hhi_AB
-df_treat$pol <- df_treat$pol_AB
+df_fb$hhi <- df_fb$hhi_AB
+df_fb$pol <- df_fb$pol_AB
 
 ## get variables of interest in survey data ## 
 # get variables want to compare - #AB col names for corresponding variables in comments
@@ -2003,11 +2003,11 @@ ab$pol <- ifelse(ab$COUNTRY=="Nigeria" & ab$Q88B=="All Progressive Congres (APC)
                    ab$COUNTRY=="Kenya" & ab$Q88B=="Jubilee Alliance Party (JAP)/Jubilee Party",1,0)
 
 # add country variable
-df_treat$country <- ifelse(df_treat$nigeria ==1 , "Nigeria", "Kenya")
+df_fb$country <- ifelse(df_fb$nigeria ==1 , "Nigeria", "Kenya")
 ab$country <- ab$COUNTRY
 
 # subset experimental + AB data to variables of interest
-df_treat_dem <- df_treat[,c(compare_cols, 'batch')]
+df_treat_dem <- df_fb[,c(compare_cols, 'batch')]
 ab_dem <- ab[,(compare_cols)]
 
 # ad label for data set
@@ -2085,15 +2085,15 @@ baltest_out_KY |>
       booktabs = TRUE,
       toprule = NULL, 
       bottomrule = paste('N', prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][2], big.mark = ','),
-                          ' ',
-                          prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][3], big.mark = ','),
-                          ' ',
-                          prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][2] + 
-                                       nvals[nvals[,'country']=='Kenya','n', drop =TRUE][3], big.mark = ','),
-                          '',
-                          prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][1], big.mark = ','), 
-                          ' ', ' ',
-                          sep = ' & '),
+                         ' ',
+                         prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][3], big.mark = ','),
+                         ' ',
+                         prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][2] + 
+                                     nvals[nvals[,'country']=='Kenya','n', drop =TRUE][3], big.mark = ','),
+                         '',
+                         prettyNum(nvals[nvals[,'country']=='Kenya','n', drop =TRUE][1], big.mark = ','), 
+                         ' ', ' ',
+                         sep = ' & '),
       midrule = '\\cmidrule(lr){2-2}  \\cmidrule(lr){3-3}  \\cmidrule(lr){4-4} \\cmidrule(lr){5-5} \\cmidrule(lr){6-6} \\cmidrule(lr){7-7} \\cmidrule(lr){8-8} \\cmidrule(lr){9-9} \\cmidrule(lr){10-10}',
       linesep = '',
       col.names = c('', 'Learning Mean', 'Learning SE', 'Evaluation Mean', 'Evaluation SE' , 'Overall Facebook Mean', 'Facebook SE', 'Afrobarometer Mean', 'Afrobarometer SE', 'Difference'),
@@ -2111,15 +2111,15 @@ baltest_out_NG |>
       booktabs = TRUE,
       toprule = NULL, 
       bottomrule = paste('N', prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][2], big.mark = ','),
-                          ' ',
-                          prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][3], big.mark = ','),
-                          ' ',
-                          prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][2] + 
-                                       nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][3], big.mark = ','),
-                          '',
-                          prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][1], big.mark = ','), 
-                          ' ', ' ',
-                          sep = ' & '),
+                         ' ',
+                         prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][3], big.mark = ','),
+                         ' ',
+                         prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][2] + 
+                                     nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][3], big.mark = ','),
+                         '',
+                         prettyNum(nvals[nvals[,'country']=='Nigeria','n', drop =TRUE][1], big.mark = ','), 
+                         ' ', ' ',
+                         sep = ' & '),
       midrule = '\\cmidrule(lr){2-2}  \\cmidrule(lr){3-3}  \\cmidrule(lr){4-4} \\cmidrule(lr){5-5} \\cmidrule(lr){6-6} \\cmidrule(lr){7-7} \\cmidrule(lr){8-8} \\cmidrule(lr){9-9} \\cmidrule(lr){10-10}',
       linesep = '',
       col.names = c('', 'Learning Mean', 'Learning SE', 'Evaluation Mean', 'Evaluation SE' , 'Overall Facebook Mean', 'Facebook SE', 'Afrobarometer Mean', 'Afrobarometer SE', 'Difference'),
@@ -2128,6 +2128,38 @@ baltest_out_NG |>
   writeLines('../tables/abNG.tex')
 
 ```
+
+# Table S2
+
+```{r batchwise_shares}
+cbind(0:4, matrix(prop.table(table(df_treat$pre_false, df_treat$batch), margin = 2), nrow = 5)) |> 
+  kbl(align = c('r','c','c','c','c', 'c'),
+      format = "latex",
+      booktabs = TRUE,
+      toprule = NULL, 
+      bottomrule = paste0(c('N', prettyNum(table(df_treat$batch), big.mark = ',')), collapse = ' & '),
+      midrule = ' \\cmidrule(lr){2-2}  \\cmidrule(lr){3-3}  \\cmidrule(lr){4-4} \\cmidrule(lr){5-5} \\cmidrule(lr){6-6} ',
+      linesep = '',
+      col.names = c('Shares', 'Batch 1', 'Batch 2', 'Batch 3', 'Batch 4' , 'Batch 5'),
+      digits =2,
+      table.envir = NULL) |> 
+  writeLines('../tables/false_shares_batchwise.tex')
+
+cbind(0:4, matrix(prop.table(table(df_treat$pre_true, df_treat$batch), margin = 2), nrow = 5)) |> 
+  kbl(align = c('r','c','c','c','c', 'c'),
+      format = "latex",
+      booktabs = TRUE,
+      toprule = NULL, 
+      bottomrule = paste0(c('N', prettyNum(table(df_treat$batch), big.mark = ',')), collapse = ' & '),
+      midrule = ' \\cmidrule(lr){2-2}  \\cmidrule(lr){3-3}  \\cmidrule(lr){4-4} \\cmidrule(lr){5-5} \\cmidrule(lr){6-6} ',
+      linesep = '',
+      col.names = c('Shares', 'Batch 1', 'Batch 2', 'Batch 3', 'Batch 4' , 'Batch 5'),
+      digits =2,
+      table.envir = NULL) |> 
+  writeLines('../tables/true_shares_batchwise.tex')
+
+```
+
 
 # Figure 1: On-policy in learning
 ```{r arm_assignment, warning=FALSE, message=FALSE}
@@ -2139,28 +2171,715 @@ for(i in 1:length(WR_idx)){
 gg_df <- tibble(batch = df_learn$batch,
                 y_on = ifelse(predict(cf.priority, xs_learn)$predictions<0, probs_r[,2], probs_r[,7]))
 
-new_gg <- aggregate(y_on ~ batch, data = gg_df, function(x) c(estimate = mean(x), std.error = sd(x)/sqrt(length(x))))
-new_gg <- do.call(data.frame, new_gg)
-new_gg <- setNames(new_gg, c('Batch', 'estimate', 'std.error'))
+new_gg <- list(x = lm_robust(y_on ~ as.factor(batch) -1, data = gg_df))
 
-ggplot(new_gg, aes(x = Batch, y = estimate)) + 
+rows <- data.frame(matrix(c('', 'row1'), ncol = 2) )
+attr(rows, 'position') <- c(1)
+
+xx <- modelsummary(new_gg, 
+                   stars = FALSE,  
+                   escape = FALSE,
+                   col.names = NULL, 
+                   coef_rename = paste('Batch', 1:4),
+                   gof_omit = '.*',
+                   output = 'latex_tabular')
+
+xx <- gsub('\\toprule', ' & \\textbf{On policy} \\\\ \n \\cmidrule(lr){2-2}', xx[1], fixed = TRUE)
+
+writeLines(xx, '../tables/on_policy.tex')
+
+```
+
+# Table S6: Alternative specifications
+```{r additional_scores}
+if(file.exists('objects/aipw_scores_unbalanced.RDS')){ # read in scores if already generated
+  aipw_scores_unbalanced <- readRDS('objects/aipw_scores_unbalanced.RDS')
+  
+}else{
+  aipw_scores_unbalanced <- aw_scores_eval(xs = xs_eval,
+                                           yobs = yobs_eval, 
+                                           ws = ws_eval)
+  
+  saveRDS(aipw_scores_unbalanced, 'objects/aipw_scores_unbalanced.RDS')
+  
+}
+
+# learned optimal policy
+if(file.exists('objects/aipw_scores_learned_unbalanced.RDS')){ # read in scores if already generated
+  aipw_scores_learned_unbalanced <- readRDS('objects/aipw_scores_learned_unbalanced.RDS')
+  
+}else{
+  aipw_scores_learned_unbalanced <- aw_scores_eval(xs = xs_eval,
+                                                   yobs = yobs_eval, 
+                                                   ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                            ws_eval == optimal_assignment_original ~ 2,
+                                                                            TRUE ~ 3)))
+  
+  saveRDS(aipw_scores_learned_unbalanced, 'objects/aipw_scores_learned_unbalanced.RDS')
+  
+}
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_alternative_unbalanced.RDS')){ # read in scores if already generated
+  aipw_scores_alternative_unbalanced <- readRDS('objects/aipw_scores_alternative_unbalanced.RDS')
+  
+}else{
+  aipw_scores_alternative_unbalanced <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = yobs_eval, 
+                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                ws_eval == optimal_assignment ~ 2,
+                                                                                TRUE ~ 3)))
+  
+  saveRDS(aipw_scores_alternative_unbalanced, 'objects/aipw_scores_alternative_unbalanced.RDS')
+  
+}
+
+
+# Adjust scores for differences between learning and evaluation splits;
+# target is eval pop reweighted to learning distribution
+ws_learn_eval <- rep(1, N)
+ws_learn_eval[1:A] <- 0 # 0 for learning, 1 for evaluation split
+learn_eval_forest <- multi_arm_causal_forest(X = rbind(xs_learn, xs_eval), 
+                                             Y = c(yobs_learn, yobs_eval), 
+                                             W = as.factor(ws_learn_eval))
+probs_adjusted <- learn_eval_forest$W.hat
+
+# probability of being in your own split over probability of being in learning split
+# Weight is 1 for observations in the learning split
+what_eval_adjustment <- (probs_adjusted[matrix(c(1:N, ws_learn_eval+1), ncol = 2)]/probs_adjusted[,1])[(A+1):N]
+# Standardize to appropriate group size
+what_eval_adjustment <- what_eval_adjustment*(N-A)/sum(what_eval_adjustment)
+
+
+if(file.exists('objects/aipw_scores_eval_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_adjusted <- readRDS('objects/aipw_scores_eval_adjusted.RDS')
+  
+}else{
+  aipw_scores_adjusted <- aw_scores_eval(xs = xs_eval,
+                                         yobs = yobs_eval, 
+                                         ws = ws_eval, 
+                                         sample.weights = what_eval_adjustment)
+  
+  saveRDS(aipw_scores_adjusted, 'objects/aipw_scores_eval_adjusted.RDS')
+}
+
+
+# learned optimal policy
+if(file.exists('objects/aipw_scores_learned_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_learned_adjusted <- readRDS('objects/aipw_scores_learned_adjusted.RDS')
+  
+}else{
+  aipw_scores_learned_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                 yobs = yobs_eval, 
+                                                 ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                          ws_eval == optimal_assignment_original ~ 2,
+                                                                          TRUE ~ 3)), 
+                                                 sample.weights = what_eval_adjustment)
+  
+  saveRDS(aipw_scores_learned_adjusted, 'objects/aipw_scores_learned_adjusted.RDS')
+  
+}
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_alternative_adjusted.RDS')){ # read in scores if already generated
+  aipw_scores_alternative_adjusted <- readRDS('objects/aipw_scores_alternative_adjusted.RDS')
+  
+}else{
+  aipw_scores_alternative_adjusted <- aw_scores_eval(xs = xs_eval,
+                                                     yobs = yobs_eval, 
+                                                     ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                              ws_eval == optimal_assignment ~ 2,
+                                                                              TRUE ~ 3)), 
+                                                     sample.weights = what_eval_adjustment)
+  
+  saveRDS(aipw_scores_alternative_adjusted, 'objects/aipw_scores_alternative_adjusted.RDS')
+  
+}
+
+```
+
+
+
+```{r alternative_estimates}
+balwts_eval <- (1/probs_eval)[cbind(1:nrow(df_eval), df_eval$W)]
+
+# formatting for table
+aipw_te_unbalanced <- find_te(aipw_scores_unbalanced)
+aipw_te_learned_unbalanced <- find_te(aipw_scores_learned_unbalanced)
+aipw_te_alternative_unbalanced <- find_te(aipw_scores_alternative_unbalanced)
+
+aipw_est_unbalanced <- find_est(aipw_scores_unbalanced)
+aipw_te_unbalanced <- bind_rows(aipw_te_unbalanced[1:4,],
+                                aipw_te_learned_unbalanced[1,],
+                                aipw_te_alternative_unbalanced[1,])
+
+
+aipw_te_adjusted <- find_te(aipw_scores_adjusted)
+aipw_te_learned_adjusted <- find_te(aipw_scores_learned_adjusted)
+aipw_te_alternative_adjusted <- find_te(aipw_scores_alternative_adjusted)
+
+aipw_est_adjusted <- find_est(aipw_scores_adjusted)
+aipw_te_adjusted <- bind_rows(aipw_te_adjusted[1:4,],
+                              aipw_te_learned_adjusted[1,],
+                              aipw_te_alternative_adjusted[1,])
+
+
+
+ws_original <- as.factor(case_when(ws_eval == 1 ~ 1,
+                                   ws_eval == optimal_assignment_original ~ 2,
+                                   TRUE ~ 3))
+
+ws_alternative <- as.factor(case_when(ws_eval == 1 ~ 1,
+                                      ws_eval == optimal_assignment ~ 2,
+                                      TRUE ~ 3))
+
+# Robust estimation with no covariates
+l0 <- lm_robust(Y~W, data = df_eval,
+                weights = balwts_eval)
+
+l0l <- lm_robust(Y~ws_original, data = df_eval,
+                 weights = balwts_eval)
+l0a <- lm_robust(Y~ws_alternative, data = df_eval,
+                 weights = balwts_eval)
+
+l0 <- bind_rows(tidy(l0)[2:4,], tidy(l0)[6,], tidy(l0l)[2,], tidy(l0a)[2,], tidy(l0)[1,])
+l0$p.value.upper <- pt(l0$estimate/l0$std.error, df = l0$df, lower = FALSE)
+
+
+# Lin estimator adjusting for pre-test response
+l1 <- lm_lin(Y~W, data = df_eval,
+             weights = balwts_eval, 
+             covariates = formula(' ~ pre_false + pre_true'))
+
+l1l <- lm_lin(Y~ws_original, data = df_eval,
+              weights = balwts_eval, 
+              covariates = formula(' ~ pre_false + pre_true'))
+
+l1a <- lm_lin(Y~ws_alternative, data = df_eval,
+              weights = balwts_eval, 
+              covariates = formula(' ~ pre_false + pre_true'))
+
+
+l1 <- bind_rows(tidy(l1)[2:4,], tidy(l1)[6,], tidy(l1l)[2,], tidy(l1a)[2,], tidy(l1)[1,])
+l1$p.value.upper <- pt(l1$estimate/l1$std.error, df = l1$df, lower = FALSE)
+
+# 
+# Lin by optimal0
+l2 <- lm_lin(Y~W, data = df_eval,
+             weights = balwts_eval, 
+             covariates = formula(' ~ as.factor(optimal0)'))
+
+l2l <- lm_lin(Y~ws_original, data = df_eval,
+              weights = balwts_eval, 
+              covariates = formula(' ~ as.factor(optimal0)'))
+
+l2a <- lm_lin(Y~ws_alternative, data = df_eval,
+              weights = balwts_eval, 
+              covariates = formula(' ~ as.factor(optimal0)'))
+
+l2 <- bind_rows(tidy(l2)[2:4,], tidy(l2)[6,], tidy(l2l)[2,], tidy(l2a)[2,], tidy(l2)[1,])
+l2$p.value.upper <- pt(l2$estimate/l2$std.error, df = l2$df, lower = FALSE)
+
+l0$term <- l1$term <- l2$term <- c(treatment_levels[-1], treatment_levels[1])
+aipw_te_unbalanced$term <- aipw_te_adjusted$term <-
+  treatment_levels[-1]
+
+aipw_est_unbalanced$term <- aipw_est_adjusted$term <-
+  treatment_levels[1]
+
+# Mean response estimates
+models <- list(
+  `Unweighted` = list(
+    tidy = bind_rows(aipw_te_unbalanced[1:6,],
+                     aipw_est_unbalanced[1,]),
+    pval = 'p.value.upper'),
+  `Weighted to learning` = list(
+    tidy = bind_rows(aipw_te_adjusted[1:6,],
+                     aipw_est_adjusted[1,]),
+    pval = 'p.value.upper'),
+  `No covariate adjustment` = list(
+    tidy = l0,
+    pval = 'p.value'),
+  `Pre-test response adjusted` = list(
+    tidy = l1,
+    pval = 'p.value'),
+  `Block strata adjusted` = list(
+    tidy = l2,
+    pval = 'p.value')
+)
+
+
+models <- lapply(models, function(x){
+  class(x) <- "modelsummary_list"
+  pvals <- x$tidy[,x$pval]
+  pvals[length(pvals)] <- NA
+  x$tidy$p.value <- pvals
+  x
+})
+
+
+rows <- as.data.frame(matrix(c('', '(1)', '(2)', '(3)', '(4)', '(5)',
+                               'row2', rep('', 5),
+                               'row7', rep('', 5),
+                               'row16', rep('', 5)),
+                             byrow = TRUE, ncol = 6
+))
+
+row2 <- '& \\multicolumn{2}{c}{Scores} &  \\multicolumn{1}{c}{Robust OLS} & \\multicolumn{2}{c}{Lin estimator}\\\\
+\\cmidrule(lr){2-3} \\cmidrule(lr){4-4} \\cmidrule(lr){5-6} \\multicolumn{4}{l}{\\textbf{Headline treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row7 <- '\\multicolumn{4}{l}{\\textbf{Respondent treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row16 <- '\\hline'
+
+attr(rows, 'position') <- c(1,2,7,16)
+
+xx <- modelsummary(models, 
+                   stars = TRUE,  
+                   add_rows = rows,
+                   escape = FALSE,
+                   col.names = NULL,
+                   
+                   coef_rename = c('Headline\nFactcheck' = r'(\hspace{1em}Factcheck)',
+                                   'Headline\nRelated articles' = r'(\hspace{1em}Related articles)',
+                                   'Respondent\nAccuracy' = r'(\hspace{1em}Accuracy)',
+                                   'Respondent\nFacebook tips' = r'(\hspace{1em}Facebook tips)',
+                                   'Respondent\nAlternative targeted' = r'(\hspace{1em}Alternative targeted policy)',
+                                   'Respondent\nLearned targeted' = r'(\hspace{1em}Learned targeted policy)',
+                                   'Control' = r'(\hspace{1em}Control mean)'),
+                   output = 'latex_tabular')
+xx <- gsub('\n\\toprule', '', xx[1], fixed = TRUE)
+xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
+
+xx <- gsub('\nrow2 &  &  &  &  & \\\\', 
+           row2, xx, fixed = TRUE)
+xx <- gsub('\nrow7 &  &  &  &  & \\\\', 
+           row7, xx, fixed = TRUE)
+xx <- gsub('\nrow16 &  &  &  &  & \\\\', 
+           row16, xx, fixed = TRUE)
+
+
+yy <- gregexec('Learned targeted policy[& -\\{num}{0-9.*}]*', xx)
+
+xx_substr <- substr(xx, yy[[1]][,1], yy[[1]][,1]+attr(yy[[1]], "match.length"))
+
+xx <- gsub(xx_substr,
+           paste0(xx_substr, ' \\hspace{1.5em}(maximizing combined response)'),
+           xx, fixed = TRUE)
+
+yy <- gregexec('Alternative targeted policy[& -\\{num}{0-9.*}]*', xx)
+
+xx_substr <- substr(xx, yy[[1]][,1], yy[[1]][,1]+attr(yy[[1]], "match.length"))
+
+xx <- gsub(xx_substr,
+           paste0(xx_substr, ' \\hspace{1.5em}(minimizing any false sharing)'),
+           xx, fixed = TRUE)
+
+
+writeLines(xx, '../tables/alternative_results.tex')
+
+
+```
+
+# Alternative policy learning
+```{r learning_policy_combined_alternative}
+
+cf.priority_c_alt <- causal_forest(
+  X = xs_learn[train_idx, ],
+  Y = df_learn$Y[train_idx],
+  W = 1*(ws_r[train_idx]==2),
+  W.hat = probs_r[train_idx, 2]/(rowSums(probs_r[train_idx, c(2,7)])),
+  seed = 60637)
+
+optimal_assignment_c_alt <- ifelse(predict(cf.priority_c_alt, xs_eval)$predictions>0, 4, 5)
+
+
+# Compute a prioritization based on estimated treatment effects.
+priority.cate_c_alt <- predict(cf.priority_c_alt, xs_eval[test_idx,])$predictions
+
+# Estimate AUTOC on held out data.
+cf.eval_c_alt <- causal_forest(
+  X = xs_eval[test_idx,],
+  Y = df_eval$Y[test_idx],
+  W = 1*(ws_eval[test_idx]==4),
+  W.hat = rowSums(treat_uncens_prob[test_idx, c(4), drop = FALSE])/rowSums(treat_uncens_prob[test_idx, c(4,5)]),
+  #W.hat = rowSums(probs_eval[test_idx, c(6), drop = FALSE])/rowSums(probs_eval[test_idx, c(6, 11)]),
+  #sample.weights = balwts_uncens[test_idx],
+)
+
+
+rate_c_alt <- rank_average_treatment_effect(cf.eval_c_alt, priority.cate_c_alt, 
+                                            q = seq(0.01, 1, by = 0.01), 
+                                            R = 800)
+rate_c_alt
+plot(rate_c_alt)
+
+rate_c_alt$estimate/rate_c_alt$std.err
+
+
+```
+
+```{r scores_policy_combined_alternative}
+# alternative optimal policy, combined response function
+if(file.exists('objects/aipw_scores_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_c_alt <- readRDS('objects/aipw_scores_c_alt.RDS')
+  
+}else{
+  aipw_scores_c_alt <- aw_scores_eval(xs = xs_eval,
+                                      yobs = yobs_eval, 
+                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                               ws_eval == optimal_assignment_c_alt ~ 2,
+                                                               TRUE ~ 3)), 
+                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_c_alt, 'objects/aipw_scores_c_alt.RDS')
+  
+}
+
+# any true
+
+if(file.exists('objects/aipw_scores_any_true_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_any_true_c_alt <- readRDS('objects/aipw_scores_any_true_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_any_true_c_alt <- aw_scores_eval(xs = xs_eval,
+                                               yobs = any_true, 
+                                               ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                        ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                        TRUE ~ 3)), 
+                                               sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_true_c_alt, 'objects/aipw_scores_any_true_c_alt.RDS')
+  
+}
+
+# any false
+
+if(file.exists('objects/aipw_scores_any_false_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_any_false_c_alt <- readRDS('objects/aipw_scores_any_false_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_any_false_c_alt <- aw_scores_eval(xs = xs_eval,
+                                                yobs = any_false, 
+                                                ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                         ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                         TRUE ~ 3)), 
+                                                sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_false_c_alt, 'objects/aipw_scores_any_false_c_alt.RDS')
+  
+}
+
+
+# timeline true/false
+
+if(file.exists('objects/aipw_scores_timeline_true_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true_c_alt <- readRDS('objects/aipw_scores_timeline_true_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true_c_alt <- aw_scores_eval(xs = xs_eval,
+                                                    yobs = timeline_true, 
+                                                    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                             ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                             TRUE ~ 3)), 
+                                                    sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_true_c_alt, 'objects/aipw_scores_timeline_true_c_alt.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_false_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false_c_alt <- readRDS('objects/aipw_scores_timeline_false_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false_c_alt <- aw_scores_eval(xs = xs_eval,
+                                                     yobs = timeline_false, 
+                                                     ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                              ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                              TRUE ~ 3)), 
+                                                     sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_false_c_alt, 'objects/aipw_scores_timeline_false_c_alt.RDS')
+  
+}
+
+# send true/false
+if(file.exists('objects/aipw_scores_send_true_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_send_true_c_alt <- readRDS('objects/aipw_scores_send_true_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_send_true_c_alt <- aw_scores_eval(xs = xs_eval,
+                                                yobs = send_true, 
+                                                ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                         ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                         TRUE ~ 3)), 
+                                                sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_true_c_alt, 'objects/aipw_scores_send_true_c_alt.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_send_false_c_alt.RDS')){ # read in scores if already generated
+  aipw_scores_send_false_c_alt <- readRDS('objects/aipw_scores_send_false_c_alt.RDS')
+  
+}else{
+  
+  aipw_scores_send_false_c_alt <- aw_scores_eval(xs = xs_eval,
+                                                 yobs = send_false, 
+                                                 ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                          ws_eval == optimal_assignment_c_alt ~ 2,
+                                                                          TRUE ~ 3)), 
+                                                 sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_false_c_alt, 'objects/aipw_scores_send_false_c_alt.RDS')
+  
+}
+
+```
+
+```{r table_policy_combined_alternative}
+# Mean response estimates
+models <- list(
+  `Combined` = list(
+    tidy = find_te(aipw_scores_c_alt)[1,],
+    pval = 'p.value.upper'),
+  `False: Any sharing` = list(
+    tidy = find_te(aipw_scores_any_false_c_alt)[1,],
+    pval = 'p.value.lower'),
+  `False: Messenger` = list(
+    tidy = find_te(aipw_scores_send_false_c_alt)[1,],
+    pval = 'p.value.lower'),
+  `False: Timeline` = list(
+    tidy = find_te(aipw_scores_timeline_false_c_alt)[1,],
+    pval = 'p.value.lower'),
+  `True: Any sharing` = list(
+    tidy = find_te(aipw_scores_any_true_c_alt)[1,],
+    pval = 'p.value.upper'),
+  `True: Messenger` = list(
+    tidy = find_te(aipw_scores_send_true_c_alt)[1,],
+    pval = 'p.value.upper'),
+  `True: Timeline` = list(
+    tidy = find_te(aipw_scores_timeline_true_c_alt)[1,],
+    pval = 'p.value.upper'
+  )
+)
+
+models <- lapply(models, function(x){
+  class(x) <- "modelsummary_list"
+  pvals <- x$tidy[,x$pval]
+  x$tidy$p.value <- pvals
+  x$tidy$term <- r'(\hspace{1em}Secondary targeted policy)'
+  x
+})
+
+
+rows <- as.data.frame(matrix(c('', '', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
+                               '', '\\textbf{Combined}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+                               'row3', rep('', 7)),
+                             byrow = TRUE, ncol = 8
+))
+row3 <- '\\cmidrule(lr){2-2} \\cmidrule(lr){3-5} \\cmidrule(lr){6-8}'
+
+attr(rows, 'position') <- c(1,2,3)
+
+xx <- modelsummary(models, 
+                   stars = TRUE,  
+                   add_rows = rows,
+                   escape = FALSE,
+                   col.names = NULL,
+                   output = 'latex_tabular')
+xx <- gsub('\n\\toprule', '', xx[1], fixed = TRUE)
+xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
+
+xx <- gsub('\nrow3 &  &  &  &  &  &  & \\\\', 
+           row3, xx, fixed = TRUE)
+
+yy <- gregexec('Secondary targeted policy[& -\\{num}{0-9.*}]*', xx)
+
+xx_substr <- substr(xx, yy[[1]][,1], yy[[1]][,1]+attr(yy[[1]], "match.length"))
+
+xx <- gsub(xx_substr,
+           paste0(xx_substr, ' \\hspace{1.5em}(maximizing combined response)'),
+           xx, fixed = TRUE)
+
+
+writeLines(xx, '../tables/alternative_policy_results.tex')
+```
+
+# Different combined response
+
+```{r post_truefalse_scores}
+
+
+if(file.exists('objects/aipw_scores_post_true.RDS')){ # read in scores if already generated
+  aipw_scores_post_true <- readRDS('objects/aipw_scores_post_true.RDS')
+  
+}else{
+  aipw_scores_post_true <- aw_scores_eval(xs = xs_eval,
+                                           yobs = df_eval$post_true, 
+                                           ws = ws_eval, 
+                                           sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_true, 'objects/aipw_scores_post_true.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_post_false.RDS')){ # read in scores if already generated
+  aipw_scores_post_false <- readRDS('objects/aipw_scores_post_false.RDS')
+  
+}else{
+  aipw_scores_post_false <- aw_scores_eval(xs = xs_eval,
+                                           yobs = df_eval$post_false, 
+                                           ws = ws_eval, 
+                                           sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_false, 'objects/aipw_scores_post_false.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_post_true_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_post_true_alternative <- readRDS('objects/aipw_scores_post_true_alternative.RDS')
+  
+}else{
+  aipw_scores_post_true_alternative <- aw_scores_eval(xs = xs_eval,
+                                                      yobs = df_eval$post_true, 
+                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                               ws_eval == optimal_assignment ~ 2,
+                                                                               TRUE ~ 3)), 
+                                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_true_alternative, 'objects/aipw_scores_post_true_alternative.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_post_false_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_post_false_alternative <- readRDS('objects/aipw_scores_post_false_alternative.RDS')
+  
+}else{
+  aipw_scores_post_false_alternative <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = df_eval$post_false, 
+                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                ws_eval == optimal_assignment ~ 2,
+                                                                                TRUE ~ 3)), 
+                                                       sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_false_alternative, 'objects/aipw_scores_post_false_alternative.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_post_true_learned.RDS')){ # read in scores if already generated
+  aipw_scores_post_true_learned <- readRDS('objects/aipw_scores_post_true_learned.RDS')
+  
+}else{
+  aipw_scores_post_true_learned <- aw_scores_eval(xs = xs_eval,
+                                                      yobs = df_eval$post_true, 
+                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                               ws_eval == optimal_assignment_original ~ 2,
+                                                                               TRUE ~ 3)), 
+                                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_true_learned, 'objects/aipw_scores_post_true_learned.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_post_false_learned.RDS')){ # read in scores if already generated
+  aipw_scores_post_false_learned <- readRDS('objects/aipw_scores_post_false_learned.RDS')
+  
+}else{
+  aipw_scores_post_false_learned <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = df_eval$post_false, 
+                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                ws_eval == optimal_assignment_original ~ 2,
+                                                                                TRUE ~ 3)), 
+                                                       sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_post_false_learned, 'objects/aipw_scores_post_false_learned.RDS')
+  
+}
+
+```
+
+
+```{r post_truefalse_plots}
+
+# save estimates
+est_list <- list(
+cbind(aipw_scores_post_true[, 2:5], aipw_scores_post_true_learned[, 2], aipw_scores_post_true_alternative[, 2]),
+cbind(aipw_scores_post_false[, 2:5], aipw_scores_post_false_learned[, 2], aipw_scores_post_false_alternative[, 2])
+)
+
+
+
+false_weights <- seq(-1, 0, .1)
+true_weights <- seq(0, 1, .1)
+
+xy <- expand.grid(false_weights, true_weights)
+
+out_l <- lapply(1:6, function(s){
+mapply(function(x, y) {
+  # z <- x * aipw_scores_post_false_alternative[,2] + y * aipw_scores_post_true_alternative[,2]
+  z <- x * est_list[[2]][,s] + y * est_list[[1]][,s]
+  c(estimate = mean(z), 
+    std.error = sd(z)/sqrt(length(z)),
+    false_w = x, 
+    true_w = y,
+    term = s)
+},
+xy[,1], 
+xy[,2]
+) |> t()
+})
+
+df <- do.call(rbind.data.frame, out_l)
+df$Condition <- factor(treatment_levels[-1][df$term], 
+                  levels = c(
+           'Headline\nFactcheck',
+            'Headline\nRelated articles', 
+           'Respondent\nAccuracy',
+           'Respondent\nFacebook tips',
+           'Respondent\nLearned targeted',
+           'Respondent\nAlternative targeted'
+         ))
+
+df$`Logged negative ratio of false to true weights` <- log(-df$false_w/df$true_w)
+df$Statistic <- df$estimate/df$std.error
+ggplot(df, aes(x = `Logged negative ratio of false to true weights`, y = `Statistic`, color = Condition)) + 
   geom_point() + 
-  geom_line() + 
-  stat_gradientinterval(aes(x = Batch, 
-                            ydist = distributional::dist_normal(estimate, std.error)), .width = 0, size = 0) +
-  geom_errorbar(aes(ymin = estimate - 1.96*std.error, 
-                    ymax = estimate + 1.96*std.error), width = 0.05) +
-  ylab('Average overlap') + 
-  xlab('Batch') +
-  geom_hline(yintercept = 1/8, colour = 'grey60', linetype = 2) + 
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = 'white'),
-        plot.background = element_rect(fill = 'white', color = 'white'),
-        strip.text.y = element_blank()) +
-  coord_cartesian(ylim = c(0.1, 0.25))
+        plot.background = element_rect(fill = 'white', color = 'white')) + 
+  scale_color_manual(values = cbPalette)
 
-ggsave('../figures/on_policy.png', width = 8, height = 4)
+ggsave('../figures/alternative_weighting.png', width = 8, height = 4)
+
+```
+
+
+# Figure XXX: covariates by optimal policy
+```{r covariates_in_optimal}
+
+.df <- df_eval %>% 
+  mutate(leaf = factor(optimal_assignment_original,
+                                     labels = c('Optimal policy == accuracy',
+                                                'Optimal policy == FB tips',
+                                                'Optimal policy == other'))) %>% 
+  group_by(leaf) %>% 
+  mutate(leaf = factor(paste0(leaf, "\n ", "(n = ", prettyNum(n(), big.mark = ",") , ")"))) %>% 
+  as.data.frame() 
+
+covs_of_interest <- c('age', 'dli', 'male', 'pol', 'science')
+plot_covariate_means_by_group(
+  .df,
+  .title = NULL,
+  rowvars = covs_of_interest)
+
+ggsave('../figures/covariate_optimal_original.png', 
+       width = 6.25, height = 4)
 
 ```
 
@@ -3333,6 +4052,11 @@ for(i in 1:length(ns)){
 writeLines(xx, '../tables/heterogeneity_facebook.tex')
 ```
 
+
+
+
+
+
 # Additional in-text results
 
 ## Results: Learning and evaluation stages
@@ -3472,7 +4196,23 @@ sd(x)/sqrt(length(x))
 ```
 
 
-# Appendix: Evaluation stage
+## Appendix: Evaluation stage
+
+```{r control_pretest}
+# BENEFITS TO CONTROLLING FOR PRE-TEST
+# We note here the benefits to controlling for pre-rest response; comparing columns 3 and 4,
+# for example, the standard error on the control mean is reduced:
+l1[l1$term == 'Control','std.error']/l0[l0$term == 'Control','std.error']
+
+
+# DESCRIPTION OF ALTERNATIVE TARGETED POLICY, USING COMBINED RESPONSE
+prop.table(table(optimal_assignment_c_alt))
+
+sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment))))
+
+sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment_original))))
+```
+
 
 ```{r results_heterogeneity_overall}
 
