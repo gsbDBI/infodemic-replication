@@ -1,0 +1,2414 @@
+---
+title: 'Facebook Misinformation Study, pre-analysis replication script'
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_folding: hide
+    number_sections: true
+---
+
+
+
+# Data reading
+```{r paths, message = FALSE}
+set.seed(60637)
+source('utils.R')
+
+dir.create(file.path('..', 'tables'), showWarnings = FALSE)
+dir.create(file.path('..', 'figures'), showWarnings = FALSE)
+dir.create(file.path('objects'), showWarnings = FALSE)
+```
+
+
+
+
+## Load Data
+Load most recent download of data; the file name indicates the download date. 
+```{r data, cache = TRUE}
+files <- list.files('../data', 
+                    pattern = '^cleaned-data.*rds$', 
+                    full.names = TRUE)
+
+(INPUT_FILENAME <- files[which.max(file.info(files)$mtime)])
+df_treat <- readRDS(INPUT_FILENAME)
+
+context_cols <- c('male', 
+                  'age', 
+                  'age_flag',
+                  'age_check_flag',
+                  'ed', 'ed_flag', 
+                  'urban',
+                  'rel_christian', 'rel_muslim',
+                  'denom_pentecostal', 
+                  'religiosity', 'religiosity_flag',
+                  'locus', 'locus_flag',
+                  'science', 'science_flag',
+                  'dli',
+                  'fb_post', 'fb_post_flag',
+                  'fb_msg', 'fb_msg_flag',
+                  'crt',
+                  'hhi', 'hhi_flag',
+                  'cash',
+                  'hh', 'hh_flag',
+                  'pol',
+                  'cov_concern', 'cov_concern_flag',
+                  'cov_efficacy', 'cov_efficacy_flag',
+                  'nigeria')
+
+demos_cols <- c('male', 
+                'age', 'age_flag',
+                'ed', 'ed_flag', 
+                'urban', 
+                'rel_none', 'rel_christian', 'rel_muslim', 'rel_traditionalist', 'rel_other', 'denom_pentecostal', 'religiosity',
+                'religiosity_flag',
+                'god',
+                'locus', 'locus_flag',
+                'science', 'science_flag',
+                'dli',
+                'fb_post', 'fb_post_flag',
+                'fb_msg', 'fb_msg_flag',
+                'crt',
+                'hhi', 'hhi_flag',
+                'cash',
+                'hh', 'hh_flag',
+                'pol',
+                'cov_concern', 
+                'cov_concern_flag',
+                'cov_info',
+                'cov_efficacy', 
+                'cov_efficacy_flag')
+
+predv_cols <- c('strat_send_false0', 'strat_send_false1', 'strat_send_false2', 
+                'strat_send_true0', 'strat_send_true1', 'strat_send_true2', 
+                'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
+                'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
+
+# names for treatment levels
+W_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles', 'Control', 'Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck Tips', 'Facebook Tips', 'Video training') 
+WC_terms <- c('Control', W_terms) # with control
+
+# names for respondent-level treatments
+WR_terms <- c('Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck tips', 'Facebook tips', 'Video training')
+WCR_terms <- c('Control', WR_terms) # with control
+
+# names for headline-level treatments
+WH_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles')
+WCH_terms <- c('Control', WH_terms) # with control
+
+# evaluation treatment levels
+treatment_levels <- c('Control', 
+                      'Headline\nFactcheck', 
+                      'Headline\nRelated articles', 
+                      'Respondent\nAccuracy', 
+                      'Respondent\nFacebook tips', 
+                      'Respondent\nLearned targeted',
+                      'Respondent\nAlternative targeted')
+
+covariate_list <- c('age', 'male', 'pol', 'dli', 'science')
+stimuli_types <- c('true', 'false')
+channel_types <- c('send', 'timeline')
+```
+
+
+```{r datasets, cache = TRUE, cache.lazy=FALSE}
+df_eval <- df_treat[which(df_treat$batch == 5),]
+df_learn <- df_treat[which(df_treat$batch<5 & df_treat$attrited == 0),]
+
+# saved contextual probabilities 
+contextual_probs <- readRDS('objects/contextual_probabilities.RDS')
+contextual_probs <- contextual_probs[which(df_treat$batch<5 & df_treat$attrited == 0), 
+                                     which(df_treat$batch<5 & df_treat$attrited == 0), ]
+```
+
+```{r attrition, cache = TRUE, cache.lazy=FALSE}
+# Accounting for attrition
+uncens_prob <- probability_forest(X = as.matrix(df_eval[, c(context_cols, predv_cols)]),
+                                  Y = as.factor(1*(df_eval$attrited == 0)))$predictions[which(df_eval$attrited == 0),]
+
+ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
+                               as.numeric(df_eval$W) == 2 ~  2, # headline factcheck,
+                               as.numeric(df_eval$W) == 5 ~ 3, # headline related,
+                               as.numeric(df_eval$W) == 6 ~ 4, # respondent accuracy
+                               as.numeric(df_eval$W) == 11 ~ 5, # facebook tips,
+                               # combine optimal with small groups
+                               TRUE ~ 6 # other optimal respondent (8/12)
+)) 
+treat_uncens <- factor(case_when(df_eval$attrited == 0 ~ as.numeric(ws_eval),
+                                 TRUE ~ 7))
+treat_uncens_prob <- probability_forest(X = as.matrix(df_eval[, c(context_cols, predv_cols)]),
+                                        Y = treat_uncens)$predictions[which(df_eval$attrited == 0),]
+
+balwts_uncens <- (1/uncens_prob)[, 2]
+
+balwts_treat_uncens <- (1/treat_uncens_prob)[cbind(1:nrow(treat_uncens_prob), treat_uncens[which(df_eval$attrited == 0)])]
+
+df_eval <- df_eval[which(df_eval$attrited == 0),]
+ws_eval <- ws_eval[which(df_eval$attrited == 0)]
+```
+
+
+```{r hyperparameters, cache = TRUE}
+## Hyperparameters
+num_batches <- 3
+# times at which the model is updated (applied in following observation)
+update_times <- sapply(1:4, function(x) length(which(df_learn$batch == x)))
+update_times <- cumsum(update_times)
+num_init_draws <- update_times[1]
+A <- update_times[4] # no. observations in learning split/ last model update
+N <- nrow(df_learn) + nrow(df_eval)
+K <- length(unique((df_learn$W)))
+```
+
+
+
+```{r data_components, cache = TRUE}
+xs_learn <- as.matrix(df_learn[, c(context_cols, predv_cols)])
+yobs_learn <- df_learn$Y
+ws_learn <- as.numeric(df_learn$W)
+
+xs_eval <- as.matrix(df_eval[, c(context_cols, predv_cols)])
+yobs_eval <- df_eval$Y
+ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
+                               as.numeric(df_eval$W) == 2 ~  2, # headline factcheck,
+                               as.numeric(df_eval$W) == 5 ~ 3, # headline related,
+                               as.numeric(df_eval$W) == 6 ~ 4, # respondent accuracy
+                               as.numeric(df_eval$W) == 11 ~ 5, # facebook tips,
+                               # combine optimal with small groups
+                               TRUE ~ 6 # other optimal respondent (8/12)
+)) 
+
+```
+
+
+# Analysis Overview
+
+## Response
+The response function is:
+
+$$Y_i = -M_i^{\text{post-treat}} + 0.5T_i^{\text{post-treat}}$$
+
+It is composed of $M_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *misinformation stimuli*, and $T_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *true stimuli*, both post-treatment. There are two types of each stimuli, and for each two questions about sharing: whether they would share directly on Messenger, and whether they woudld share on their timeline. 
+
+We assign greater weight to the sharing of *misinformation* in our response function, because our primary objective is to curb the spread of misinformation, although we would like to do so at minimal cost to the sharing of true information. 
+
+For example, response value of $Y_i = -1$ indicates that the respondent responded yes to two of the questions about sharing the misinformation stimuli and two of the questions about sharing true stimuli. 
+
+## Treatments
+
+Treatment is composed of a respondent-level treatment and a headline-level treatment. In the adaptive learning portion of the experiment, respondent-level treatments and headline-level treatments are implemented as separate factors, each of which has an empty baseline level that is the control. So respondents may be assigned the pure control condition, one of the respondent-level treatments but no headline-level treatment, one of the headline-level treatments but no respondent-level treatment, or one of the respondent-level treatments *and* one of the headline-level treatments. 
+
+**Respondent-level treatments:**
+
+* Control
+* Facebook tips
+* AfricaCheck tips
+* Video training
+* Emotion suppression
+* Pledge
+* Accuracy nudge
+* Deliberation nudge
+
+**Headline-level treatments**
+
+* Control
+* Related articles
+* Third-party factcheck
+* More information link
+* Real information statement
+
+## Response under unique treatments
+
+For use in analysis of the adaptive design, we calculate doubly robust scores. Scores are composed of a conditional means model, which is estimated by fitting $K$ separate causal forests, and a weighting term, which here are inverse probability weights using known probability of treatment assignment. 
+
+$$
+\Gamma_{i,w} = \mu_{w}(X_{i}) + 1 \{W_i = w \} \xi_w(X_i)(Y_{i} - \mu_w(X_i))
+$$
+
+$$
+\mu_{w}(x)  = \textrm{E}[Y_i(w) | X_i = x]
+$$
+
+$$
+\xi^{IPW}_w(X_i) = \frac{ 1 }{\Pr[W_i = w|X_i = x]}
+$$
+
+## Calculating scores
+
+```{r treament_levels, cache=TRUE}
+# For learning split only
+df_learn['treatment_r'] <- relevel(as.factor(gsub('H_.*_|R_', '', df_learn$W)),
+                                   ref = 'control')
+df_learn['treatment_h'] <- relevel(as.factor(gsub('H_|_R_.*', '', df_learn$W)),
+                                   ref = 'control')
+
+W_levels <- levels(df_learn$W)
+# Decompose treatment levels into separate factors
+WH_levels <- unique(sub('_R_.*', '', W_levels))
+WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
+
+# Identify treatment locations where each respective factor level is represented
+WH_idx <- lapply(WH_levels, function(x) grep(x, W_levels))
+WR_idx <- lapply(WR_levels, function(x) grep(x, W_levels))
+
+
+ws_r <- as.numeric(df_learn$treatment_r) # respondent-level treatment only
+ws_h <- as.numeric(df_learn$treatment_h) # headline-level treatment only
+K_r <- length(unique(ws_r))
+K_h <- length(unique(ws_h))
+# Include headline as context
+xs_h <- cbind(xs_learn, 
+              model.matrix(lm(Y~ treatment_h-1, data = df_learn)))
+# Predict when headline == control
+xs_h_new <- xs_h
+treat_cols <- grepl(pattern = 'treatment', colnames(xs_h))
+xs_h_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
+                                 nrow = nrow(df_learn), 
+                                 ncol = sum(treat_cols), byrow = TRUE)
+
+# Include respondent as context
+xs_r <- cbind(xs_learn, 
+              model.matrix(lm(Y~ treatment_r-1, data = df_learn)))
+# Predict when headline == control
+xs_r_new <- xs_r
+treat_cols <- grepl(pattern = 'treatment', colnames(xs_r))
+xs_r_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )), 
+                                 nrow = nrow(df_learn), 
+                                 ncol = sum(treat_cols), byrow = TRUE)
+
+```
+
+### Learning scores
+```{r probs_learning, cache = TRUE}
+# For learning
+probs_learn <- as.matrix(df_learn[, paste0('probs_', 0:39)])
+balwts_learn <- (1/probs_learn)[cbind(1:A, ws_learn)]
+
+# Re-calculate probs to aggregate across headline level
+# Conditional on being assigned a given headline level, what is the probability of being assigned a given respondent condition?
+probs_rwide <- probs_learn
+for(x in WH_idx){
+  probs_rwide[,x] <- probs_learn[,x]/rowSums(probs_learn[,x])
+}
+balwts_r <- (1/probs_rwide)[matrix(c(1:nrow(df_learn),ws_learn), ncol = 2)]
+
+
+probs_r <- t(sapply(1:nrow(df_learn), function(x){
+  hval <- ws_h[x]
+  colidx <- WH_idx[[hval]]
+  probs_rwide[x, colidx]
+} ))
+
+# Re-calculate probs to aggregate across respondent level
+probs_hwide <- probs_learn
+for(x in WR_idx){
+  probs_hwide[,x] <- probs_learn[,x]/rowSums(probs_learn[,x])
+}
+balwts_h <- (1/probs_hwide)[matrix(c(1:nrow(df_learn),ws_learn), ncol = 2)]
+
+
+probs_h <- t(sapply(1:nrow(df_learn), function(x){
+  rval <- ws_r[x]
+  colidx <- WR_idx[[rval]]
+  probs_hwide[x, colidx]
+} ))
+```
+
+For scores in the learning split, we are interested in making comparisons across levels within the two types of factors: respondent-level treatments, and headline-level treatments. To share information across treatment conditions, for our conditional means model, we run separate multi-arm causal forests for each factor type. 
+
+- For the respondent type factor, in the multi-arm causal forest model each *respondent* treatment is an arm, with the reference condition set as control. Headline treatments are treated as contexts. There are `r sum((df_learn$treatment_r=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_r)[2:8])` and `r max(table(df_learn$treatment_r)[2:8])` in a given treatment group, respectively.
+- For the headline type factor, in the multi-arm causal forest model each *headline* treatment is an arm, with the reference condition set as control. Respondent treatments are treated as contexts. There are `r sum((df_learn$treatment_h=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_h)[2:5])` and `r max(table(df_learn$treatment_h)[2:5])` in a given treatment group, respectively.
+
+```{r learn_scores, cache=TRUE}
+
+ws_learn_r <- factor(df_learn$treatment_r, 
+                     levels = c('control', 'accuracy', 'deliberation',
+                                'emotion', 'pledge', 'africacheck',
+                                'facebook', 'video'))
+ws_learn_h <- factor(df_learn$treatment_h, 
+                     levels = c('control', 'factcheck', 'more_info',
+                                'real_info', 'related'))
+
+if(file.exists('objects/aipw_scores_learn.RDS')){ # read in scores if already generated
+  aipw_scores_learn <- readRDS('objects/aipw_scores_learn.RDS')
+  aipw_scoresR_learn <- aipw_scores_learn[[1]]
+  aipw_scoresRmarg_learn <- aipw_scores_learn[[2]]
+  aipw_scoresH_learn <- aipw_scores_learn[[3]]
+  aipw_scoresHmarg_learn <- aipw_scores_learn[[4]]
+  
+}else{
+  aipw_scores_learn <- aw_scores_learn(xs_h = xs_h, xs_r = xs_r,
+                                       ws_h = ws_learn_h, 
+                                       ws_r = ws_learn_r, 
+                                       ws = ws_learn,
+                                       yobs = yobs_learn,
+                                       K_h = K_h, K_r = K_r, K = K,
+                                       balwts = balwts_learn,
+                                       balwts_r = balwts_r, balwts_h = balwts_h,
+                                       probs_r = probs_r, probs_h = probs_h,
+                                       probsK = probs_learn,
+                                       chunks = update_times)
+  
+  aipw_scoresR_learn <- aipw_scores_learn[[1]]
+  aipw_scoresRmarg_learn <- aipw_scores_learn[[2]]
+  aipw_scoresH_learn <- aipw_scores_learn[[3]]
+  aipw_scoresHmarg_learn <- aipw_scores_learn[[4]]
+  
+  saveRDS(aipw_scores_learn, 'objects/aipw_scores_learn.RDS')
+  
+}
+```
+
+
+For the evaluation scores, we consider only respondents who are assigned policies of interest:
+
+- control
+- headline: related articles
+- headline: fact check
+- respondent: accuracy nudge
+- respondent: Facebook tips
+- respondent: contextual policy, composed of accuracy nudge, Facebook tips, emotion nudge, and video treatment
+
+Approximately 11% of respondents are assigned treatment uniformly at random; these respondents can be used for off-policy evaluation, but are not used in this analysis. 
+
+To calculate scores, our conditional means model is a multi-arm causal forest, with the reference condition set as the pure control. We include five arms for each of the non-contextual policies; because the contextual policy is composed of treatments that overlap with the non-contextual policies, we do not include a contextual policy condition, but rather a condition for the contextual assignments that are not accounted for in the non-contextual arms, the emotion nudge and video treatment. 
+
+
+### Evalution Scores
+
+```{r optimal_policy_learning, cache=TRUE, warning=FALSE, message=FALSE}
+train_idx <- ws_r %in%c(2,6) # note that ordering does not match probs_r
+probs_eval <- as.matrix(df_eval[, paste0('probs_', 0:39)])
+
+cf.priority <- causal_forest(
+  X = xs_learn[train_idx, ],
+  Y = df_learn$post_false_prop[train_idx],
+  W = 1*(ws_r[train_idx]==2),
+  W.hat = probs_r[train_idx, 2]/(rowSums(probs_r[train_idx, c(2,7)])),
+  seed = 60637)
+
+optimal_assignment <- ifelse(predict(cf.priority, xs_eval)$predictions<0, 4, 5)
+
+df_eval$optimal_assignment <- factor(optimal_assignment,
+                                     labels = c('Optimal policy == accuracy',
+                                                'Optimal policy == FB tips'))
+
+optimal_assignment_original <- case_when(df_eval$optimal0 == 6 ~ 4,
+                                         df_eval$optimal0 == 8 ~ 6, #8/12 collapsed
+                                         df_eval$optimal0 == 11 ~ 5,
+                                         df_eval$optimal0 == 12 ~ 6)
+
+```
+
+
+```{r combined_eval_scores, cache=TRUE, warning=FALSE, message=FALSE}
+## Combined response function scores 
+if(file.exists('objects/aipw_scores.RDS')){ # read in scores if already generated
+  aipw_scores <- readRDS('objects/aipw_scores.RDS')
+  
+}else{
+  aipw_scores <- aw_scores_eval(xs = xs_eval,
+                                yobs = yobs_eval, 
+                                ws = ws_eval, 
+                                sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores, 'objects/aipw_scores.RDS')
+  
+}
+
+
+# learned optimal policy
+if(file.exists('objects/aipw_scores_learned.RDS')){ # read in scores if already generated
+  aipw_scores_learned <- readRDS('objects/aipw_scores_learned.RDS')
+  
+}else{
+  aipw_scores_learned <- aw_scores_eval(xs = xs_eval,
+                                        yobs = yobs_eval, 
+                                        ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                 ws_eval == optimal_assignment_original ~ 2,
+                                                                 TRUE ~ 3)), 
+                                        sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_learned, 'objects/aipw_scores_learned.RDS')
+  
+}
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_alternative <- readRDS('objects/aipw_scores_alternative.RDS')
+  
+}else{
+  aipw_scores_alternative <- aw_scores_eval(xs = xs_eval,
+                                            yobs = yobs_eval, 
+                                            ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                     ws_eval == optimal_assignment ~ 2,
+                                                                     TRUE ~ 3)), 
+                                            sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_alternative, 'objects/aipw_scores_alternative.RDS')
+  
+}
+```
+
+```{r any_eval_scores, cache = TRUE, warning=FALSE, message=FALSE}
+## Any share scores
+any_true <- df_eval$post_true_prop
+any_false<- df_eval$post_false_prop
+
+if(file.exists('objects/aipw_scores_any_true.RDS')){ # read in scores if already generated
+  aipw_scores_any_true <- readRDS('objects/aipw_scores_any_true.RDS')
+  
+}else{
+  aipw_scores_any_true <- aw_scores_eval(xs = xs_eval,
+                                         yobs = any_true, 
+                                         ws = ws_eval,
+                                         sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_true, 'objects/aipw_scores_any_true.RDS')
+}
+
+# learned optimal policy
+if(file.exists('objects/aipw_scores_any_true_learned.RDS')){ # read in scores if already generated
+  aipw_scores_any_true_learned <- readRDS('objects/aipw_scores_any_true_learned.RDS')
+  
+}else{
+  aipw_scores_any_true_learned <- aw_scores_eval(xs = xs_eval,
+                                                 yobs = any_true, 
+                                                 ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                          ws_eval == optimal_assignment_original ~ 2,
+                                                                          TRUE ~ 3)), 
+                                                 sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_true_learned, 'objects/aipw_scores_any_true_learned.RDS')
+}
+
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_any_true_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_any_true_alternative <- readRDS('objects/aipw_scores_any_true_alternative.RDS')
+  
+}else{
+  aipw_scores_any_true_alternative <- aw_scores_eval(xs = xs_eval,
+                                                     yobs = any_true, 
+                                                     ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                              ws_eval == optimal_assignment ~ 2,
+                                                                              TRUE ~ 3)), 
+                                                     sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_true_alternative, 'objects/aipw_scores_any_true_alternative.RDS')
+}
+
+
+if(file.exists('objects/aipw_scores_any_false.RDS')){ # read in scores if already generated
+  aipw_scores_any_false <- readRDS('objects/aipw_scores_any_false.RDS')
+  
+}else{
+  aipw_scores_any_false <- aw_scores_eval(xs = xs_eval,
+                                          yobs = any_false, 
+                                          ws = ws_eval, 
+                                          sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_false, 'objects/aipw_scores_any_false.RDS')
+}
+
+
+if(file.exists('objects/aipw_scores_any_false_learned.RDS')){ # read in scores if already generated
+  aipw_scores_any_false_learned <- readRDS('objects/aipw_scores_any_false_learned.RDS')
+  
+}else{
+  aipw_scores_any_false_learned <- aw_scores_eval(xs = xs_eval,
+                                                  yobs = any_false, 
+                                                  ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                           ws_eval == optimal_assignment_original ~ 2,
+                                                                           TRUE ~ 3)), 
+                                                  sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_false_learned, 'objects/aipw_scores_any_false_learned.RDS')
+}
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_any_false_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_any_false_alternative <- readRDS('objects/aipw_scores_any_false_alternative.RDS')
+  
+}else{
+  aipw_scores_any_false_alternative <- aw_scores_eval(xs = xs_eval,
+                                                      yobs = any_false, 
+                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                               ws_eval == optimal_assignment ~ 2,
+                                                                               TRUE ~ 3)), 
+                                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_any_false_alternative, 'objects/aipw_scores_any_false_alternative.RDS')
+}
+```
+
+```{r channel_eval_scores, cache = TRUE, message=FALSE, warning=FALSE}
+## Channel scores
+timeline_true <- df_eval$post_true_timeline_prop
+timeline_false <- df_eval$post_false_timeline_prop
+send_true <- df_eval$post_true_send_prop
+send_false <- df_eval$post_false_send_prop
+
+if(file.exists('objects/aipw_scores_timeline_true.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true <- readRDS('objects/aipw_scores_timeline_true.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true <- aw_scores_eval(xs = xs_eval,
+                                              yobs = timeline_true, 
+                                              ws = ws_eval, 
+                                              sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_true, 'objects/aipw_scores_timeline_true.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_true_learned.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true_learned <- readRDS('objects/aipw_scores_timeline_true_learned.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true_learned <- aw_scores_eval(xs = xs_eval,
+                                                      yobs = timeline_true, 
+                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                               ws_eval == optimal_assignment_original ~ 2,
+                                                                               TRUE ~ 3)), 
+                                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_true_learned, 'objects/aipw_scores_timeline_true_learned.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_true_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_true_alternative <- readRDS('objects/aipw_scores_timeline_true_alternative.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_true_alternative <- aw_scores_eval(xs = xs_eval,
+                                                          yobs = timeline_true, 
+                                                          ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                   ws_eval == optimal_assignment ~ 2,
+                                                                                   TRUE ~ 3)), 
+                                                          sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_true_alternative, 'objects/aipw_scores_timeline_true_alternative.RDS')
+  
+}
+
+
+
+if(file.exists('objects/aipw_scores_timeline_false.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false <- readRDS('objects/aipw_scores_timeline_false.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false <- aw_scores_eval(xs = xs_eval,
+                                               yobs = timeline_false, 
+                                               ws = ws_eval, 
+                                               sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_false, 'objects/aipw_scores_timeline_false.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_false_learned.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false_learned <- readRDS('objects/aipw_scores_timeline_false_learned.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false_learned <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = timeline_false, 
+                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                ws_eval == optimal_assignment_original ~ 2,
+                                                                                TRUE ~ 3)), 
+                                                       sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_false_learned, 'objects/aipw_scores_timeline_false_learned.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_timeline_false_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_timeline_false_alternative <- readRDS('objects/aipw_scores_timeline_false_alternative.RDS')
+  
+}else{
+  
+  aipw_scores_timeline_false_alternative <- aw_scores_eval(xs = xs_eval,
+                                                           yobs = timeline_false, 
+                                                           ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                    ws_eval == optimal_assignment ~ 2,
+                                                                                    TRUE ~ 3)), 
+                                                           sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_timeline_false_alternative, 'objects/aipw_scores_timeline_false_alternative.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_send_true.RDS')){ # read in scores if already generated
+  aipw_scores_send_true <- readRDS('objects/aipw_scores_send_true.RDS')
+  
+}else{
+  
+  aipw_scores_send_true <- aw_scores_eval(xs = xs_eval,
+                                          yobs = send_true, 
+                                          ws = ws_eval, 
+                                          sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_true, 'objects/aipw_scores_send_true.RDS')
+}
+
+if(file.exists('objects/aipw_scores_send_true_learned.RDS')){ # read in scores if already generated
+  aipw_scores_send_true_learned <- readRDS('objects/aipw_scores_send_true_learned.RDS')
+  
+}else{
+  
+  aipw_scores_send_true_learned <- aw_scores_eval(xs = xs_eval,
+                                                  yobs = send_true, 
+                                                  ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                           ws_eval == optimal_assignment_original ~ 2,
+                                                                           TRUE ~ 3)), 
+                                                  sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_true_learned, 'objects/aipw_scores_send_true_learned.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_send_true_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_send_true_alternative <- readRDS('objects/aipw_scores_send_true_alternative.RDS')
+  
+}else{
+  
+  aipw_scores_send_true_alternative <- aw_scores_eval(xs = xs_eval,
+                                                      yobs = send_true, 
+                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                               ws_eval == optimal_assignment ~ 2,
+                                                                               TRUE ~ 3)), 
+                                                      sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_true_alternative, 'objects/aipw_scores_send_true_alternative.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_send_false.RDS')){ # read in scores if already generated
+  aipw_scores_send_false <- readRDS('objects/aipw_scores_send_false.RDS')
+  
+}else{
+  aipw_scores_send_false <- aw_scores_eval(xs = xs_eval,
+                                           yobs = send_false, 
+                                           ws = ws_eval, 
+                                           sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_false, 'objects/aipw_scores_send_false.RDS')
+}
+
+
+if(file.exists('objects/aipw_scores_send_false_learned.RDS')){ # read in scores if already generated
+  aipw_scores_send_false_learned <- readRDS('objects/aipw_scores_send_false_learned.RDS')
+  
+}else{
+  
+  aipw_scores_send_false_learned <- aw_scores_eval(xs = xs_eval,
+                                                   yobs = send_false, 
+                                                   ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                            ws_eval == optimal_assignment_original ~ 2,
+                                                                            TRUE ~ 3)), 
+                                                   sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_false_learned, 'objects/aipw_scores_send_false_learned.RDS')
+  
+}
+
+if(file.exists('objects/aipw_scores_send_false_alternative.RDS')){ # read in scores if already generated
+  aipw_scores_send_false_alternative <- readRDS('objects/aipw_scores_send_false_alternative.RDS')
+  
+}else{
+  
+  aipw_scores_send_false_alternative <- aw_scores_eval(xs = xs_eval,
+                                                       yobs = send_false, 
+                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                                ws_eval == optimal_assignment ~ 2,
+                                                                                TRUE ~ 3)), 
+                                                       sample.weights = balwts_uncens)
+  
+  saveRDS(aipw_scores_send_false_alternative, 'objects/aipw_scores_send_false_alternative.RDS')
+  
+}
+```
+
+### Evalution Estimation
+```{r response_eval_estimation, cache=TRUE}
+# Scores estimates
+# mean response
+aipw_est <- find_est(aipw_scores)
+aipw_est_learned <- find_est(aipw_scores_learned)
+aipw_est_alternative <- find_est(aipw_scores_alternative)
+aipw_est <- bind_rows(aipw_est[1:5,],
+                      aipw_est_learned[2,],
+                      aipw_est_alternative[2,])
+# treatment effects
+aipw_te <- find_te(aipw_scores)
+aipw_te_learned <- find_te(aipw_scores_learned)
+aipw_te_alternative <- find_te(aipw_scores_alternative)
+aipw_te <- bind_rows(aipw_te[1:4,],
+                     aipw_te_learned[1,],
+                     aipw_te_alternative[1,])
+
+# Any
+## true
+aipw_t_est <- find_est(aipw_scores_any_true)
+aipw_t_est_learned <- find_est(aipw_scores_any_true_learned)
+aipw_t_est_alternative <- find_est(aipw_scores_any_true_alternative)
+aipw_t_est <- bind_rows(aipw_t_est[1:5,],
+                        aipw_t_est_learned[2,],
+                        aipw_t_est_alternative[2,])
+
+aipw_t_te <- find_te(aipw_scores_any_true)
+aipw_t_te_learned <- find_te(aipw_scores_any_true_learned)
+aipw_t_te_alternative <- find_te(aipw_scores_any_true_alternative)
+aipw_t_te <- bind_rows(aipw_t_te[1:4,],
+                       aipw_t_te_learned[1,],
+                       aipw_t_te_alternative[1,])
+
+## false
+aipw_f_est <- find_est(aipw_scores_any_false)
+aipw_f_est_learned <- find_est(aipw_scores_any_false_learned)
+aipw_f_est_alternative <- find_est(aipw_scores_any_false_alternative)
+aipw_f_est <- bind_rows(aipw_f_est[1:5,],
+                        aipw_f_est_learned[2,],
+                        aipw_f_est_alternative[2,])
+
+aipw_f_te <- find_te(aipw_scores_any_false)
+aipw_f_te_learned <- find_te(aipw_scores_any_false_learned)
+aipw_f_te_alternative <- find_te(aipw_scores_any_false_alternative)
+aipw_f_te <- bind_rows(aipw_f_te[1:4,],
+                       aipw_f_te_learned[1,],
+                       aipw_f_te_alternative[1,])
+
+# Channel
+## true
+aipw_tt_est <- find_est(aipw_scores_timeline_true)
+aipw_tt_est_learned <- find_est(aipw_scores_timeline_true_learned)
+aipw_tt_est_alternative <- find_est(aipw_scores_timeline_true_alternative)
+aipw_tt_est <- bind_rows(aipw_tt_est[1:5,],
+                         aipw_tt_est_learned[2,],
+                         aipw_tt_est_alternative[2,])
+
+aipw_tt_te <- find_te(aipw_scores_timeline_true)
+aipw_tt_te_learned <- find_te(aipw_scores_timeline_true_learned)
+aipw_tt_te_alternative <- find_te(aipw_scores_timeline_true_alternative)
+aipw_tt_te <- bind_rows(aipw_tt_te[1:4,],
+                        aipw_tt_te_learned[1,],
+                        aipw_tt_te_alternative[1,])
+
+
+aipw_st_est <- find_est(aipw_scores_send_true)
+aipw_st_est_learned <- find_est(aipw_scores_send_true_learned)
+aipw_st_est_alternative <- find_est(aipw_scores_send_true_alternative)
+aipw_st_est <- bind_rows(aipw_st_est[1:5,],
+                         aipw_st_est_learned[2,],
+                         aipw_st_est_alternative[2,])
+
+aipw_st_te <- find_te(aipw_scores_send_true)
+aipw_st_te_learned <- find_te(aipw_scores_send_true_learned)
+aipw_st_te_alternative <- find_te(aipw_scores_send_true_alternative)
+aipw_st_te <- bind_rows(aipw_st_te[1:4,],
+                        aipw_st_te_learned[1,],
+                        aipw_st_te_alternative[1,])
+
+## false
+aipw_tf_est <- find_est(aipw_scores_timeline_false)
+aipw_tf_est_learned <- find_est(aipw_scores_timeline_false_learned)
+aipw_tf_est_alternative <- find_est(aipw_scores_timeline_false_alternative)
+aipw_tf_est <- bind_rows(aipw_tf_est[1:5,],
+                         aipw_tf_est_learned[2,],
+                         aipw_tf_est_alternative[2,])
+
+aipw_tf_te <- find_te(aipw_scores_timeline_false)
+aipw_tf_te_learned <- find_te(aipw_scores_timeline_false_learned)
+aipw_tf_te_alternative <- find_te(aipw_scores_timeline_false_alternative)
+aipw_tf_te <- bind_rows(aipw_tf_te[1:4,],
+                        aipw_tf_te_learned[1,],
+                        aipw_tf_te_alternative[1,])
+
+
+aipw_sf_est <- find_est(aipw_scores_send_false)
+aipw_sf_est_learned <- find_est(aipw_scores_send_false_learned)
+aipw_sf_est_alternative <- find_est(aipw_scores_send_false_alternative)
+aipw_sf_est <- bind_rows(aipw_sf_est[1:5,],
+                         aipw_sf_est_learned[2,],
+                         aipw_sf_est_alternative[2,])
+
+aipw_sf_te <- find_te(aipw_scores_send_false)
+aipw_sf_te_learned <- find_te(aipw_scores_send_false_learned)
+aipw_sf_te_alternative <- find_te(aipw_scores_send_false_alternative)
+aipw_sf_te <- bind_rows(aipw_sf_te[1:4,],
+                        aipw_sf_te_learned[1,],
+                        aipw_sf_te_alternative[1,])
+
+
+aipw_est$term <- 
+  aipw_t_est$term <-  
+  aipw_f_est$term <-  
+  aipw_tt_est$term <- aipw_tf_est$term <- 
+  aipw_st_est$term <- aipw_sf_est$term <-
+  treatment_levels
+
+aipw_te$term <- 
+  aipw_f_te$term <-  
+  aipw_t_te$term <-  
+  aipw_t_te$term <-  
+  aipw_tt_te$term <- aipw_tf_te$term <- 
+  aipw_st_te$term <- aipw_sf_te$term <-
+  treatment_levels[-1]
+
+```
+
+
+## Other manipulations
+```{r marg_scores, cache = TRUE}
+# Save marginalized scores
+colnames(aipw_scoresRmarg_learn) <- paste0(WR_levels, '_scores')
+colnames(aipw_scoresHmarg_learn) <- paste0(WH_levels, '_scores')
+
+df_learn <- cbind(df_learn, as.data.frame(aipw_scoresHmarg_learn), as.data.frame(aipw_scoresRmarg_learn))
+
+aipw_scores_marg <- aipw_scores[,1] + cbind(0,  aipw_scores[,2:5])
+colnames(aipw_scores_marg) <- paste0(c(WR_levels[1], WH_levels[2], WH_levels[5], WR_levels[2], WR_levels[7]), '_scores')
+
+df_eval <- cbind(df_eval, as.data.frame(aipw_scores_marg))
+```
+
+```{r addvars}
+df_learn <- df_learn %>% 
+  mutate(median_age = 1*(age>median(df_treat$age)),
+         median_dli = 1*(dli>= median(df_treat$dli)),
+         age_dli = interaction(as.factor(median_age),  as.factor(median_dli)),
+         median_science = 1*(science> median(df_treat$science)),
+         median_crt = 1*(crt> median(df_treat$crt)),
+         median_ed = 1*(ed> median(df_treat$ed)),
+         median_locus = 1*(locus> median(df_treat$locus)),
+         median_religiosity = 1*(religiosity> median(df_treat$religiosity)),
+         science_crt = interaction(as.factor(median_science),  as.factor(median_crt)),
+         median_fb_post = 1*(fb_post> median(df_treat$fb_post)),
+         median_fb_msg = 1*(fb_msg> median(df_treat$fb_msg)),
+         fb_active = fb_post+fb_msg,
+         median_fb_active = 1 * ((fb_post + fb_msg) > median(df_treat$fb_post+df_treat$fb_msg))
+  )
+
+df_eval <- df_eval %>% 
+  mutate(median_age = 1*(age>median(df_treat$age)),
+         median_dli = 1*(dli>= median(df_treat$dli)),
+         median_science = 1*(science> median(df_treat$science)),
+         median_crt = 1*(crt> median(df_treat$crt)),
+         median_religiosity = 1*(religiosity> median(df_treat$religiosity)),
+         median_ed = 1*(ed> median(df_treat$ed)),
+         median_fb_post = 1*(fb_post> median(df_treat$fb_post)),
+         median_fb_msg = 1*(fb_msg> median(df_treat$fb_msg)),
+         fb_active = fb_post+fb_msg,
+         median_fb_active = 1 * ((fb_post + fb_msg) > median(df_treat$fb_post+df_treat$fb_msg))
+  )
+```
+
+
+# Secondary analysis
+## Heterogeneity analysis
+
+
+*	### Variation based on scientific views, cognitive reflection test
++	Notes on analysis:
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Replicate Figure 4
+![image](https://user-images.githubusercontent.com/77539474/193426695-a7503a06-1024-4b34-bfb2-5e24fab2a7d1.png)
+![image](https://user-images.githubusercontent.com/77539474/193426702-45428e07-0c7d-4fcd-aecb-56b166206660.png)
+
+
++ Hypothesis: 
+-  Facebook tips or AfricaCheck tips > Accuracy for respondents with high DLI, high CRT, high Science 
+
+
+* ### Industry Practice
++ Notes on analysis:
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+- Treatments
+- Factcheck (headline)
+- More information (headline)
+- Related articles (headline)
+- Facebook tips (respondent)
+- AfricaCheck tips (respondent) 
+- Covariates
+- Age
+- Male
+- Education
++ Hypotheses:
+-  The effect of Factcheck, more information, related articles: more educated users, older people, and women > less educated, younger and male 
+-  The effect (reduce sharing of misinformation) of Facebook tips, AfricaCheck tips: less-educated > those with more education
+
+
+* ### Social Science Theory
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use learning data
+- Compare response under the following treatments to indicator = 1 or ≥ median to indicator = 0 or < median
+- Covariates:
+- CRT
+- Facebook usage
+- Religiosity
+- Treatments:
+- Accuracy nudge (respondent)
+- Deliberation nudge (respondent)
+- Pledge (respondent)
++ Hypotheses
+-  Compare responses under accuracy nudge and deliberation nudge between low CRT and high CRT respondents
+-  Pledge respondent-level treatment: frequent user of Facebook, more religious, and high CRT > less frequent user of Facebook, less religious, and low CRT
+
+
+* ### Best respondent and headline-level treatments
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Use evaluation data
++ Hypotheses
+-  How locus of control and age interact with the best uniform respondent-level treatment
+-  How CRT and education interact with the best uniform headline-level treatment
+
+
+* ### Baseline level
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+- Compare response under the following covariates to indicator = 1 or ≥ median to indicator = 0 or < median
+- Use evaluation data
++ Hypotheses
+- Certain types of people are simply more likely to share false information:
+-  Young
+-  Male
+-  Less educated
+-  Low CRT
+-  More religious
+
+
+# Secondary Analysis
+
+## HYPOTHESES
+To test hypotheses regarding specific heterogeneous response, as described in PAP, Section 4.1.2, we average across the relevant scores, and compare estimates across the two groups. Given that testing these treatment-covariate combinations will result in a large number of unique tests, we will adjust for multiple hypothesis testing for response heterogeneity by reporting tests under both Bonferroni and Benjamini-Hochberg corrections.
+
+#### General hypotheses
+
+```{r pilot_figures, cache = TRUE}
+
+#### Age DLI ####
+
+
+mean_mat <- aggregate(aipw_scoresRmarg_learn, by = list(df_learn$age_dli),  mean)
+se_mat <- aggregate(aipw_scoresRmarg_learn, by = list(df_learn$age_dli), function(x) sd(x)/sqrt(length(x)))
+counts <- table(df_learn$age_dli)
+
+ggmat <- reshape2::melt(mean_mat, variable.name = 'Best', value.name = 'Response')
+ggmat2 <- reshape2::melt(se_mat, variable.name = 'Best', value.name = 'SE')
+ggmat <- merge(ggmat, ggmat2) %>% 
+  filter(Best %in% levels(Best)[c(1,2,7)]) %>% 
+  mutate(Group = factor(Group.1, labels = c(paste0('Low Age, Low DLI \n(N = ', counts[1], ')'), 
+                                            paste0('Low Age x High DLI \n(N = ', counts[2], ')'),
+                                            paste0('High Age x Low DLI \n(N = ', counts[3], ')'),
+                                            paste0('High Age x High DLI \n(N = ', counts[4], ')'))),
+         Best = factor(Best, labels = c('Control', 'Accuracy', 'Facebook_Tips')),
+         c.lower = Response-1.96*SE, 
+         c.upper = Response+1.96*SE)
+
+gg <- ggplot(data = ggmat, aes(x = Best, y = Response, fill = Best)) + 
+  geom_bar(stat = "identity", width = 1) +
+  facet_grid(~Group, switch = "x", scales = "free_x", space = "free_x") +
+  theme(panel.spacing = unit(0, "lines"), 
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = "none") + 
+  scale_x_discrete(guide = guide_axis(n.dodge=3)) + 
+  xlab("Category")+
+  # ylim(-1, 1) +
+  geom_errorbar(aes(x=Best, ymin=c.lower, ymax=c.upper), 
+                width = 0.1,
+                position=position_dodge(0.9))
+
+
+# Substituting in emotion suppression for Facebook tips
+ggmat <- reshape2::melt(mean_mat, variable.name = 'Best', value.name = 'Response')
+ggmat2 <- reshape2::melt(se_mat, variable.name = 'Best', value.name = 'SE')
+ggmat <- merge(ggmat, ggmat2) %>% 
+  filter(Best %in% levels(Best)[c(1,2,4)]) %>% 
+  mutate(Group = factor(Group.1, labels = c(paste0('Low Age, Low DLI \n(N = ', counts[1], ')'), 
+                                            paste0('Low Age x High DLI \n(N = ', counts[2], ')'),
+                                            paste0('High Age x Low DLI \n(N = ', counts[3], ')'),
+                                            paste0('High Age x High DLI \n(N = ', counts[4], ')'))),
+         Best = factor(Best, labels = c('Control', 'Accuracy', 'Emotion')),
+         c.lower = Response-1.96*SE, 
+         c.upper = Response+1.96*SE)
+
+gg <- ggplot(data = ggmat, aes(x = Best, y = Response, fill = Best)) + 
+  geom_bar(stat = "identity", width = 1) +
+  facet_grid(~Group, switch = "x", scales = "free_x", space = "free_x") +
+  theme(panel.spacing = unit(0, "lines"), 
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = "none") + 
+  scale_x_discrete(guide = guide_axis(n.dodge=3)) + 
+  xlab("Category")+
+  # ylim(-1, 1) +
+  geom_errorbar(aes(x=Best, ymin=c.lower, ymax=c.upper), 
+                width = 0.1,
+                position=position_dodge(0.9))
+
+ggsave(
+  filename = '../figures/age_dli_emotion.png',
+  plot = gg,
+  width = 8,
+  height = 4
+)
+
+# Science CRT
+
+mean_mat <- aggregate(aipw_scoresRmarg_learn, by = list(df_learn$science_crt),  mean)
+se_mat <- aggregate(aipw_scoresRmarg_learn, by = list(df_learn$science_crt), function(x) sd(x)/sqrt(length(x)))
+counts <- table(df_learn$science_crt)
+
+ggmat <- reshape2::melt(mean_mat, variable.name = 'Best', value.name = 'Response')
+ggmat2 <- reshape2::melt(se_mat, variable.name = 'Best', value.name = 'SE')
+ggmat <- merge(ggmat, ggmat2) %>% 
+  filter(Best %in% levels(Best)[c(1, 2, 6, 8)]) %>% 
+  mutate(Group = factor(Group.1, labels = c(paste0('Low Science x Low CRT \n(N = ', counts[1], ')'), 
+                                            paste0('Low Science x High CRT \n(N = ', counts[2], ')'),
+                                            paste0('High Science x Low CRT \n(N = ', counts[3], ')'),
+                                            paste0('High Science x High CRT \n(N = ', counts[4], ')'))),
+         Best = factor(Best, labels = c('Control', 'Accuracy', 'AfricaCheck_Tips', 'Video')),
+         c.lower = Response-1.96*SE, 
+         c.upper = Response+1.96*SE)
+
+gg <- ggplot(data = ggmat, aes(x = Best, y = Response, fill = Best)) + 
+  geom_bar(stat = "identity", width = 1) +
+  facet_grid(~Group, switch = "x", scales = "free_x", space = "free_x") +
+  theme(panel.spacing = unit(0, "lines"), 
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = "none") +
+  scale_x_discrete(guide = guide_axis(n.dodge=4)) + 
+  xlab("Category") +
+  # ylim(-1, 1) +
+  geom_errorbar(aes(x=Best, ymin=c.lower, ymax=c.upper), 
+                width = 0.1,
+                position=position_dodge(0.9))
+
+
+ggsave(
+  filename = '../figures/science_crt.png',
+  plot = gg,
+  width = 8,
+  height = 4
+)
+
+```
+
+
+#### Industry focused
+
+We select the below treatments because these are currently, or were previously, used by social media companies including Facebook and Twitter. The below covariates were selected as those that social media companies directly collect or have access to, and therefore could more easily use for targeting interventions. For our covariates of interest we will divide these into two groups for any binary variables (i.e. indicator for male) and split on the median value for continuous variables to test two subgroups' difference in scores/outcomes (i.e. age $\geq$ median and age $<$ median).
+
+*Treatments:*
+
+* Facebook tips (respondent)
+* AfricaCheck tips (respondent)
+* Factcheck (headline)
+* More information (headline)
+* Related articles (headline)
+
+*Covariates:*
+
+* Age
+* Male
+* Education
+
+```{r heterogeneity_industry, cache = TRUE}
+full_xmat <- c()
+
+
+treatments_industry <- c("R_tips_facebook", "R_tips_africacheck", "H_factcheck", "H_more_info", "H_related")
+covariates_industry <- c("median_age", "median_ed", "male")
+
+lm_fit <- list()
+for (t in treatments_industry){
+  for (c in covariates_industry){
+    form <- as.formula(paste0(t, "_scores ~ ", c))
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_fit[[lm_name]] <- lm(form, data = df_learn)
+  }
+}
+
+lm_est <- list()
+lm_se <- list()
+for (t in treatments_industry){
+  for (c in covariates_industry){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_est[[lm_name]] <- coef(lm_fit[[lm_name]])[[2]]
+    lm_se[[lm_name]] <- coef(summary(lm_fit[[lm_name]]))[2,2]
+  }
+}
+
+
+xmat <- round(unlist(lm_est), 3)
+xmat_se <- round(unlist(lm_se), 3)
+xmat_tstat <-round(xmat / xmat_se,3)
+xmat_pval <-2 * (1 - pnorm(abs(xmat_tstat)))
+xmat_pval_bonferroni <- round(p.adjust(xmat_pval, "bonferroni"),3)
+xmat_pval_hochberg <- round(p.adjust(xmat_pval, "hochberg"),3)
+xmat_se <- sapply(xmat_se, function(x) paste0('(', round(x,3), ')'))
+xmat_pval <- round(xmat_pval, 3)
+
+xmat <- cbind(xmat, xmat_se, xmat_tstat, xmat_pval, xmat_pval_bonferroni, xmat_pval_hochberg)
+colnames(xmat) <- c("estimate", "se", "tstat", "p-value", "bonferroni p-value", "hochberg p-value")
+full_xmat <- rbind(full_xmat, xmat)
+
+as.data.frame(xmat, col.names = c("estimate", "se", "tstat", "bonferroni p-value", "hochberg p-value"))
+
+xmat <- xtable(xmat)
+align(xmat) <- rep('c', ncol(xmat)+1)
+
+print(
+  xmat,
+  include.rownames = TRUE,
+  floating = FALSE,
+  file = '../tables/hte_industry.tex') 
+```
+
+#### Social science theory
+
+Previous studies have hypothesized and tested the role that deliberation plays in mitigating belief and sharing of online misinforma- tion (Bago et al., 2020; Pennycook et al., 2020). Drawing on these findings, we anticipate that our **accuracy nudge** and **deliberation nudge** respondent-level treatments may help shift respondents from system I, intuitive reactions, to system II, more deliberative thinking by nudging respondents to stop and think about the accuracy of the headline, in the former, and about why they share posts, in the latter. We anticipate that these treatments will perform comparatively better among respondents who score low on our **CRT measure** by getting these intuitive thinkers to stop and reflect. Alternatively, these treatments could perform best among high CRT respondents if they are better able to engage with these treatments in the desired way.
+
+```{r heterogeneity_theory, cache = TRUE}
+treatments_theory <- c("R_accuracy", "R_deliberation")
+covariates_theory <- c("median_crt")
+
+lm_fit <- list()
+for (t in treatments_theory){
+  for (c in covariates_theory){
+    form <- as.formula(paste0(t, "_scores ~ ", c))
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_fit[[lm_name]] <- lm(form, data = df_learn)
+  }
+}
+
+
+lm_est <- list()
+lm_se <- list()
+for (t in treatments_theory){
+  for (c in covariates_theory){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_est[[lm_name]] <- coef(lm_fit[[lm_name]])[[2]]
+    lm_se[[lm_name]] <- coef(summary(lm_fit[[lm_name]]))[2,2]
+  }
+}
+
+xmat <- round(unlist(lm_est), 3)
+xmat_se <- round(unlist(lm_se), 3)
+xmat_tstat <-round(xmat / xmat_se,3)
+xmat_pval <-2 * (1 - pnorm(abs(xmat_tstat)))
+xmat_pval_bonferroni <- round(p.adjust(xmat_pval, "bonferroni"),3)
+xmat_pval_hochberg <- round(p.adjust(xmat_pval, "hochberg"),3)
+xmat_se <- sapply(xmat_se, function(x) paste0('(', round(x,3), ')'))
+xmat_pval <- round(xmat_pval, 3)
+
+xmat <- cbind(xmat, xmat_se, xmat_tstat, xmat_pval, xmat_pval_bonferroni, xmat_pval_hochberg)
+colnames(xmat) <- c("estimate", "se", "tstat", "p-value", "bonferroni p-value", "hochberg p-value")
+full_xmat <- rbind(full_xmat, xmat)
+
+as.data.frame(xmat, col.names = c("estimate", "se", "tstat", "bonferroni p-value", "hochberg p-value"))
+
+xmat <- xtable(xmat)
+align(xmat) <- rep('c', ncol(xmat)+1)
+
+print(
+  xmat,
+  include.rownames = TRUE,
+  floating = FALSE,
+  file = '../tables/hte_theory.tex') 
+```
+
+### Best Uniform Treatment
+
+In addition to the above hypotheses related to treatment heterogeneity, we  test heterogeneity with respect to the best performing respondent-level and headline-level treatments. To estimate these we again take the median as the splitting point of continuous covariates to create “high” and “low” categories:
+Specifically, we will test:
+
+1. How **locus of control** and **age** interact with the best uniform respondent-level treatment.
+
+2. How **CRT** and **education** interact with the best uniform headline-level treatment.
+
+#### Best respondent
+
+```{r heterogeneity_best_R, cache = TRUE}
+
+df_eval <- df_eval %>% 
+  mutate(median_age = 1*(age>median(df_treat$age)),
+         median_dli = 1*(dli>= median(df_treat$dli)),
+         median_dli = 1*(dli>= median(df_treat$dli)),
+         median_crt = 1*(crt> median(df_treat$crt)),
+         median_locus = 1*(locus> median(df_treat$locus)),
+  )
+
+df_eval <- df_eval %>% 
+  mutate(median_locus = 1*(locus > median(locus)))
+
+treatments_best_respondent <- c('R_accuracy', 'R_tips_facebook')
+covariates_best_respondent <- c("median_locus", "median_age")
+
+lm_fit <- list()
+for (t in treatments_best_respondent){
+  for (c in covariates_best_respondent){
+    form <- as.formula(paste0(t, "_scores ~ ", c))
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_fit[[lm_name]] <- lm(form, data = df_eval)
+  }
+}
+
+
+lm_est <- list()
+lm_se <- list()
+for (t in treatments_best_respondent){
+  for (c in covariates_best_respondent){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_est[[lm_name]] <- coef(lm_fit[[lm_name]])[[2]]
+    lm_se[[lm_name]] <- coef(summary(lm_fit[[lm_name]]))[2,2]
+  }
+}
+
+xmat <- round(unlist(lm_est), 3)
+xmat_se <- round(unlist(lm_se), 3)
+xmat_tstat <-round(xmat / xmat_se,3)
+xmat_pval <-2 * (1 - pnorm(abs(xmat_tstat)))
+xmat_pval_bonferroni <- round(p.adjust(xmat_pval, "bonferroni"),3)
+xmat_pval_hochberg <- round(p.adjust(xmat_pval, "hochberg"),3)
+xmat_se <- sapply(xmat_se, function(x) paste0('(', round(x,3), ')'))
+xmat_pval <- round(xmat_pval, 3)
+
+xmat <- cbind(xmat, xmat_se, xmat_tstat, xmat_pval, xmat_pval_bonferroni, xmat_pval_hochberg)
+colnames(xmat) <- c("estimate", "se", "tstat", "p-value", "bonferroni p-value", "hochberg p-value")
+full_xmat <- rbind(full_xmat, xmat)
+
+as.data.frame(xmat, col.names = c("estimate", "se", "tstat", "bonferroni p-value", "hochberg p-value"))
+
+xmat <- xtable(xmat)
+align(xmat) <- rep('c', ncol(xmat)+1)
+
+print(
+  xmat,
+  include.rownames = TRUE,
+  floating = FALSE,
+  file = '../tables/hte_best_respondent.tex') 
+
+```
+
+#### Best headline
+
+```{r heterogeneity_best_H, cache = TRUE}
+
+treatments_best_headline <- c('H_factcheck', 'H_related')
+covariates_best_headline <- c("median_crt", "median_ed")
+
+lm_fit <- list()
+for (t in treatments_best_headline){
+  for (c in covariates_best_headline){
+    form <- as.formula(paste0(t, "_scores ~ ", c))
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_fit[[lm_name]] <- lm(form, data = df_eval)
+  }
+}
+
+lm_est <- list()
+lm_se <- list()
+for (t in treatments_best_headline){
+  for (c in covariates_best_headline){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_est[[lm_name]] <- coef(lm_fit[[lm_name]])[[2]]
+    lm_se[[lm_name]] <- coef(summary(lm_fit[[lm_name]]))[2,2]
+  }
+}
+
+xmat <- round(unlist(lm_est), 3)
+xmat_se <- round(unlist(lm_se), 3)
+xmat_tstat <-round(xmat / xmat_se,3)
+xmat_pval <-2 * (1 - pnorm(abs(xmat_tstat)))
+xmat_pval_bonferroni <- round(p.adjust(xmat_pval, "bonferroni"),3)
+xmat_pval_hochberg <- round(p.adjust(xmat_pval, "hochberg"),3)
+xmat_se <- sapply(xmat_se, function(x) paste0('(', round(x,3), ')'))
+xmat_pval <- round(xmat_pval, 3)
+
+xmat <- cbind(xmat, xmat_se, xmat_tstat, xmat_pval, xmat_pval_bonferroni, xmat_pval_hochberg)
+colnames(xmat) <- c("estimate", "se", "tstat", "p-value","bonferroni p-value", "hochberg p-value")
+full_xmat <- rbind(full_xmat, xmat)
+
+as.data.frame(xmat, col.names = c("estimate", "se", "tstat", "bonferroni p-value", "hochberg p-value"))
+
+xmat <- xtable(xmat)
+align(xmat) <- rep('c', ncol(xmat)+1)
+
+print(
+  xmat,
+  include.rownames = TRUE,
+  floating = FALSE,
+  file = '../tables/hte_best_headline.tex') 
+
+```
+
+### Pledge analysis
+
+We expect the **pledge respondent-level treatment** to be more effective among people who *more frequently post and interact with friends on Facebook*, those who are *more religious* (i.e. those who attend religious services more frequently), and those with *high CRT scores*. Among respondents who are randomly assigned the *public* pledge treatment, we anticipate this treatment to be more effective among respondents who engage on Facebook regularly (as measured by the number of times they posted in the past 7 days and their frequency of communication with friends on the platform during the same period). In other words, we expect that people who are more engaged on social media, and therefore likely have more meaningful connections on the platform, will face higher audience costs to pledging to fight misinformation and then sharing dubious posts and will therefore reduce their sharing of misinformation. We also hypothesize that more religious respondents and those with high CRT scores, compared to their counterparts, may have stronger motivations to remain consistent with their own behavior. Meaning if they have pledged to helps spot misinformation, they will be less inclined to share it – at least compared to those who may care less about commitment and consistency with their own previous actions. We evaluate heterogeneity with respect to intention to treat, i.e., individuals who were assigned to the pledge treatment, irrespective of whether they actually took the pledge. However, we will also report rates at which respondents clicked the button to share the pledge across groups under comparison.
+
+```{r pledge, cache = TRUE}
+treatments_pledge <- "R_pledge"
+covariates_pledge <- c("median_crt", "median_fb_post", "median_fb_msg", "median_religiosity")
+
+lm_fit <- list()
+for (t in treatments_pledge){
+  for (c in covariates_pledge){
+    form <- as.formula(paste0(t, "_scores ~ ", c))
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_fit[[lm_name]] <- lm(form, data = df_learn)
+  }
+}
+
+output <- list()
+for (t in treatments_pledge){
+  for (c in covariates_pledge){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    output[[lm_name]] <- predict(lm_fit[[lm_name]], df_learn)
+  }
+}
+
+lm_est <- list()
+lm_se <- list()
+for (t in treatments_pledge){
+  for (c in covariates_pledge){
+    lm_name <- paste0(t,"_", gsub("_median", "", c))
+    lm_est[[lm_name]] <- coef(lm_fit[[lm_name]])[[2]]
+    lm_se[[lm_name]] <- coef(summary(lm_fit[[lm_name]]))[2,2]
+  }
+}
+
+df_pledge <- df_learn[df_learn$treatment_r == "pledge",]
+
+post_rate <- t(cbind(df_pledge %>% 
+                       group_by(median_fb_post) %>% 
+                       summarise(seen = sum(pledge_seen, na.rm = T),
+                                 post= sum(pledge_post, na.rm = T),
+                                 post_rate = post/seen) %>%
+                       select(post_rate), 
+                     df_pledge %>% 
+                       group_by(median_fb_msg) %>% 
+                       summarise(seen = sum(pledge_seen, na.rm = T),
+                                 post= sum(pledge_post, na.rm = T),
+                                 post_rate = post/seen) %>%
+                       select(post_rate),
+                     df_pledge %>% 
+                       group_by(median_crt) %>% 
+                       summarise(seen = sum(pledge_seen, na.rm = T),
+                                 post= sum(pledge_post, na.rm = T),
+                                 post_rate = post/seen) %>%
+                       select(post_rate),
+                     df_pledge %>% 
+                       group_by(median_religiosity) %>% 
+                       summarise(seen = sum(pledge_seen, na.rm = T),
+                                 post= sum(pledge_post, na.rm = T),
+                                 post_rate = post/seen) %>%
+                       select(post_rate)))
+
+post_rate_diff <- round(post_rate[,2] - post_rate[,1], 3)
+
+xmat <- round(unlist(lm_est), 3)
+xmat_se <- round(unlist(lm_se), 3)
+xmat_tstat <-round(xmat / xmat_se,3)
+xmat_pval <-2 * (1 - pnorm(abs(xmat_tstat)))
+xmat_pval_bonferroni <- round(p.adjust(xmat_pval, "bonferroni"),3)
+xmat_pval_hochberg <- round(p.adjust(xmat_pval, "hochberg"),3)
+xmat_se <- sapply(xmat_se, function(x) paste0('(', round(x,3), ')'))
+xmat_pval <- round(xmat_pval, 3)
+
+xmat <-cbind(xmat, xmat_se, xmat_tstat, xmat_pval, xmat_pval_bonferroni, xmat_pval_hochberg, post_rate_diff)
+colnames(xmat) <- c("estimate", "se", "tstat", "p-value","bonferroni p-value", "hochberg p-value", "post rate difference")
+full_xmat <- cbind(full_xmat, rep("", nrow(full_xmat)))
+full_xmat <- rbind(full_xmat, xmat)
+
+as.data.frame(xmat, col.names = c("estimate", "se", "tstat", "bonferroni p-value", "hochberg p-value", "post rate difference"))
+
+xmat <- xtable(xmat)
+align(xmat) <- rep('c', ncol(xmat)+1)
+
+print(
+  xmat,
+  include.rownames = TRUE,
+  floating = FALSE,
+  file = '../tables/hte_pledge.tex') 
+```
+
+
+## Secondary outcome{.tabset}
+
+**True stimuli tab**
+
+We report the click-through-rates for the share button for *true* articles as the percent of true stimuli that the respondent said they wanted to share during the survey. (We do not differentiate between stimuli presented pre- and post- treatment here, since the behavioral response measurement for all stimuli is all post-treatment.) To provide some insight into the extent to which respondents followed up on an intention to share, we report the *aggregate* number of times the associated post for each stimuli was shared.
+
+**False stimuli tab**
+
+For the false stimuli that were shown to the respondents, instead of allowing respondents to share these headlines, we provide links to tips for spotting misinformation online; we measure click-through-rates on these links.
+
+
+
+### True stimuli
+
+```{r outcome2_true, cache = TRUE}
+TK <- sapply(1:6, function (x) paste0("TK", x))
+TN <- sapply(1:6, function (x) paste0("TN", x))
+TB <- sapply(1:5, function (x) paste0("TB", x))
+
+stimuli_T <- c(TK, TN, TB)
+
+stimuli_T_data <- df_treat %>% select(intersect(sapply(stimuli_T, function(x) paste0("share_", x)), colnames(df_treat)))
+stimuli_T_data <- suppressWarnings(apply(stimuli_T_data, 2, as.numeric))
+aggregate_T <- colSums(stimuli_T_data, na.rm = T)
+
+aggregate_T_full <- table(toupper(unlist(df_treat[,grepl("dv_stimulus_", colnames(df_treat))], use.names = FALSE)))[stimuli_T]
+T_names <- intersect(toupper(names(aggregate_T_full)), str_sub(names(aggregate_T), -3, -1))
+T_summary <- data.frame(matrix(nrow = 3, ncol = length(T_names)))
+colnames(T_summary) <- T_names
+rownames(T_summary) <- c("aggregated total", "aggregated share", "rate")
+for (t in T_names){
+  T_summary[1, t] <- aggregate_T_full[t]
+  T_summary[2, t] <- aggregate_T[paste0("share_", t)]
+}
+T_summary[3, ] <- round(T_summary[2,] / T_summary[1,], 3)
+
+# seen_T_data <- df_treat %>% select(intersect(sapply(stimuli_T, function(x) paste0("seen_", x)), colnames(df_treat)))
+# seen_T_data <- apply(seen_T_data, 2, as.numeric)
+# aggregate_T_seen <- colSums(seen_T_data, na.rm = T)
+# 
+# T_names <- intersect(str_sub(names(aggregate_T_seen), -3, -1), str_sub(names(aggregate_T), -3, -1))
+# T_summary <- data.frame(matrix(nrow = 3, ncol = length(T_names)))
+# colnames(T_summary) <- T_names
+# rownames(T_summary) <- c("aggregated seen", "aggregated share", "rate")
+# for (t in T_names){
+#   T_summary[1, t] <- aggregate_T_seen[paste0("seen_", t)]
+#   T_summary[2, t] <- aggregate_T[paste0("share_", t)]
+# }
+# T_summary[3, ] <- round(T_summary[2,] / T_summary[1,], 3)
+
+T_summary
+```
+
+### False stimuli
+
+```{r outcome2_false, warning=FALSE, cache = TRUE}
+FK <- sapply(1:13, function (x) paste0("FK", x))
+FN <- sapply(1:16, function (x) paste0("FN", x))
+
+stimuli_F <- c(FK, FN)
+
+# Clicks on factcheck links shown with original stimuli
+# stimuli_F_data_click <- df_treat %>% select(intersect(sapply(stimuli_F, function(x) paste0("click_", x)), colnames(df_treat)))
+# stimuli_F_data_click <- apply(stimuli_F_data_click, 2, as.numeric)
+# aggregate_F_click <- colSums(stimuli_F_data_click, na.rm = T)
+
+# clicks on factckeck links shown in debrief with false stimuli
+stimuli_F_data_link <- df_treat %>% select(intersect(sapply(stimuli_F, function(x) paste0("link_", x)), colnames(df_treat)))
+stimuli_F_data_link <- suppressWarnings(apply(stimuli_F_data_link, 2, as.numeric))
+aggregate_F_link <- colSums(stimuli_F_data_link, na.rm = TRUE)
+
+aggregate_F_full <- table(toupper(unlist(df_treat[,grepl("dv_stimulus_", colnames(df_treat))], use.names = FALSE)))[stimuli_F]
+F_names_link <- intersect(names(aggregate_F_full), gsub("link_", "",names(aggregate_F_link)))
+F_summary_link <- data.frame(matrix(nrow = 3, ncol = length(F_names_link)))
+colnames(F_summary_link) <- F_names_link
+rownames(F_summary_link) <- c("aggregated total", "aggregated link", "link rate")
+for (f in F_names_link){
+  F_summary_link[1, f] <- aggregate_F_full[f]
+  F_summary_link[2, f] <- aggregate_F_link[paste0("link_", f)]
+}
+F_summary_link[3, ] <- round(F_summary_link[2,] / F_summary_link[1,], 3)
+F_summary_link
+
+# seen_F_data <- df_treat %>% select(intersect(sapply(stimuli_F, function(x) paste0("seen_", x)), colnames(df_treat)))
+# seen_F_data <- apply(seen_F_data, 2, as.numeric)
+# aggregate_F_seen <- colSums(seen_F_data, na.rm = T)
+# 
+# F_names_link <- intersect(gsub("seen_", "",names(aggregate_F_seen)), gsub("link_", "",names(aggregate_F_link)))
+# F_summary_link <- data.frame(matrix(nrow = 3, ncol = length(F_names_link)))
+# colnames(F_summary_link) <- F_names_link
+# rownames(F_summary_link) <- c("aggregated seen", "aggregated link", "link rate")
+# for (f in F_names_link){
+#   F_summary_link[1, f] <- aggregate_F_seen[paste0("seen_", f)]
+#   F_summary_link[2, f] <- aggregate_F_link[paste0("link_", f)]
+# }
+# F_summary_link[3, ] <- round(F_summary_link[2,] / F_summary_link[1,], 4)
+# F_summary_link
+```
+
+
+
+## Baseline Level
+
+We expect that baseline rates of sharing false posts (compared to true posts) will be higher among these subgroups (pre-treatment):
+
+* young
+* male
+* less educated 
+* low CRT
+* more religious
+
+In the analyses below, *1* represents above median in each category and *0* represents below median in each category. Baseline rates are calculated by the percentage of false stimuli sharing over the percentage of true stimuli sharing, which means that the lower baseline rates the better.
+
+```{r baseline, message = FALSE, cache = TRUE}
+# young
+df_treat %>% 
+  filter(W == "H_control_R_control") %>%
+  group_by(median_age) %>%
+  summarise(true = mean(pre_true/4),
+            false = mean(pre_false/4),
+            baseline_rate = false/true)
+# male
+df_treat %>% 
+  filter(W == "H_control_R_control") %>%
+  group_by(male) %>%
+  summarise(true = mean(pre_true/4),
+            false = mean(pre_false/4),
+            baseline_rate = false/true)
+
+# less_educated
+df_treat %>% 
+  filter(W == "H_control_R_control") %>%
+  group_by(median_ed) %>%
+  summarise(true = mean(pre_true/4),
+            false = mean(pre_false/4),
+            baseline_rate = false/true)
+
+# low_crt
+df_treat %>% 
+  filter(W == "H_control_R_control") %>%
+  group_by(median_crt) %>%
+  summarise(true = mean(pre_true/4),
+            false = mean(pre_false/4),
+            baseline_rate = false/true)
+
+# more_religious
+df_treat %>% 
+  filter(W == "H_control_R_control") %>%
+  group_by(median_religiosity) %>%
+  summarise(true = mean(pre_true/4),
+            false = mean(pre_false/4),
+            baseline_rate = false/true)
+```
+
+## Analyze WHO vs Govt
+
+```{r who, cache = TRUE}
+
+df_treat_long <- df_treat %>% 
+  rename_with(function(x) gsub('dv_|pre|post', '', x), starts_with(c('dv_stimulus_pre', 'dv_stimulus_post', 'dv_send_pre', 'dv_send_post', 'dv_timeline_pre', 'dv_timeline_post'))) %>%
+  pivot_longer(cols = matches('(stimulus_|timeline_|send_)[0-9]$'),
+               names_to = c('.value', 'period'),
+               names_sep = '_') %>% 
+  pivot_longer(cols = c('timeline', 'send'), 
+               names_to = 'channel',
+               values_to = 'share'
+  ) %>% 
+  filter(grepl("^t", stimulus)) %>% 
+  mutate(y_trueshare = (share=='yes'),
+         WHO = ifelse(grepl("^tb", stimulus), 1, 0),
+         messenger = (channel == 'send'))
+
+df_treat_long <- df_treat_long %>% 
+  mutate(WHO_var = case_when( (WHO == 1) & (pol == 0) ~ 'WHOnoPol',
+                              (WHO == 1) & (pol == 1) ~ 'WHOPol',
+                              (WHO == 0) & (pol == 0) ~ 'GOVnoPol',
+                              (WHO == 0) & (pol == 1) ~ 'GOVPol'))
+
+
+govt_WHO_lm <- lm_robust(y_trueshare ~ WHO_var-1, data = df_treat_long, 
+                         clusters = ID)
+
+govt_WHO_lm %>% 
+  tidy() %>% 
+  mutate(term = c('Gov, Pol = 0',
+                  'Gov, Pol = 1',
+                  'WHO, Pol = 0',
+                  'WHO, Pol = 1')) %>% 
+  ggplot(aes(x = term,y =estimate)) +
+  geom_point(position=position_dodge(width=0.5)) +
+  geom_errorbar(aes(x=term,ymin = estimate - 1.96 * std.error,ymax = estimate + 1.96 * std.error),width = 0,position=position_dodge(width=0.5), color = 'black') +  
+  xlab('') +
+  ylab('Estimate') +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust =1)) + 
+  coord_cartesian(ylim=c(0.5, 0.75)) + 
+  ggtitle('Sharing for Government vs. WHO x Pol') + 
+  ggsave('../figures/gov_vs_who.pdf', height = 6, width = 6)
+
+# with covariates
+govt_WHO_lm2 <- lm_lin(y_trueshare ~WHO_var-1,
+                       covariates = 
+                         formula(paste0('~ ', paste0(c('messenger', context_cols), collapse = ' + '))),
+                       data = df_treat_long) 
+
+govt_WHO_lm2 %>% 
+  tidy() %>% 
+  filter(term %in% c('WHO_varGOVnoPol', 'WHO_varGOVPol', 'WHO_varWHOnoPol', 'WHO_varWHOPol')) %>% 
+  mutate(term = c('Gov, Pol = 0',
+                  'Gov, Pol = 1',
+                  'WHO, Pol = 0',
+                  'WHO, Pol = 1')) %>% 
+  ggplot(aes(x = term,y =estimate)) +
+  geom_point(position=position_dodge(width=0.5)) +
+  geom_errorbar(aes(x=term,ymin = estimate - 1.96 * std.error,ymax = estimate + 1.96 * std.error),width = 0,position=position_dodge(width=0.5), color = 'black') +  
+  xlab('') +
+  ylab('Estimate') +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust =1)) + 
+  coord_cartesian(ylim=c(0.5, 0.75)) + 
+  ggtitle('Sharing for Government vs. WHO x Pol, Lin (SEs not CR)') + 
+  ggsave('../figures/gov_vs_who-lin.pdf', height = 6, width = 6)
+```
+
+
+
+
+# Etc
+
+## News time used
+
+```{r news, cache = TRUE}
+end <- strptime(df_treat$news_time_end, "%Y-%m-%d %H:%M:%OS")
+start <- strptime(df_treat$news_time_start, "%Y-%m-%d %H:%M:%OS")
+time_used_news <- end - start
+
+# seconds
+summary(as.numeric(time_used_news))
+paste0("Standard deviation of time used for news is ", round(sd(time_used_news), 2), " seconds")
+
+
+# minutes
+summary(as.numeric(time_used_news) / 60)
+paste0("Standard deviation of time used for news is ", round(sd(time_used_news / 60), 2), " minutes")
+hist(as.numeric(time_used_news) / 60, breaks = 50)
+
+# histogram
+ggoutlier_hist(data.frame(as.numeric(time_used_news)/60), "as.numeric.time_used_news..60", cut_off_ceiling = 5)
+```
+
+## Age check
+
+```{r age, cache = TRUE}
+misalign <- sum((df_treat$age - df_treat$age_check) != 0, na.rm = T) / (nrow(df_treat) - length(which(is.na(df_treat$age - df_treat$age_check)))) * 100
+paste0("Percentage of age check doesn't match: ", round(misalign, 2), "%")
+```
+
+
+## Conversion to LaTeX
+
+```{r latex, cache = TRUE}
+full_xmat <- cbind(rownames(full_xmat), full_xmat)
+rownames(full_xmat) <- c(rep("Industry Focused", 15), 
+                         rep("Social Science Theory", 2),
+                         rep("Best Respondent", 2),
+                         rep("Best Headline", 2),
+                         rep("Pledge Analysis", 4))
+colnames(full_xmat)[1]
+
+to_remove <- c("_male", "_age", "_ed", "_crt", "_locus", "_fb_post", "_fb_msg", "_religiosity")
+treatname <- sapply(full_xmat[,1], function(x) 
+  gsub(paste(to_remove, collapse = '|'), '', x))
+
+treatment_type <- sapply(treatname, function(x) substring(x, 1, 1))
+treatment_name <- sapply(treatname, function(x) substring(x, 3))
+treatment_name <- sapply(treatment_name, function(x) str_to_title(gsub("_", " ", x)))
+treatment_col <- sapply(1:nrow(full_xmat), function(i)
+  paste0(treatment_name[i], " (", treatment_type[i], ")"))
+
+variable_name <- sapply(full_xmat[,1], function(x) 
+  gsub(paste(paste0(c(WR_levels, WH_levels), "_"), collapse = '|'), '', x))
+
+full_xmat <- cbind(treatment_col, variable_name, full_xmat[,2:ncol(full_xmat)])
+cleanf <- function(x){ 
+  oldx <- c(FALSE, x[-1]==x[-length(x)])  # is the value equal to the previous?
+  res <- x
+  res[oldx] <- NA        
+  return(res)
+}
+full_xmat <- cbind(row.names(full_xmat), full_xmat)
+full_xmat[, 1:2] <- do.call(cbind, lapply(1:2, function(x){ 
+  oldx <- c(FALSE, full_xmat[,x][-1]==full_xmat[,x][-length(full_xmat[,x])])  
+  res <- full_xmat[,x]
+  res[oldx] <- NA        
+  return(res)
+}))
+
+
+
+full_xmat_se_transformed <- do.call(rbind, lapply(1:nrow(full_xmat), function(i) rbind(full_xmat[i, -5], c(NA, NA, "", full_xmat[i, 5], "", "", "", "", ""))))
+colnames(full_xmat_se_transformed) <- c("Type of analysis", "Treatment", "Variable", "mean (se)", "tstat", "p-value", "Bonferroni p-value", "Hochberg p-value", "Post rate difference")
+
+xmat <- xtable(full_xmat_se_transformed)
+align(xmat) <- rep('c', ncol(full_xmat_se_transformed)+1)
+
+print(
+  xmat,
+  include.rownames = FALSE,
+  floating = FALSE,
+  file = '../tables/full_secondary_table.tex') 
+```
+
+
+
+# * Etc
+#### Heterogeneity figure
+```{r pooled_respondent_any_on_covariates_figure, cache = TRUE}
+
+df_eval$pooled_respondent_any_false <- rowMeans(aipw_scores_any_false[, 4:5])
+df_eval$pooled_respondent_any_true <- rowMeans(aipw_scores_any_true[, 4:5])
+
+
+apply_mat <- expand.grid(stimuli_types, covariate_list)
+table <- apply(apply_mat, 1, function(x) {
+  stimuli_type <- x[1]
+  covariate <- x[2]
+  outcome <- paste0('pooled_respondent_any_', stimuli_type)
+  
+  if(length(unique(df_eval[, covariate])) <= 2){
+    # binary covariates
+    fmla0 <- formula(paste(outcome, ' ~  factor(',covariate, ') -1'))
+    fmla1 <- formula(paste(outcome, ' ~  factor(',covariate, ')'))
+    fmla0_0 <- formula(paste0('aipw_scores_any_',stimuli_type,'[,1] ~  factor(',covariate, ') -1'))
+    fmla0_1 <- formula(paste0('aipw_scores_any_',stimuli_type,'[,1] ~  factor(',covariate, ')'))
+    ns <- table(df_eval[,covariate])
+  }else{
+    # continuous covariates
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    fmla0_0 <- formula(paste0('aipw_scores_any_',stimuli_type,'[,1] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+    fmla0_1 <- formula(paste0('aipw_scores_any_',stimuli_type,'[,1] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
+  }
+  
+  ols0 <- tidy(lm_robust(fmla0, data=df_eval)) # treatment effect means by group
+  ols1 <- tidy(lm_robust(fmla1, data=df_eval)) # difference in treatment effects
+  ols0_0 <- tidy(lm_robust(fmla0_0, data=df_eval)) # control means by group
+  ols0_1 <- tidy(lm_robust(fmla0_1, data=df_eval)) # difference in control
+  
+  # coef, standardm error, p value
+  est_coef <- round(c(ols0_0$estimate, 
+                      ols0$estimate + ols0_0$estimate), 3)
+  est_std.err <- round(c(ols0_0$std.error, 
+                         ols0$std.error), 3)
+  p_vals <- c(paste0(round(ols0_1$estimate, 3), '\n', '(', 
+                     round(ols0_1$std.error, 3), ')')[2:length(ols0_1$estimate)],
+              paste0(round(ols0$estimate, 3), '\n', '(', 
+                     round(ols0$std.error, 3), ')'),
+              paste0(round(ols1$estimate, 3), '\n', '(', 
+                     round(ols1$std.error, 3), ')')[2:length(ols1$estimate)])
+  
+  
+  # Tally up results
+  outdf <- data.frame(stringr::str_to_sentence(stimuli_type),
+                      stringr::str_to_sentence(covariate), 
+                      rep(c('Control', 'Pooled\nrespondent'), 
+                          each = length(ols0_0$estimate)),
+                      rep(
+                        if(length(ols0_0$estimate) == 2){
+                          c('Not/lower type', 'Type/higher type')
+                        } else {
+                          paste0('Level ', sort(unique(df_eval[, covariate]))) 
+                        },
+                        times = 2),
+                      est_coef, est_std.err, matrix(p_vals, nrow = 1), 
+                      rep(prettyNum(ns, big.mark = ","), times = 2))
+  colnames(outdf) <- c('Stimuli type', 'Covariate type', 
+                       'Condition', 'Type',
+                       'estimate', 'std.error', 
+                       paste0(
+                         'p-value for control difference',
+                         if(length(ols0_0$estimate) == 2){
+                           c('')
+                         } else {
+                           paste0(' ', sort(unique(df_eval[, covariate]))[-1])
+                         }
+                       ),
+                       paste0(
+                         'p-value for te difference ',
+                         if(length(ols0_0$estimate) == 2){
+                           c('low', 'high')
+                         } else {
+                           sort(unique(df_eval[, covariate])) 
+                         }
+                       ),
+                       paste0(
+                         'p-value for diff in diff',
+                         if(length(ols0_0$estimate) == 2){
+                           c('')
+                         } else {
+                           paste0(' ' , sort(unique(df_eval[, covariate]))[-1])
+                         }
+                       ), 
+                       'n')
+  outdf
+  
+})
+table <- do.call(plyr::rbind.fill, table)
+
+
+table <- table %>% 
+  mutate(
+    `Stimuli type` = factor(`Stimuli type`, 
+                            levels = c('True', 'False')), 
+    label = case_when(
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type == 'Not/lower type' ~ 
+        paste0('< median\nn = ', n),
+      `Covariate type` %in%  c('Age', 'Dli','Hhi', 'Science')  & 
+        Type != 'Not/lower type' ~ 
+        paste0('≥ median\nn = ', n),
+      `Covariate type` %in%  c('Male')  & 
+        Type == 'Not/lower type' ~ 
+        paste0(' Not male\nn = ', n),
+      `Covariate type` %in%  c('Male')  & 
+        Type != 'Not/lower type' ~ 
+        paste0('Male\nn = ', n),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type == 'Not/lower type' ~ 
+        paste0('Kenya\nn = ', n),
+      `Covariate type` %in%  c('Nigeria')  & 
+        Type != 'Not/lower type' ~ 
+        paste0('Nigeria\nn = ', n),
+      `Covariate type` %in%  c('Pol')  & 
+        Type == 'Not/lower type' ~ 
+        paste0(' Not aligned\nn = ', n),
+      `Covariate type` %in%  c('Pol')  & 
+        Type != 'Not/lower type' ~ 
+        paste0('Aligned w/\nruling party\nn = ', n)),
+    `Covariate type` = case_when(`Covariate type` == 'Dli' ~ 
+                                   'Digital\nliteracy\nindex',
+                                 `Covariate type` == 'Hhi' ~ 
+                                   'Household\nwealth\nindex',
+                                 `Covariate type` == 'Nigeria' ~ 
+                                   'Country',
+                                 `Covariate type` == 'Pol' ~ 
+                                   'Political\nallegiance',
+                                 `Covariate type` == 'Science' ~ 
+                                   'Scientific\nknowledge\nindex',
+                                 TRUE ~ `Covariate type`)
+  )
+
+
+table_stats <- table %>% 
+  group_by(`Stimuli type`, `Covariate type`) %>% 
+  mutate(y = max(estimate)) %>% 
+  group_by(`Stimuli type`, `Covariate type`, Condition) %>% 
+  mutate(
+    p = unique(`p-value for diff in diff`),
+    p_low = unique(`p-value for te difference low`),
+    p_high = unique(`p-value for te difference high`),
+    p0 = unique(`p-value for control difference`),
+    y_c = max(estimate), 
+    x = 1,
+    xend = 2) %>%
+  group_by(`Stimuli type`, `Covariate type`, Condition, Type) %>% 
+  mutate(
+    y_t = max(estimate),
+  ) %>% 
+  filter(Condition == 'Control')
+
+# only one row per facet plot
+table_stats0 <- table_stats[which(table_stats$Type == 'Not/lower type'),]
+
+p <- ggplot(table, 
+            aes(y = estimate, x = label, group = Condition, 
+                fill = `Stimuli type`)) +
+  geom_col(aes(alpha = Condition),
+           position = position_dodge(width=0.5), size = 0) +
+  facet_grid(rows = vars(`Stimuli type`), 
+             cols = vars(`Covariate type`), scales = 'free_x') +
+  theme_minimal() + 
+  coord_cartesian(ylim = c(0.3, 0.9)) + 
+  scale_alpha_manual(values = c(0.6, 1)) + 
+  scale_fill_manual(values = cbPalette[c(6,7)]) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.background = element_rect(fill = 'white'),
+    plot.background = element_rect(fill = 'white', color = 'white'))+
+  scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+  xlab('Covariate types') + 
+  ylab('Estimate')
+
+
+
+p +
+  stat_pointinterval(aes(x = label,
+                         ydist = distributional::dist_normal(estimate, std.error), alpha = Condition),
+                     position = position_dodge(width=0.5),
+                     .width = c(.66, .95, .99),
+                     point_size = 0, color = 'grey60') + 
+  scale_alpha_manual(values = c(0.6, 0)) + 
+  theme(legend.text=element_text(color="white"),
+        legend.title = element_text(color = 'white')) + 
+  guides(alpha = guide_legend(
+    # title.theme = element_text(color = 'black'),
+    # label.theme = element_text(color = 'black'),
+    override.aes = list(alpha = 0)),
+    fill = guide_legend(override.aes = list(alpha = 0.6),
+                        title.theme = element_text(color = 'black', size = 11),
+                        label.theme = element_text(color = 'black', size = 9)
+    )) +
+  # flat bar
+  geom_segment(data = table_stats0, 
+               aes(x = x-.125, xend = xend-.125,
+                   y = y_c + .1, 
+                   yend = y_c + .1), lwd = .5, 
+               color = 'grey60') + 
+  # left leg
+  geom_segment(data = table_stats0, 
+               aes(x = x-.125, xend = x-.125,
+                   y = y_c + .06, 
+                   yend = y_c + .1), lwd = .5, 
+               color = 'grey60') + 
+  # right leg
+  geom_segment(data = table_stats0, 
+               aes(x = xend-.125, xend = xend-.125,
+                   y = y_c + .06, 
+                   yend = y_c + .1), lwd = .5, 
+               color = 'grey60') +  
+  # center notch
+  geom_segment(data = table_stats0, 
+               aes(x = 1.375, xend = 1.375,
+                   y = y_c + .09, 
+                   yend = y_c + .11), lwd = .5, 
+               color = 'grey60') + 
+  geom_text(data = table_stats0, 
+            aes(x = 1.375,
+                y = y_c + .22, label = p0), 
+            color = 'grey30', size = 3) +
+  coord_cartesian(ylim = c(0,1)) + 
+  labs(title = 'Average response, true and false sharing, control condition',
+       subtitle = 'Evaluation data'
+       # ,
+       # caption = 'P-values represent statistical significance of difference across covariate types in control response estimates.'
+  ) +
+  ylab('Estimate')
+
+ggsave('../figures/any_sharing_by_covariates_control.png', height = 7, width = 9.5)
+
+
+
+p +
+  stat_pointinterval(aes(x = label,
+                         ydist = distributional::dist_normal(estimate, std.error)),
+                     position = position_dodge(width=0.5),
+                     .width = c(.66, .95, .99),
+                     point_size = 0,
+                     color = 'grey60') + 
+  # flat bar
+  geom_segment(data = table_stats, 
+               aes(x = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125, 
+                   xend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125,
+                   y = y_t + .1, 
+                   yend = y_t + .1), lwd = .5, 
+               color = 'grey60') + 
+  # left leg
+  geom_segment(data = table_stats, 
+               aes(x = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125, 
+                   xend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125,
+                   y = y_t + .06, 
+                   yend = y_t + .1), lwd = .5, 
+               color = 'grey60') + 
+  # right leg
+  geom_segment(data = table_stats, 
+               aes(x = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125, 
+                   xend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125,
+                   y = y_t + .06, 
+                   yend = y_t + .1), lwd = .5, 
+               color = 'grey60') +  
+  # center notch
+  geom_segment(data = table_stats, 
+               aes(x = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type'), 
+                   xend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type'),
+                   y = y_t + .09, 
+                   yend = y_t + .11), lwd = .5, 
+               color = 'grey60') + 
+  geom_text(data = table_stats, 
+            aes(x = x*(Type == 'Not/lower type') + 
+                  xend*(Type != 'Not/lower type'),
+                y = y_t + .17, label = paste0(ifelse((Type == 'Not/lower type'), p_low, p_high)), size = 3), 
+            color = 'grey30', size = 2.5) +
+  labs(title = 'Average response, true and false sharing, control condition and pooled respondent',
+       subtitle = 'Evaluation data'
+       #,
+       # caption = 'P-values represent statistical significance of treatment effect estimates.'
+  ) +
+  ylab('Estimate')
+
+ggsave('../figures/any_sharing_by_covariates_te_comparisons.png', height = 7, width = 9.5)
+
+
+p +
+  stat_pointinterval(aes(x = label,
+                         ydist = distributional::dist_normal(estimate, std.error)),
+                     position = position_dodge(width=0.5),
+                     .width = c(.66, .95, .99),
+                     point_size = 0,
+                     color = 'grey60') + 
+  # flat bar
+  geom_segment(data = table_stats0, 
+               aes(x = x, xend = xend,
+                   y = y + .1, 
+                   yend = y + .1), lwd = .5, 
+               color = 'grey60') + 
+  # left leg
+  geom_segment(data = table_stats0, 
+               aes(x = x, xend = x,
+                   y = y + .06, 
+                   yend = y + .1), lwd = .5, 
+               color = 'grey60') + 
+  # right leg
+  geom_segment(data = table_stats0, 
+               aes(x = xend, xend = xend,
+                   y = y + .06, 
+                   yend = y + .1), lwd = .5, 
+               color = 'grey60') +  
+  # flat bar0
+  geom_segment(data = table_stats0, 
+               aes(x = x-.15, xend = x+.15,
+                   y = y + .06, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') + 
+  # left leg0
+  geom_segment(data = table_stats0, 
+               aes(x = x-.15, xend = x-.15,
+                   y = y + .03, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') + 
+  # right leg0
+  geom_segment(data = table_stats0, 
+               aes(x = x+.15, xend = x+.15,
+                   y = y + .03, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') +  
+  # flat bar1
+  geom_segment(data = table_stats0, 
+               aes(x = xend-.15, xend = xend+.15,
+                   y = y + .06, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') + 
+  # left leg1
+  geom_segment(data = table_stats0, 
+               aes(x = xend-.15, xend = xend-.15,
+                   y = y + .03, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') + 
+  # right leg1
+  geom_segment(data = table_stats0, 
+               aes(x = xend+.15, xend = xend+.15,
+                   y = y + .03, 
+                   yend = y + .06), lwd = .5, 
+               color = 'grey60') +  
+  # center notch
+  geom_segment(data = table_stats0, 
+               aes(x = 1.5, xend = 1.5,
+                   y = y + .09, 
+                   yend = y + .11), lwd = .5, 
+               color = 'grey60') + 
+  geom_text(data = table_stats0, 
+            aes(x = 1.5,
+                y = y + .17, label = paste0(p)), 
+            color = 'grey30', size = 2.5) +
+  labs(title = 'Average response, true and false sharing, control condition and pooled respondent',
+       subtitle = 'Evaluation data'
+       # ,
+       # caption = 'P-values represent statistical significance of difference across covariate types in treatment effect estimates.'
+  ) +
+  ylab('Estimate') 
+
+ggsave('../figures/any_sharing_by_covariates.png', height = 7, width = 9.5)
+
+
+```
+
+```{r pooled_respondent_any_false_on_covariates_figure, cache=TRUE}
+p <- ggplot(table[which(table$`Stimuli type` == 'False'),], 
+            aes(x = estimate, y = label, group = Condition, fill = Condition)) +
+  stat_gradientinterval(
+    aes(y = label, 
+        xdist = distributional::dist_normal(estimate, std.error),),
+    position=position_dodge(width=0.5),
+    .width = 0, size = 0, height = 0.4,
+    fill = cbPalette[7], color = cbPalette[7])  +
+  geom_point(position = position_dodge(width=0.5), size = 4,
+             shape = 21, color = cbPalette[7]) +
+  facet_grid(rows = vars(`Covariate type`), scales = 'free_y', switch = 'y') +
+  theme_minimal() + 
+  coord_cartesian(xlim = c(0.3, 0.65)) + 
+  scale_fill_manual(values =c('#FFFFFFFF', cbPalette[7])) +
+  #scale_color_manual(values =c('#FFFFFFFF', cbPalette[7])) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.background = element_rect(fill = 'white'),
+    plot.background = element_rect(fill = 'white', color = 'white'),
+    strip.text.y.left = element_text(angle = 0, hjust = 0, vjust = 1),
+    strip.placement = "outside") +
+  # scale_y_discrete(guide=guide_axis(n.dodge=2)) +
+  ylab('Covariate types') + 
+  xlab('Estimate')
+
+p +
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5), color = cbPalette[7]) +
+  # flat bar
+  geom_segment(data = table_stats[which(table_stats$`Stimuli type` == 'False'),], 
+               aes(y = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125, 
+                   yend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125,
+                   x = y_t + .075, 
+                   xend = y_t + .075), lwd = .5, 
+               color = 'grey60') + 
+  # left leg
+  geom_segment(data = table_stats[which(table_stats$`Stimuli type` == 'False'),], 
+               aes(y = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125, 
+                   yend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')-.125,
+                   x = y_t + .035, 
+                   xend = y_t + .075), lwd = .5, 
+               color = 'grey60') + 
+  # right leg
+  geom_segment(data = table_stats[which(table_stats$`Stimuli type` == 'False'),], 
+               aes(y = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125, 
+                   yend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type')+.125,
+                   x = y_t + .035, 
+                   xend = y_t + .075), lwd = .5, 
+               color = 'grey60') +  
+  # center notch
+  geom_segment(data = table_stats[which(table_stats$`Stimuli type` == 'False'),], 
+               aes(y = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type'), 
+                   yend = x*(Type == 'Not/lower type') + 
+                     xend*(Type != 'Not/lower type'),
+                   x = y_t + .065, 
+                   xend = y_t + .085), lwd = .5, 
+               color = 'grey60') + 
+  geom_text(data = table_stats[which(table_stats$`Stimuli type` == 'False'),], 
+            aes(y = x*(Type == 'Not/lower type') + 
+                  xend*(Type != 'Not/lower type'),
+                x = y_t + .1, label = paste0(ifelse((Type == 'Not/lower type'), p_low, p_high))), 
+            color = 'grey30', size = 3) +
+  labs(title = 'Average response, false sharing, pooled respondent treatment and control condition',
+       subtitle = 'Evaluation data'
+       # ,
+       # caption = 'P-values represent two-sided statistical significance of difference across covariate types in treatment effect estimates.'
+  ) +
+  ylab('Average intended stimuli shares on either channel') 
+
+ggsave('../figures/any_sharing_by_covariates_te_comparisons_false.png', width = 8, height = 6)
+```
+
+
+
+## Additional
+* ### Follow up on bonus stimuli [not coded yet]
++ Notes on analysis
++ Outcomes:
+1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
++ Use evaluation data
++ Hypotheses
+-  [ ] Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli; compare for each factor level separately
+
+* ### Follow up questions 1-3 days after
++ Notes on analysis
++ Outcomes:
+1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+3. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
+4. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
++ Respondents should only see 1 true and 1 false stimuli
++ Following Broockman et al. (2017), we will analyze duration effects adjusting for differential response rate to the follow-up survey and the number of days since the respondent completed the survey
++ Use evaluation data
++ Hypotheses
+-  Estimate mean response under each factor level separately
+
+* ### Open response question for deliberation question [not coded yet]
++ Notes on analysis
++ Outcomes:
+1. ) Why respondents chose to share or not share, hand-coded separately (question text: "In a few words, please say why you would or would not like to share this story on Facebook.")
++ Use evaluation data
++ Hypotheses
+-  Compare responses on motivation for sharing for both true and false stimuli. i.e. compare responses on sharing true stimuli vs. sharing the correction of false stimuli
+
+
+* ### Compare sample to Facebook and general pop
++ We will analyze how our sample compares to both the Facebook population and the general population in Kenya and Nigeria using Facebook’s advertising API data and nationally representative Afrobarometer surveys conducted in both countries.
++ Conduct separately for learning and evaluation 
+
+* ### Aggregate number of times the associated Facebook post for each stimuli was shared 
++ (need to check Facebook timeline)
+
+
+### P-value tables
+```{r any_eval_pvalues, cache = TRUE}
+control_scores_any_true <- aipw_scores_any_true[, 1]
+h_factcheck_scores_any_true <- aipw_scores_any_true[, 2] 
+h_related_scores_any_true <- aipw_scores_any_true[, 3]
+r_accuracy_scores_any_true <- aipw_scores_any_true[, 4]
+r_tips_facebook_scores_any_true <- aipw_scores_any_true[, 5]
+r_learned_scores_any_true <- aipw_scores_any_true_learned[, 2]
+r_alternative_scores_any_true <- aipw_scores_any_true_alternative[, 2]
+
+control_scores_any_false <- aipw_scores_any_false[, 1]
+h_factcheck_scores_any_false <- aipw_scores_any_false[, 2] 
+h_related_scores_any_false <- aipw_scores_any_false[, 3]
+r_accuracy_scores_any_false <- aipw_scores_any_false[, 4]
+r_tips_facebook_scores_any_false <- aipw_scores_any_false[, 5]
+r_learned_scores_any_false <- aipw_scores_any_false_learned[, 2]
+r_alternative_scores_any_false <- aipw_scores_any_false_alternative[, 2]
+
+
+# TRUE
+scoresl <- list(control_scores_any_true, 
+                control_scores_any_true+h_factcheck_scores_any_true, 
+                control_scores_any_true+h_related_scores_any_true, 
+                control_scores_any_true+r_accuracy_scores_any_true, 
+                control_scores_any_true+r_tips_facebook_scores_any_true, 
+                control_scores_any_true+r_learned_scores_any_true, 
+                control_scores_any_true+r_alternative_scores_any_true)
+
+scoresln <- c('control_scores', 
+              'h_factcheck_scores', 
+              'h_related_scores', 
+              'r_accuracy_scores', 
+              'r_tips_facebook_scores', 
+              'r_learned_scores', 
+              'r_alternative_scores')
+
+names(scoresl) <- scoresln
+# p-values for two-sided hypotheses
+scores_map <- expand.grid(scoresln, scoresln, stringsAsFactors = FALSE)
+
+outmat <- matrix(mapply(pval, scores_map[,1], scores_map[,2]), ncol = length(scoresln), byrow = FALSE)
+colnames(outmat) <- rownames(outmat) <- treatment_levels
+
+
+kable(round(outmat * upper.tri(outmat),3), format="html", digits=3, 
+      caption='P-values for test that row == column, any true share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE)
+
+kable(round(outmat * upper.tri(outmat)*1,3), format="latex", digits=3, 
+      caption='P-values for test that row == column, any true share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE) %>% 
+  save_kable(file = '../tables/evaluated_pvals_twosided_any_true.tex')
+
+
+# p-values for hypothesis that y is greater than x
+outmat_ge <- matrix(mapply(pval_ge, scores_map[,1], scores_map[,2]), ncol = length(scoresln), byrow = FALSE)
+colnames(outmat_ge) <- rownames(outmat_ge) <- treatment_levels
+
+kable(round(t(outmat_ge), 3), format="html", digits=3, 
+      caption='P-values for test that row < column, any true share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE)
+
+kable(round(t(outmat_ge), 3), format="latex", digits=3, 
+      caption='P-values for test that row < column, main response function', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE) %>% 
+  save_kable(file = '../tables/evaluated_pvals_onesided_any_true.tex')
+
+
+# FALSE
+scoresl <- list(control_scores_any_false, 
+                control_scores_any_false+h_factcheck_scores_any_false, 
+                control_scores_any_false+h_related_scores_any_false, 
+                control_scores_any_false+r_accuracy_scores_any_false, 
+                control_scores_any_false+r_tips_facebook_scores_any_false, 
+                control_scores_any_false+r_learned_scores_any_false, 
+                control_scores_any_false+r_alternative_scores_any_false)
+
+names(scoresl) <- scoresln
+# p-values for two-sided hypotheses
+scores_map <- expand.grid(scoresln, scoresln, stringsAsFactors = FALSE)
+
+outmat <- matrix(mapply(pval, scores_map[,1], scores_map[,2]), ncol = length(scoresln), byrow = FALSE)
+colnames(outmat) <- rownames(outmat) <- treatment_levels
+
+
+kable(round(outmat * upper.tri(outmat),3), format="html", digits=3, 
+      caption='P-values for test that row == column, any false share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE)
+
+kable(round(outmat * upper.tri(outmat)*1,3), format="latex", digits=3, 
+      caption='P-values for test that row == column, any false share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE) %>% 
+  save_kable(file = '../tables/evaluated_pvals_twosided_any_false.tex')
+
+
+# p-values for hypothesis that y is greater than x
+outmat_ge <- matrix(mapply(pval_ge, scores_map[,1], scores_map[,2]), ncol = length(scoresln), byrow = FALSE)
+colnames(outmat_ge) <- rownames(outmat_ge) <- treatment_levels
+
+kable(round(t(outmat_ge), 3), format="html", digits=3, 
+      caption='P-values for test that row < column, any false share', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE)
+
+kable(round(t(outmat_ge), 3), format="latex", digits=3, 
+      caption='P-values for test that row < column, main response function', 
+      escape = FALSE,
+      row.names = TRUE) %>%
+  kable_styling(bootstrap_options=c("condensed", "responsive"),
+                full_width=FALSE) %>% 
+  save_kable(file = '../tables/evaluated_pvals_onesided_any_false.tex')
+```
+
+
+
+```{r load_cached, eval = FALSE}
+qwraps2::lazyload_cache_dir(path = "misinformation_replication_secondar_cache/html")
+source('utils.R')
+```
+

@@ -43,3 +43,5 @@ data/seed.txt
 data/*.rds
 data/*.csv
 .DS_Store
+.idea
+**/archived
