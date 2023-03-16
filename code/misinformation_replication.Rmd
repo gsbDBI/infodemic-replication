@@ -887,7 +887,7 @@ aipw_te$term <-
 -  The best contextual policy achieves higher value than the best uniform respondent-level treatment
 
 
-# Figure S3: joint scores
+# Figure 1: Learning stage estimates 
 
 ```{r contextual_estimates, cache = TRUE, cache.lazy = FALSE}
 # Get estimates for all 40 counterfactual policies
@@ -933,98 +933,87 @@ out_R <- lapply(WR_idx, function(x) {
 
 
 ```{r learning_grid, cache = TRUE}
-# Respondent
 df_grid <- do.call(rbind.data.frame, c(out_full, 
                                        out_R, 
                                        out_H))
-colnames(df_grid) <- c('Estimate', 'std.error')
+colnames(df_grid) <- c('estimate', 'std.error')
 
-df_grid$Headline <- factor(c(gsub(' ', '\n',  WCH_terms), 
-                             rep(gsub(' ', '\n',  WCH_terms), each = 7),
-                             rep('Average', 8),
-                             gsub(' ', '\n',  WCH_terms)), 
-                           levels = c(gsub(' ', '\n',  WCH_terms), 'Average'))
-df_grid$Respondent <- factor(c(rep(WCR_terms[1],5),
-                               rep(gsub(' ', '\n',  WCR_terms)[-1], times = 5),
-                               gsub(' ', '\n',  WCR_terms),
-                               rep('Average', 5)),
-                             levels = c('Average', rev(gsub(' ', '\n',  WCR_terms))))
 
-ggplot(df_grid, aes(x = Headline, y = Respondent, fill = Estimate)) +
-  geom_tile(color = "white",
-            lwd = 1.5,
-            linetype = 1) +
-  # coord_fixed() +
-  scale_fill_gradientn(colors = 
-                         c(cbPalette[7], cbPalette[7], cbPalette[7], cbPalette[2], cbPalette[5], cbPalette[4], cbPalette[4], cbPalette[4])) +
-  # scale_fill_continuous(low = cbPalette[7], high = cbPalette[6]) + 
-  scale_x_discrete(position = "top", labels = unicode_minus) +
-  geom_tile(data = df_grid[which(df_grid$Headline == 'Average' | df_grid$Respondent == 'Average' ),], 
-            aes(x = Headline, y = Respondent, fill = Estimate),
-            color = cbPalette[1],
-            lwd = 1.5,
-            linetype = 1) +
-  geom_text(aes(label = paste0(unicode_minus(round(Estimate, 3)), '\n',
-                               paste0('(', round(std.error, 3), ')')
-  )), 
-  color = 'white', size = 3, hjust = 0.5) + 
-  theme_minimal() + 
+
+df_grid <- df_grid %>%
+  mutate(
+    Headline = factor(c(WCH_terms, 
+                        rep(WCH_terms, each = 7),
+                        rep('Equally\nweighted', 8),
+                        WCH_terms), 
+                      levels = c(WCH_terms, 'Equally\nweighted')),
+    Respondent = factor(c(rep(WCR_terms[1],5),
+                          rep(WCR_terms[-1], times = 5),
+                          WCR_terms,
+                          rep('Equally\nweighted', 5)),
+                        levels = c('Equally\nweighted', rev(WCR_terms))),
+    level = factor(case_when(Headline =='Equally\nweighted' ~ 'Respondent: Headline equally weighted', 
+                             Respondent =='Equally\nweighted' ~ 'Headline: Respondent equally weighted', 
+                             TRUE ~ 'Interactions: Respondent x headline'),
+                   levels = c('Interactions: Respondent x headline', 
+                              'Headline: Respondent equally weighted', 
+                              'Respondent: Headline equally weighted')))
+
+estimate_order <- c('Control',
+                    as.character(
+                    df_grid[which(df_grid$Headline =='Equally\nweighted' & df_grid$Respondent!='Control'), 'Respondent'][
+                    order(df_grid[which(df_grid$Headline =='Equally\nweighted' & df_grid$Respondent!='Control'), 'estimate'], decreasing = FALSE)]),
+                    as.character(
+                    df_grid[which(df_grid$Respondent =='Equally\nweighted' & df_grid$Headline!='Control'), 'Headline'][
+                    order(df_grid[which(df_grid$Respondent =='Equally\nweighted' & df_grid$Headline!='Control'), 'estimate'], decreasing = FALSE)]))
+
+df_grid <- df_grid %>%
+  mutate(term = factor(case_when(Headline =='Equally\nweighted' ~ Respondent, 
+                            Respondent =='Equally\nweighted'~ Headline,
+                            TRUE ~ Respondent),
+                  levels = estimate_order),
+    colors = factor(case_when(Headline =='Equally\nweighted' ~ 'Respondent\nHeadline equally weighted', 
+                              Respondent =='Equally\nweighted'~ 'Headline\nRespondent equally weighted',
+                              TRUE ~ Headline),
+                    levels =estimate_order[c(1, 9:12)]))
+
+
+gg <- ggplot(df_grid, aes(x = estimate, y = term, group = colors, color = colors,
+                    xmin = estimate - 1.96*std.error,
+                    xmax = estimate + 1.96*std.error)) +
+  stat_gradientinterval(
+    aes(xdist = distributional::dist_normal(estimate, std.error), 
+        color=colors, fill = colors), 
+    position = position_dodge(width=0.5), .width = 0, size = 0) + 
+  geom_point(position=position_dodge(width=0.5), 
+             size = 1, fill = 'white') + # change size, fill here
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5)) + 
+  theme_bw() +   
+  xlab('Estimate') +
+  ylab('Policy') +
+  scale_color_manual(values = cbPalette[-1], breaks = estimate_order[c(1, 9:12)]) +
+  scale_fill_manual(values = cbPalette[-1], breaks = estimate_order[c(1, 9:12)]) +
+  ggforce::facet_col(vars(level), scales = 'free_y', space = 'free') +
+  # facet_grid(rows = vars(level), scales = 'free', space = 'free')+  
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = 'white'),
-        plot.background = element_rect(fill = 'white', color = 'white'))
-
-ggsave('../figures/joint_scores.png', height = 6, width = 8)
-
-```
-
-# Figure S4: Cumulative assignment
-
-```{r assignment_on_time_simple, cache=TRUE}
-xx <- sapply(WH_idx[[1]], function(x) ws_learn %in% x)
-xx <- apply(xx, 2, cumsum)
-xx <- reshape(data.frame(xx), direction = 'long', varying = 1:8, 
-              v.names = "Cumulative assignment counts",
-              idvar = "Total observations",
-              timevar = "Factor level")
-xx$`Factor level` <- factor(xx$`Factor level`, 
-                            labels = WCR_terms)
-
-ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignment counts`, 
-                                                         x = `Total observations`, 
-                                                         group = `Factor level`, 
-                                                         color = `Factor level`)) + 
-  geom_line() +
-  ggtitle('Adaptive assignment, simple respondent treatments')  +
-  scale_colour_manual(values = cbPalette) +
-  theme_minimal() +
-  theme(panel.background = element_rect(fill = 'white'),
-        plot.background = element_rect(fill = 'white', color = 'white'))
-ggsave('../figures/respondent_base_assignment_on_time.png', width = 8, height = 6)
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.background = element_blank(),
+        legend.justification = 'top') + 
+  guides(color=guide_legend(title='Headline level', reverse = TRUE), 
+         fill=guide_legend(title='Headline level', reverse = TRUE))
 
 
 
-xx <- sapply(WR_idx[[1]], function(x) ws_learn %in% x)
-xx <- apply(xx, 2, cumsum)
-xx <- reshape(data.frame(xx), direction = 'long', varying = 1:5, 
-              v.names = "Cumulative assignment counts",
-              idvar = "Total observations",
-              timevar = "Factor level")
-xx$`Factor level` <- factor(xx$`Factor level`, 
-                            labels = WCH_terms)
+gt <- ggplot_gtable(ggplot_build(gg))
+# gtable::gtable_show_layout(gt) # to check which heights to change
 
+gt$heights[13] = 0.5*gt$heights[13] 
+gt$heights[18] = 0.5*gt$heights[18] 
 
-ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignment counts`, 
-                                                         x = `Total observations`, 
-                                                         group = `Factor level`, 
-                                                         color = `Factor level`)) + 
-  geom_line() +
-  ggtitle('Adaptive assignment, simple headline treatments') +
-  scale_colour_manual(values = cbPalette) +
-  theme_minimal() +
-  theme(panel.background = element_rect(fill = 'white'),
-        plot.background = element_rect(fill = 'white', color = 'white'))
-ggsave('../figures/headline_base_assignment_on_time.png', width = 8, height = 6)
-
+grid.draw(gt)
+ggsave('../figures/joint_scores.png', plot = gt, height = 6, width = 8)
 
 ```
 
@@ -1600,7 +1589,7 @@ writeLines(xx, '../tables/main_results.tex')
 
 ```
 
-# Figure 3: Rate
+# Figure 3: RATE
 ```{r RATE_accuracy_vs_facebook, cache=TRUE, warning=FALSE, message=FALSE}
 
 # Compute a prioritization based on estimated treatment effects.
@@ -1910,7 +1899,7 @@ writeLines(xx, '../tables/heterogeneity_policy.tex')
 
 
 
-# Figure 4: covariates by optimal policy
+# Figure 4: Selected covariate means by alternative optimal policy assignment
 ```{r covariates_in_optimal}
 
 .df <- df_eval %>% 
@@ -1930,7 +1919,7 @@ ggsave('../figures/covariate_optimal.png',
 
 ```
 
-# Table S1
+# Table S1: Comparing Facebook and Afrobarometer samples
 
 ```{r ABdata, cache = TRUE, warning=FALSE, message=FALSE}
 files <- list.files('../data', 
@@ -1984,7 +1973,6 @@ ab$rel_muslim <- ifelse(ab$Q98 %in% c("Muslim only","Sunni only","Tijaniya Broth
                                       "Ismaeli","Mouridiya Brotherhood","Qadiriya Brotherhood"),1,0)
 
 # for all index items == 1 if "Yes, someone else owns" / "Yes, do own", 0 otherwise
-own_fun <- function(x) {ifelse(x %in% c("Yes, someone else owns","Yes, do own"),1,0)}
 
 hhi_cols <- c(
   'Q89A',
@@ -1995,7 +1983,7 @@ hhi_cols <- c(
   'Q89F'
 )
 
-ab$hhi <- rowSums(as.data.frame(lapply(ab[hhi_cols], own_fun)))
+ab$hhi <- rowSums(as.data.frame(lapply(ab[hhi_cols], function(x) {ifelse(x %in% c("Yes, someone else owns","Yes, do own"),1,0)})))
 
 ab$cash <- ifelse(ab$Q94 %in% c("Yes, part time","Yes, full time"),1,0) # coding yes partime or fulltime as 1 here (not sure what done in our coding)
 
@@ -2018,14 +2006,14 @@ ab_dem$df <- "Afrobarometer sample"
 # merge AB + our data
 ab.fb <- smartbind(df_treat_dem,ab_dem)
 
-nvals <- ab.fb |> 
-  group_by(country, df, batch == 5) |> 
+nvals <- ab.fb %>% 
+  group_by(country, df, batch == 5) %>% 
   count()
 
 ## KENYA TABLE ##
-baltest_out_KY <- ab.fb |> filter(country == "Kenya") |>
-  gather(key = var, value = outcome, -country,-df, -batch) |>
-  group_by(var) |>
+baltest_out_KY <- ab.fb %>% filter(country == "Kenya") %>%
+  gather(key = var, value = outcome, -country,-df, -batch) %>%
+  group_by(var) %>%
   do({
     ## Run t-test of mean balance
     t_out <- try(t.test(outcome ~ df, data = .), silent = TRUE)
@@ -2049,9 +2037,9 @@ baltest_out_KY$var <- c("age","has cash income","education level","household ass
                         "male","supports governing party","christian","muslim","urban")
 
 ## NIGERIA TABLE ##
-baltest_out_NG <- ab.fb |> filter(country == "Nigeria") |>
-  gather(key = var, value = outcome, -country,-df, -batch) |>
-  group_by(var) |>
+baltest_out_NG <- ab.fb %>% filter(country == "Nigeria") %>%
+  gather(key = var, value = outcome, -country,-df, -batch) %>%
+  group_by(var) %>%
   do({
     ## Run t-test of mean balance
     t_out <- try(t.test(outcome ~ df, data = .), silent = TRUE)
@@ -2076,10 +2064,10 @@ baltest_out_NG$var <- c("age","has cash income","education level","household ass
 
 ## make latex tables
 #kenya
-baltest_out_KY |> 
-  ungroup() |> 
-  mutate(var = c('Age', 'Has cash income', 'Education level', 'Index of household possessions', 'Male', 'Supports governing party', 'Christian', 'Muslim', 'Urban')) |> 
-  select(var, learning_mean, sd1_split, evaluation_mean, sd2_split, mean_group2, sd2, mean_group1, sd1, diff_means) |>
+baltest_out_KY %>% 
+  ungroup() %>% 
+  mutate(var = c('Age', 'Has cash income', 'Education level', 'Index of household possessions', 'Male', 'Supports governing party', 'Christian', 'Muslim', 'Urban')) %>% 
+  select(var, learning_mean, sd1_split, evaluation_mean, sd2_split, mean_group2, sd2, mean_group1, sd1, diff_means) %>%
   kbl(align = c('r','c','c','c','c|', 'c','c','c','c','c'),
       format = "latex",
       booktabs = TRUE,
@@ -2098,14 +2086,14 @@ baltest_out_KY |>
       linesep = '',
       col.names = c('', 'Learning Mean', 'Learning SE', 'Evaluation Mean', 'Evaluation SE' , 'Overall Facebook Mean', 'Facebook SE', 'Afrobarometer Mean', 'Afrobarometer SE', 'Difference'),
       digits =2,
-      table.envir = NULL) |>
+      table.envir = NULL) %>%
   writeLines('../tables/abKY.tex')
 
 #nigeria
-baltest_out_NG |> 
-  ungroup() |> 
-  mutate(var = c('Age', 'Has cash income', 'Education level', 'Index of household possessions', 'Male', 'Supports governing party', 'Christian', 'Muslim', 'Urban')) |> 
-  select(var, learning_mean, sd1_split, evaluation_mean, sd2_split, mean_group2, sd2, mean_group1, sd1, diff_means) |>
+baltest_out_NG %>% 
+  ungroup() %>% 
+  mutate(var = c('Age', 'Has cash income', 'Education level', 'Index of household possessions', 'Male', 'Supports governing party', 'Christian', 'Muslim', 'Urban')) %>% 
+  select(var, learning_mean, sd1_split, evaluation_mean, sd2_split, mean_group2, sd2, mean_group1, sd1, diff_means) %>%
   kbl(align = c('r','c','c','c','c|', 'c','c','c','c','c'),
       format = "latex",
       booktabs = TRUE,
@@ -2124,15 +2112,15 @@ baltest_out_NG |>
       linesep = '',
       col.names = c('', 'Learning Mean', 'Learning SE', 'Evaluation Mean', 'Evaluation SE' , 'Overall Facebook Mean', 'Facebook SE', 'Afrobarometer Mean', 'Afrobarometer SE', 'Difference'),
       digits =2,
-      table.envir = NULL) |> 
+      table.envir = NULL) %>% 
   writeLines('../tables/abNG.tex')
 
 ```
 
-# Table S2
+# Table S2: Shares of pre-test stimuli across timeline and Messenger by batch
 
 ```{r batchwise_shares}
-cbind(0:4, matrix(prop.table(table(df_treat$pre_false, df_treat$batch), margin = 2), nrow = 5)) |> 
+cbind(0:4, matrix(prop.table(table(df_treat$pre_false, df_treat$batch), margin = 2), nrow = 5)) %>% 
   kbl(align = c('r','c','c','c','c', 'c'),
       format = "latex",
       booktabs = TRUE,
@@ -2142,10 +2130,10 @@ cbind(0:4, matrix(prop.table(table(df_treat$pre_false, df_treat$batch), margin =
       linesep = '',
       col.names = c('Shares', 'Batch 1', 'Batch 2', 'Batch 3', 'Batch 4' , 'Batch 5'),
       digits =2,
-      table.envir = NULL) |> 
+      table.envir = NULL) %>% 
   writeLines('../tables/false_shares_batchwise.tex')
 
-cbind(0:4, matrix(prop.table(table(df_treat$pre_true, df_treat$batch), margin = 2), nrow = 5)) |> 
+cbind(0:4, matrix(prop.table(table(df_treat$pre_true, df_treat$batch), margin = 2), nrow = 5)) %>% 
   kbl(align = c('r','c','c','c','c', 'c'),
       format = "latex",
       booktabs = TRUE,
@@ -2155,13 +2143,64 @@ cbind(0:4, matrix(prop.table(table(df_treat$pre_true, df_treat$batch), margin = 
       linesep = '',
       col.names = c('Shares', 'Batch 1', 'Batch 2', 'Batch 3', 'Batch 4' , 'Batch 5'),
       digits =2,
-      table.envir = NULL) |> 
+      table.envir = NULL) %>% 
   writeLines('../tables/true_shares_batchwise.tex')
+
+```
+# Figure S3: Cumulative treatment assignment in learning phase
+
+```{r assignment_on_time_simple, cache=TRUE}
+xx <- sapply(WH_idx[[1]], function(x) ws_learn %in% x)
+xx <- apply(xx, 2, cumsum)
+xx <- reshape(data.frame(xx), direction = 'long', varying = 1:8, 
+              v.names = "Cumulative assignment counts",
+              idvar = "Total observations",
+              timevar = "Factor level")
+xx$`Factor level` <- factor(xx$`Factor level`, 
+                            labels = WCR_terms)
+
+ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignment counts`, 
+                                                         x = `Total observations`, 
+                                                         group = `Factor level`, 
+                                                         color = `Factor level`)) + 
+  geom_line() +
+  ggtitle('Adaptive assignment, simple respondent treatments')  +
+  scale_colour_manual(values = cbPalette) +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'))
+ggsave('../figures/respondent_base_assignment_on_time.png', width = 6, height = 4.5)
+
+
+
+xx <- sapply(WR_idx[[1]], function(x) ws_learn %in% x)
+xx <- apply(xx, 2, cumsum)
+xx <- reshape(data.frame(xx), direction = 'long', varying = 1:5, 
+              v.names = "Cumulative assignment counts",
+              idvar = "Total observations",
+              timevar = "Factor level")
+xx$`Factor level` <- factor(xx$`Factor level`, 
+                            labels = WCH_terms)
+
+
+ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignment counts`, 
+                                                         x = `Total observations`, 
+                                                         group = `Factor level`, 
+                                                         color = `Factor level`)) + 
+  geom_line() +
+  ggtitle('Adaptive assignment, simple headline treatments') +
+  scale_colour_manual(values = cbPalette) +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'))
+ggsave('../figures/headline_base_assignment_on_time.png', width = 6, height = 4.5)
+
 
 ```
 
 
-# Figure 1: On-policy in learning
+
+# Table S6:  Evolution of on-policy probabilities during learning stage
 ```{r arm_assignment, warning=FALSE, message=FALSE}
 
 for(i in 1:length(WR_idx)){
@@ -2190,8 +2229,32 @@ writeLines(xx, '../tables/on_policy.tex')
 
 ```
 
-# Table S6: Alternative specifications
-```{r additional_scores}
+# Figure S4: Selected covariate means by learned optimal policy assignment
+```{r covariates_in_optimal_learned, cache = TRUE}
+
+.df <- df_eval %>% 
+  mutate(leaf = factor(optimal_assignment_original,
+                       labels = c('Optimal policy == accuracy',
+                                  'Optimal policy == FB tips',
+                                  'Optimal policy == other'))) %>% 
+  group_by(leaf) %>% 
+  mutate(leaf = factor(paste0(leaf, "\n ", "(n = ", prettyNum(n(), big.mark = ",") , ")"))) %>% 
+  as.data.frame() 
+
+covs_of_interest <- c('age', 'dli', 'male', 'pol', 'science')
+plot_covariate_means_by_group(
+  .df,
+  .title = NULL,
+  rowvars = covs_of_interest)
+
+ggsave('../figures/covariate_optimal_original.png', 
+       width = 6.25, height = 4)
+
+```
+
+
+# Table S7: Alternative specifications
+```{r additional_scores, cache = TRUE}
 if(file.exists('objects/aipw_scores_unbalanced.RDS')){ # read in scores if already generated
   aipw_scores_unbalanced <- readRDS('objects/aipw_scores_unbalanced.RDS')
   
@@ -2231,6 +2294,70 @@ if(file.exists('objects/aipw_scores_alternative_unbalanced.RDS')){ # read in sco
                                                                                 TRUE ~ 3)))
   
   saveRDS(aipw_scores_alternative_unbalanced, 'objects/aipw_scores_alternative_unbalanced.RDS')
+  
+}
+
+
+if(file.exists('objects/aipw_scores_imputed.RDS')){ # read in scores if already generated
+  aipw_scores_imputed <- readRDS('objects/aipw_scores_imputed.RDS')
+  
+}else{
+  
+  aipw_scores_imputed <- aw_scores_eval(
+    xs = as.matrix(df_treat[which(df_treat$batch == 5), c(context_cols, predv_cols)]),
+    yobs = df_treat[which(df_treat$batch == 5),'Y'],
+    ws = as.factor(case_when(as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 1 ~ 1, # control
+                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 2 ~  2, # headline factcheck,
+                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 5 ~ 3, # headline related,
+                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 6 ~ 4, # respondent accuracy
+                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 11 ~ 5, # facebook tips,
+                             # combine optimal with small groups
+                             TRUE ~ 6 # other optimal respondent (8/12)
+    ))
+  )
+  
+  saveRDS(aipw_scores_imputed, 'objects/aipw_scores_imputed.RDS')
+  
+}
+
+# learned optimal policy
+if(file.exists('objects/aipw_scores_learned_imputed.RDS')){ # read in scores if already generated
+  aipw_scores_learned_imputed <- readRDS('objects/aipw_scores_learned_imputed.RDS')
+  
+}else{
+  aipw_scores_learned_imputed <- aw_scores_eval(
+    xs = as.matrix(df_treat[which(df_treat$batch == 5), c(context_cols, predv_cols)]),
+    yobs = df_treat[which(df_treat$batch == 5),'Y'], 
+    ws = 
+      as.factor(case_when(as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 1 ~ 1,
+                          as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 
+                            df_treat[which(df_treat$batch == 5),'optimal0'] ~ 2,
+                          TRUE ~ 3))
+  )
+  
+  saveRDS(aipw_scores_learned_imputed, 'objects/aipw_scores_learned_imputed.RDS')
+  
+}
+
+# alternative optimal policy
+if(file.exists('objects/aipw_scores_alternative_imputed.RDS')){ # read in scores if already generated
+  aipw_scores_alternative_imputed <- readRDS('objects/aipw_scores_alternative_imputed.RDS')
+  
+}else{
+  aipw_scores_alternative_imputed <- aw_scores_eval(
+    xs = as.matrix(df_treat[which(df_treat$batch == 5), c(context_cols, predv_cols)]),
+    yobs = df_treat[which(df_treat$batch == 5),'Y'], 
+    ws = 
+      as.factor(case_when(as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 1 ~ 1,
+                          as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 
+                            ifelse(predict(
+                              cf.priority, 
+                              as.matrix(df_treat[which(df_treat$batch == 5), c(context_cols, predv_cols)])
+                            )$predictions<0, 6, 11) ~ 2,
+                          TRUE ~ 3))
+  )
+  
+  saveRDS(aipw_scores_alternative_imputed, 'objects/aipw_scores_alternative_imputed.RDS')
   
 }
 
@@ -2300,7 +2427,7 @@ if(file.exists('objects/aipw_scores_alternative_adjusted.RDS')){ # read in score
 
 
 
-```{r alternative_estimates}
+```{r alternative_estimates, cache = TRUE}
 balwts_eval <- (1/probs_eval)[cbind(1:nrow(df_eval), df_eval$W)]
 
 # formatting for table
@@ -2312,6 +2439,15 @@ aipw_est_unbalanced <- find_est(aipw_scores_unbalanced)
 aipw_te_unbalanced <- bind_rows(aipw_te_unbalanced[1:4,],
                                 aipw_te_learned_unbalanced[1,],
                                 aipw_te_alternative_unbalanced[1,])
+
+aipw_te_imputed <- find_te(aipw_scores_imputed)
+aipw_te_learned_imputed <- find_te(aipw_scores_learned_imputed)
+aipw_te_alternative_imputed <- find_te(aipw_scores_alternative_imputed)
+
+aipw_est_imputed <- find_est(aipw_scores_imputed)
+aipw_te_imputed <- bind_rows(aipw_te_imputed[1:4,],
+                             aipw_te_learned_imputed[1,],
+                             aipw_te_alternative_imputed[1,])
 
 
 aipw_te_adjusted <- find_te(aipw_scores_adjusted)
@@ -2381,10 +2517,10 @@ l2 <- bind_rows(tidy(l2)[2:4,], tidy(l2)[6,], tidy(l2l)[2,], tidy(l2a)[2,], tidy
 l2$p.value.upper <- pt(l2$estimate/l2$std.error, df = l2$df, lower = FALSE)
 
 l0$term <- l1$term <- l2$term <- c(treatment_levels[-1], treatment_levels[1])
-aipw_te_unbalanced$term <- aipw_te_adjusted$term <-
+aipw_te_unbalanced$term <- aipw_te_imputed$term <- aipw_te_adjusted$term <-
   treatment_levels[-1]
 
-aipw_est_unbalanced$term <- aipw_est_adjusted$term <-
+aipw_est_unbalanced$term <- aipw_est_imputed$term <- aipw_est_adjusted$term <-
   treatment_levels[1]
 
 # Mean response estimates
@@ -2392,6 +2528,10 @@ models <- list(
   `Unweighted` = list(
     tidy = bind_rows(aipw_te_unbalanced[1:6,],
                      aipw_est_unbalanced[1,]),
+    pval = 'p.value.upper'),
+  `Imputed` = list(
+    tidy = bind_rows(aipw_te_imputed[1:6,],
+                     aipw_est_imputed[1,]),
     pval = 'p.value.upper'),
   `Weighted to learning` = list(
     tidy = bind_rows(aipw_te_adjusted[1:6,],
@@ -2417,16 +2557,15 @@ models <- lapply(models, function(x){
   x
 })
 
-
-rows <- as.data.frame(matrix(c('', '(1)', '(2)', '(3)', '(4)', '(5)',
-                               'row2', rep('', 5),
-                               'row7', rep('', 5),
-                               'row16', rep('', 5)),
-                             byrow = TRUE, ncol = 6
+rows <- as.data.frame(matrix(c('', '(1)', '(2)', '(3)', '(4)', '(5)', '(6)',
+                               'row2', rep('', 6),
+                               'row7', rep('', 6),
+                               'row16', rep('', 6)),
+                             byrow = TRUE, ncol = 7
 ))
 
-row2 <- '& \\multicolumn{2}{c}{Scores} &  \\multicolumn{1}{c}{Robust OLS} & \\multicolumn{2}{c}{Lin estimator}\\\\
-\\cmidrule(lr){2-3} \\cmidrule(lr){4-4} \\cmidrule(lr){5-6} \\multicolumn{4}{l}{\\textbf{Headline treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row2 <- '& \\multicolumn{3}{c}{Scores} &  \\multicolumn{1}{c}{Robust OLS} & \\multicolumn{2}{c}{Lin estimator}\\\\
+\\cmidrule(lr){2-4} \\cmidrule(lr){5-5} \\cmidrule(lr){6-7} \\multicolumn{4}{l}{\\textbf{Headline treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
 row7 <- '\\multicolumn{4}{l}{\\textbf{Respondent treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
 row16 <- '\\hline'
 
@@ -2447,13 +2586,28 @@ xx <- modelsummary(models,
                                    'Control' = r'(\hspace{1em}Control mean)'),
                    output = 'latex_tabular')
 xx <- gsub('\n\\toprule', '', xx[1], fixed = TRUE)
-xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
+xx <- gsub('\n\\bottomrule', '\\hline
+\\hline\n
+{\\textbf{Covariates}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\\n
+\\hspace{1em} All & Yes & Yes & Yes & No & No & No \\\\\n
+\\hspace{1em} Pre-test response only & No & No & No & No & Yes & No \\\\\n
+\\hspace{1em} Learned policy strata only & No & No & No & No & No & Yes \\\\\n
+{\\textbf{Missing data}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\\n
+\\hspace{1em} Imputing pre-test response & No & Yes & 
+No & No & No & No \\\\\n
+{\\textbf{Weights}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\\n
+\\hspace{1em} Treatment probability  & Yes & Yes & Yes & Yes & Yes & Yes \\\\\n
+\\hspace{1em} Learning stage covariate distribution & No & No & Yes & No & No & No \\\\\n
+\\hspace{1em} Censoring & No & No & No & No & No & No 
+\\\\\n
+{\\textbf{N}} & 10,531 & 11,534  & 10,531 & 10,531 & 10,531 & 10,531 
+\\rule{0pt}{1.2\\normalbaselineskip}\\\\\n', xx[1], fixed = TRUE)
 
-xx <- gsub('\nrow2 &  &  &  &  & \\\\', 
+xx <- gsub('\nrow2 &  &  &  &  &  & \\\\', 
            row2, xx, fixed = TRUE)
-xx <- gsub('\nrow7 &  &  &  &  & \\\\', 
+xx <- gsub('\nrow7 &  &  &  &  &  & \\\\', 
            row7, xx, fixed = TRUE)
-xx <- gsub('\nrow16 &  &  &  &  & \\\\', 
+xx <- gsub('\nrow16 &  &  &  &  &  & \\\\', 
            row16, xx, fixed = TRUE)
 
 
@@ -2479,8 +2633,10 @@ writeLines(xx, '../tables/alternative_results.tex')
 
 ```
 
-# Alternative policy learning
-```{r learning_policy_combined_alternative}
+
+
+# Table S8: Control response and treatment effect estimates, secondary targeted policy
+```{r learning_policy_combined_alternative, cache = TRUE}
 
 cf.priority_c_alt <- causal_forest(
   X = xs_learn[train_idx, ],
@@ -2517,7 +2673,7 @@ rate_c_alt$estimate/rate_c_alt$std.err
 
 ```
 
-```{r scores_policy_combined_alternative}
+```{r scores_policy_combined_alternative, cache = TRUE}
 # alternative optimal policy, combined response function
 if(file.exists('objects/aipw_scores_c_alt.RDS')){ # read in scores if already generated
   aipw_scores_c_alt <- readRDS('objects/aipw_scores_c_alt.RDS')
@@ -2640,7 +2796,7 @@ if(file.exists('objects/aipw_scores_send_false_c_alt.RDS')){ # read in scores if
 
 ```
 
-```{r table_policy_combined_alternative}
+```{r table_policy_combined_alternative, cache = TRUE}
 # Mean response estimates
 models <- list(
   `Combined` = list(
@@ -2709,9 +2865,9 @@ xx <- gsub(xx_substr,
 writeLines(xx, '../tables/alternative_policy_results.tex')
 ```
 
-# Different combined response
+# Figure S5: Significance of treatment effects under alternative weighting schemes
 
-```{r post_truefalse_scores}
+```{r post_truefalse_scores, cache = TRUE}
 
 
 if(file.exists('objects/aipw_scores_post_true.RDS')){ # read in scores if already generated
@@ -2719,9 +2875,9 @@ if(file.exists('objects/aipw_scores_post_true.RDS')){ # read in scores if alread
   
 }else{
   aipw_scores_post_true <- aw_scores_eval(xs = xs_eval,
-                                           yobs = df_eval$post_true, 
-                                           ws = ws_eval, 
-                                           sample.weights = balwts_uncens)
+                                          yobs = df_eval$post_true, 
+                                          ws = ws_eval, 
+                                          sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_post_true, 'objects/aipw_scores_post_true.RDS')
   
@@ -2776,11 +2932,11 @@ if(file.exists('objects/aipw_scores_post_true_learned.RDS')){ # read in scores i
   
 }else{
   aipw_scores_post_true_learned <- aw_scores_eval(xs = xs_eval,
-                                                      yobs = df_eval$post_true, 
-                                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                               ws_eval == optimal_assignment_original ~ 2,
-                                                                               TRUE ~ 3)), 
-                                                      sample.weights = balwts_uncens)
+                                                  yobs = df_eval$post_true, 
+                                                  ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                           ws_eval == optimal_assignment_original ~ 2,
+                                                                           TRUE ~ 3)), 
+                                                  sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_post_true_learned, 'objects/aipw_scores_post_true_learned.RDS')
   
@@ -2791,11 +2947,11 @@ if(file.exists('objects/aipw_scores_post_false_learned.RDS')){ # read in scores 
   
 }else{
   aipw_scores_post_false_learned <- aw_scores_eval(xs = xs_eval,
-                                                       yobs = df_eval$post_false, 
-                                                       ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                                ws_eval == optimal_assignment_original ~ 2,
-                                                                                TRUE ~ 3)), 
-                                                       sample.weights = balwts_uncens)
+                                                   yobs = df_eval$post_false, 
+                                                   ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                                                                            ws_eval == optimal_assignment_original ~ 2,
+                                                                            TRUE ~ 3)), 
+                                                   sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_post_false_learned, 'objects/aipw_scores_post_false_learned.RDS')
   
@@ -2804,51 +2960,90 @@ if(file.exists('objects/aipw_scores_post_false_learned.RDS')){ # read in scores 
 ```
 
 
-```{r post_truefalse_plots}
+```{r post_truefalse_plots, cache = TRUE}
 
 # save estimates
 est_list <- list(
-cbind(aipw_scores_post_true[, 2:5], aipw_scores_post_true_learned[, 2], aipw_scores_post_true_alternative[, 2]),
-cbind(aipw_scores_post_false[, 2:5], aipw_scores_post_false_learned[, 2], aipw_scores_post_false_alternative[, 2])
+  cbind(aipw_scores_post_true[, 2:5], aipw_scores_post_true_learned[, 2], aipw_scores_post_true_alternative[, 2]),
+  cbind(aipw_scores_post_false[, 2:5], aipw_scores_post_false_learned[, 2], aipw_scores_post_false_alternative[, 2])
 )
 
 
 
-false_weights <- seq(-1, 0, .1)
-true_weights <- seq(0, 1, .1)
+false_weights <- seq(-1, -0.1, .01)
+true_weights <- seq(0.1, 1, .01)
 
 xy <- expand.grid(false_weights, true_weights)
 
-out_l <- lapply(1:6, function(s){
-mapply(function(x, y) {
-  # z <- x * aipw_scores_post_false_alternative[,2] + y * aipw_scores_post_true_alternative[,2]
-  z <- x * est_list[[2]][,s] + y * est_list[[1]][,s]
-  c(estimate = mean(z), 
-    std.error = sd(z)/sqrt(length(z)),
-    false_w = x, 
-    true_w = y,
-    term = s)
+
+out_l <- mapply(function(x, y) {
+  yobs_z <- x*df_eval$post_true + y*df_eval$post_true
+  z1 <- aw_scores_eval(xs = xs_eval,
+                       yobs = yobs_z, 
+                       ws = ws_eval, 
+                       sample.weights = balwts_uncens)
+  z2 <- aw_scores_eval(xs = xs_eval,
+                       yobs = yobs_z, 
+                       ws = as.factor(
+                         case_when(ws_eval == 1 ~ 1,
+                                   ws_eval == optimal_assignment_original ~ 2,
+                                   TRUE ~ 3)), 
+                       sample.weights = balwts_uncens)
+  z3 <- aw_scores_eval(xs = xs_eval,
+                       yobs = yobs_z, 
+                       ws = as.factor(
+                         case_when(ws_eval == 1 ~ 1,
+                                   ws_eval == optimal_assignment ~ 2,
+                                   TRUE ~ 3)), 
+                       sample.weights = balwts_uncens)
+  
+  est_mat <- cbind(z1[, 2:5], z2[, 2], z3[, 2])
+  colnames(est_mat)
+  
+  sapply(1:ncol(est_mat), function(i){
+    z <- est_mat[,i]
+    c(estimate = mean(z), 
+      std.error = sd(z)/sqrt(length(z)),
+      false_w = x, 
+      true_w = y,
+      term = i)
+  }) %>% t()
 },
 xy[,1], 
-xy[,2]
-) |> t()
-})
+xy[,2],
+SIMPLIFY = FALSE
+)
+
+# out_l <- lapply(1:6, function(s){
+#   mapply(function(x, y) {
+#     z <- x * est_list[[2]][,s] + y * est_list[[1]][,s]
+#     c(estimate = mean(z), 
+#       std.error = sd(z)/sqrt(length(z)),
+#       false_w = x, 
+#       true_w = y,
+#       term = s)
+#   },
+#   xy[,1], 
+#   xy[,2]
+#   ) %>% t()
+# })
 
 df <- do.call(rbind.data.frame, out_l)
 df$Condition <- factor(treatment_levels[-1][df$term], 
-                  levels = c(
-           'Headline\nFactcheck',
-            'Headline\nRelated articles', 
-           'Respondent\nAccuracy',
-           'Respondent\nFacebook tips',
-           'Respondent\nLearned targeted',
-           'Respondent\nAlternative targeted'
-         ))
+                       levels = c(
+                         'Headline\nFactcheck',
+                         'Headline\nRelated articles', 
+                         'Respondent\nAccuracy',
+                         'Respondent\nFacebook tips',
+                         'Respondent\nLearned targeted',
+                         'Respondent\nAlternative targeted'
+                       ))
 
 df$`Logged negative ratio of false to true weights` <- log(-df$false_w/df$true_w)
 df$Statistic <- df$estimate/df$std.error
 ggplot(df, aes(x = `Logged negative ratio of false to true weights`, y = `Statistic`, color = Condition)) + 
   geom_point() + 
+  geom_line() +
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = 'white'),
@@ -2860,28 +3055,6 @@ ggsave('../figures/alternative_weighting.png', width = 8, height = 4)
 ```
 
 
-# Figure XXX: covariates by optimal policy
-```{r covariates_in_optimal_learned}
-
-.df <- df_eval %>% 
-  mutate(leaf = factor(optimal_assignment_original,
-                                     labels = c('Optimal policy == accuracy',
-                                                'Optimal policy == FB tips',
-                                                'Optimal policy == other'))) %>% 
-  group_by(leaf) %>% 
-  mutate(leaf = factor(paste0(leaf, "\n ", "(n = ", prettyNum(n(), big.mark = ",") , ")"))) %>% 
-  as.data.frame() 
-
-covs_of_interest <- c('age', 'dli', 'male', 'pol', 'science')
-plot_covariate_means_by_group(
-  .df,
-  .title = NULL,
-  rowvars = covs_of_interest)
-
-ggsave('../figures/covariate_optimal_original.png', 
-       width = 6.25, height = 4)
-
-```
 
 # Table S6: Heterogeneity, averaged respondent
 ```{r treatment_heterogeneity_primary, cache = TRUE}

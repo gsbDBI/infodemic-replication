@@ -1267,9 +1267,8 @@ makeCodebook(df_treat[, c('Y', 'W', context_cols)], replace = TRUE,
 # Extraneous
 Save R script and check packages to ensure extraneous packages aren't loaded.
 ```{r check_packages, eval = FALSE}
-library(NCmisc)
 knitr::purl('dataCleaning_evaluation.Rmd')
-list.functions.in.file('dataCleaning_evaluation.R')
+NCmisc::list.functions.in.file('dataCleaning_evaluation.R')
 ```
 
 
