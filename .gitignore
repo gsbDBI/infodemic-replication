@@ -43,8 +43,8 @@ data/seed.txt
 data/*.rds
 data/*.csv
 .DS_Store
-**/__pycache__
 .idea
 **/archived
-data/contextual_probabilities.npy
+**/__pycache__
 **/figure-html
+**/contextual_probabilities.npy
