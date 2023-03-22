@@ -2885,7 +2885,7 @@ dir.create(file.path(&#39;..&#39;, &#39;figures&#39;), showWarnings = FALSE)</co
 </div>
 <div id="variable-encoding" class="section level2">
 <h2>Variable encoding</h2>
-<pre class="r"><code>df &lt;- df |&gt; 
+<pre class="r"><code>df &lt;- df %&gt;% 
   mutate_if(is.character, tolower)
 
 df &lt;- within(df, {
@@ -3274,13 +3274,13 @@ df &lt;- within(df, {
   
   # Response to post-treatment stimuli
   
-  post_true = case_when((incomplete %in% 1) &amp; !(!is.na(dv_send_post8) &amp; !is.na(dv_timeline_post8)) ~ pre_true,
+  post_true = case_when((incomplete %in% 1) &amp; !(!is.na(dv_send_post8) &amp; !is.na(dv_timeline_post8)) ~ as.integer(pre_true),
                         TRUE ~ ((substr(dv_stimulus_post5, 0, 1)%in%&#39;t&#39;)*dv_5 +
                                   (substr(dv_stimulus_post6, 0, 1)%in%&#39;t&#39;)*dv_6 +
                                   (substr(dv_stimulus_post7, 0, 1)%in%&#39;t&#39;)*dv_7 +
                                   (substr(dv_stimulus_post8, 0, 1)%in%&#39;t&#39;)*dv_8))
   
-  post_false = case_when((incomplete %in% 1) &amp; !(!is.na(dv_send_post8) &amp; !is.na(dv_timeline_post8)) ~ pre_false,
+  post_false = case_when((incomplete %in% 1) &amp; !(!is.na(dv_send_post8) &amp; !is.na(dv_timeline_post8)) ~ as.integer(pre_false),
                          TRUE ~ ((substr(dv_stimulus_post5, 0, 1)%in%&#39;f&#39;)*dv_5 +
                                    (substr(dv_stimulus_post6, 0, 1)%in%&#39;f&#39;)*dv_6 +
                                    (substr(dv_stimulus_post7, 0, 1)%in%&#39;f&#39;)*dv_7 +
@@ -3363,78 +3363,77 @@ df &lt;- within(df, {
                                        TRUE ~ 0)
   post_false_send_prop = case_when(post_false_seen &gt; 0 ~ post_false_send/ post_false_seen,
                                    TRUE ~ 0)
-  
   # attrition
   attrited = case_when( (post_true_seen == 0 | post_false_seen == 0) ~ 1,
                         TRUE ~ 0)
 }
 )</code></pre>
 <pre class="r"><code>df &lt;- 
-  df |&gt; 
+  df %&gt;% 
   # true click through rate
-  mutate(true_any = post_true_any + pre_true_any) |&gt; 
+  mutate(true_any = post_true_any + pre_true_any) %&gt;% 
   
-  mutate(share_TB1 = coalesce(share_TB1, 0)) |&gt; 
-  mutate(share_TB2 = coalesce(share_TB2, 0)) |&gt; 
-  mutate(share_TB3 = coalesce(share_TB3, 0)) |&gt; 
-  mutate(share_TB4 = coalesce(share_TB4, 0)) |&gt; 
-  mutate(share_TB5 = coalesce(share_TB5, 0)) |&gt; 
+  mutate(share_TB1 = coalesce(share_TB1, 0)) %&gt;% 
+  mutate(share_TB2 = coalesce(share_TB2, 0)) %&gt;% 
+  mutate(share_TB3 = coalesce(share_TB3, 0)) %&gt;% 
+  mutate(share_TB4 = coalesce(share_TB4, 0)) %&gt;% 
+  mutate(share_TB5 = coalesce(share_TB5, 0)) %&gt;% 
   
-  mutate(share_TK1 = coalesce(share_TK1, 0)) |&gt; 
-  mutate(share_TK2 = coalesce(share_TK2, 0)) |&gt; 
-  mutate(share_TK3 = coalesce(share_TK3, 0)) |&gt; 
-  mutate(share_TK4 = coalesce(share_TK4, 0)) |&gt; 
-  mutate(share_TK5 = coalesce(share_TK5, 0)) |&gt; 
-  mutate(share_TK6 = coalesce(share_TK6, 0)) |&gt; 
+  mutate(share_TK1 = coalesce(share_TK1, 0)) %&gt;% 
+  mutate(share_TK2 = coalesce(share_TK2, 0)) %&gt;% 
+  mutate(share_TK3 = coalesce(share_TK3, 0)) %&gt;% 
+  mutate(share_TK4 = coalesce(share_TK4, 0)) %&gt;% 
+  mutate(share_TK5 = coalesce(share_TK5, 0)) %&gt;% 
+  mutate(share_TK6 = coalesce(share_TK6, 0)) %&gt;% 
   
-  mutate(share_TN1 = coalesce(share_TN1, 0)) |&gt; 
-  mutate(share_TN2 = coalesce(share_TN2, 0)) |&gt; 
-  mutate(share_TN3 = coalesce(share_TN3, 0)) |&gt; 
-  mutate(share_TN4 = coalesce(share_TN4, 0)) |&gt; 
-  mutate(share_TN6 = coalesce(share_TN6, 0)) |&gt; 
+  mutate(share_TN1 = coalesce(share_TN1, 0)) %&gt;% 
+  mutate(share_TN2 = coalesce(share_TN2, 0)) %&gt;% 
+  mutate(share_TN3 = coalesce(share_TN3, 0)) %&gt;% 
+  mutate(share_TN4 = coalesce(share_TN4, 0)) %&gt;% 
+  mutate(share_TN6 = coalesce(share_TN6, 0)) %&gt;% 
   
   mutate(true_shared = share_TB1 + share_TB2 + share_TB3 + share_TB4 + share_TB5 +
            share_TK1 + share_TK2 + share_TK3 + share_TK4 + share_TK5 + share_TK6 +
-           share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) |&gt; 
+           share_TN1 + share_TN2 + share_TN3 + share_TN4 + share_TN6) %&gt;% 
   
-  mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) |&gt; 
+  mutate(true_click_through_rate = coalesce(true_shared / true_any, 0)) %&gt;% 
   
   # false click through rate
-  mutate(link_FK2 = coalesce(link_FK2, 0)) |&gt; 
-  mutate(link_FK3 = coalesce(link_FK3, 0)) |&gt; 
-  mutate(link_FK4 = coalesce(link_FK4, 0)) |&gt; 
-  mutate(link_FK5 = coalesce(link_FK5, 0)) |&gt; 
-  mutate(link_FK6 = coalesce(link_FK6, 0)) |&gt; 
-  mutate(link_FK7 = coalesce(link_FK7, 0)) |&gt; 
-  mutate(link_FK8 = coalesce(link_FK8, 0)) |&gt; 
-  mutate(link_FK9 = coalesce(link_FK9, 0)) |&gt; 
-  mutate(link_FK10 = coalesce(link_FK10, 0)) |&gt; 
-  mutate(link_FK11 = coalesce(link_FK11, 0)) |&gt; 
-  mutate(link_FK12 = coalesce(link_FK12, 0)) |&gt; 
-  mutate(link_FK13 = coalesce(link_FK13, 0)) |&gt; 
+  mutate(link_FK2 = coalesce(link_FK2, 0)) %&gt;% 
+  mutate(link_FK3 = coalesce(link_FK3, 0)) %&gt;% 
+  mutate(link_FK4 = coalesce(link_FK4, 0)) %&gt;% 
+  mutate(link_FK5 = coalesce(link_FK5, 0)) %&gt;% 
+  mutate(link_FK6 = coalesce(link_FK6, 0)) %&gt;% 
+  mutate(link_FK7 = coalesce(link_FK7, 0)) %&gt;% 
+  mutate(link_FK8 = coalesce(link_FK8, 0)) %&gt;% 
+  mutate(link_FK9 = coalesce(link_FK9, 0)) %&gt;% 
+  mutate(link_FK10 = coalesce(link_FK10, 0)) %&gt;% 
+  mutate(link_FK11 = coalesce(link_FK11, 0)) %&gt;% 
+  mutate(link_FK12 = coalesce(link_FK12, 0)) %&gt;% 
+  mutate(link_FK13 = coalesce(link_FK13, 0)) %&gt;% 
   
-  mutate(link_FN1 = coalesce(link_FN1, 0)) |&gt; 
-  mutate(link_FN2 = coalesce(link_FN2, 0)) |&gt; 
-  mutate(link_FN3 = coalesce(link_FN3, 0)) |&gt; 
-  mutate(link_FN4 = coalesce(link_FN4, 0)) |&gt; 
-  mutate(link_FN5 = coalesce(link_FN5, 0)) |&gt; 
-  mutate(link_FN6 = coalesce(link_FN6, 0)) |&gt; 
-  mutate(link_FN7 = coalesce(link_FN7, 0)) |&gt; 
-  mutate(link_FN8 = coalesce(link_FN8, 0)) |&gt; 
-  mutate(link_FN9 = coalesce(link_FN9, 0)) |&gt; 
-  mutate(link_FN10 = coalesce(link_FN10, 0)) |&gt; 
-  mutate(link_FN11 = coalesce(link_FN11, 0)) |&gt; 
-  mutate(link_FN12 = coalesce(link_FN12, 0)) |&gt; 
-  mutate(link_FN13 = coalesce(link_FN13, 0)) |&gt; 
-  mutate(link_FN14 = coalesce(link_FN14, 0)) |&gt; 
-  mutate(link_FN15 = coalesce(link_FN15, 0)) |&gt; 
-  mutate(link_FN16 = coalesce(link_FN16, 0)) |&gt; 
+  mutate(link_FN1 = coalesce(link_FN1, 0)) %&gt;% 
+  mutate(link_FN2 = coalesce(link_FN2, 0)) %&gt;% 
+  mutate(link_FN3 = coalesce(link_FN3, 0)) %&gt;% 
+  mutate(link_FN4 = coalesce(link_FN4, 0)) %&gt;% 
+  mutate(link_FN5 = coalesce(link_FN5, 0)) %&gt;% 
+  mutate(link_FN6 = coalesce(link_FN6, 0)) %&gt;% 
+  mutate(link_FN7 = coalesce(link_FN7, 0)) %&gt;% 
+  mutate(link_FN8 = coalesce(link_FN8, 0)) %&gt;% 
+  mutate(link_FN9 = coalesce(link_FN9, 0)) %&gt;% 
+  mutate(link_FN10 = coalesce(link_FN10, 0)) %&gt;% 
+  mutate(link_FN11 = coalesce(link_FN11, 0)) %&gt;% 
+  mutate(link_FN12 = coalesce(link_FN12, 0)) %&gt;% 
+  mutate(link_FN13 = coalesce(link_FN13, 0)) %&gt;% 
+  mutate(link_FN14 = coalesce(link_FN14, 0)) %&gt;% 
+  mutate(link_FN15 = coalesce(link_FN15, 0)) %&gt;% 
+  mutate(link_FN16 = coalesce(link_FN16, 0)) %&gt;% 
   
   mutate(false_clicked = link_FK2 + link_FK3 + link_FK4 + link_FK5 + link_FK6 + link_FK7 +
            link_FK8 + link_FK9 + link_FK10 + link_FK11 + link_FK12 + link_FK13 +
            link_FN1 + link_FN2 + link_FN3 + link_FN4 + link_FN5 + link_FN6 +
            link_FN7 + link_FN8 + link_FN9 + link_FN10 + link_FN11 + link_FN12 +
-           link_FN13 + link_FN14 + link_FN15 + link_FN16) |&gt; 
+           link_FN13 + link_FN14 + link_FN15 + link_FN16) %&gt;% 
   
   mutate(false_click_through_rate = coalesce(false_clicked / 4, 0))
 
@@ -3533,7 +3532,7 @@ transformed_cols &lt;- c(&#39;post_false&#39;, &#39;post_true&#39;,
                       &#39;post_true_timeline_prop&#39;, &#39;post_true_send_prop&#39;,
                       &#39;post_false_timeline_prop&#39;, &#39;post_false_send_prop&#39;)
 
-df_treat &lt;- df |&gt; filter(!is.na(treatment_r)) |&gt; filter(!is.na(Y))
+df_treat &lt;- df %&gt;% filter(!is.na(treatment_r)) %&gt;% filter(!is.na(Y))
 df_treat[&#39;W&#39;] &lt;- sapply(1:nrow(df_treat), 
                         function(i) paste0(&#39;H_&#39;, df_treat[&#39;treatment_h&#39;][i, ], &#39;_R_&#39;,
                                            df_treat[&#39;treatment_r&#39;][i, ]))
@@ -3619,18 +3618,18 @@ wopt_multi_forest &lt;- WH_idx[[1]][levels_implement[apply(
 
 
 prev_nrow &lt;- nrow(df_treat)
-df_holdout &lt;- df_treat |&gt; 
+df_holdout &lt;- df_treat %&gt;% 
   filter(batch == 5 &amp; probs_0 ==0.025)
 
-df_treat &lt;- df_treat |&gt; 
+df_treat &lt;- df_treat %&gt;% 
   mutate(optimal0 = c(rep(1, n()-length(h2)), wopt_multi_forest),
-         opt_col = paste0(&#39;probs_&#39;, optimal0-1)) |&gt;
-  rowwise() |&gt;
-  mutate(optimal_probs = get(opt_col)) |&gt;
-  ungroup() |&gt;
+         opt_col = paste0(&#39;probs_&#39;, optimal0-1)) %&gt;%
+  rowwise() %&gt;%
+  mutate(optimal_probs = get(opt_col)) %&gt;%
+  ungroup() %&gt;%
   mutate(optimal0 = case_when(batch !=5 ~ NA_real_,
-                              TRUE ~ optimal0)) |&gt;
-  filter(optimal_probs!=0) |&gt; 
+                              TRUE ~ optimal0)) %&gt;%
+  filter(optimal_probs!=0) %&gt;% 
   filter( (batch != 5) | ((probs_0 %in% c(0.1666666667))),
           Y &gt;= -4 &amp; Y &lt;= 2,
           post_true &gt;= 0 &amp; post_true &lt;= 4,
@@ -3639,7 +3638,7 @@ df_treat &lt;- df_treat |&gt;
           pre_send_false &gt;= 0 &amp; pre_send_false &lt;= 2, 
           post_timeline_true &gt;= 0 &amp; post_timeline_true &lt;= 2,
           post_timeline_false &gt;= 0 &amp; post_timeline_false &lt;= 2, 
-          seen_false &lt; 6 &amp; seen_true &lt; 6) |&gt; 
+          seen_false &lt; 6 &amp; seen_true &lt; 6) %&gt;% 
   mutate(ID = as.numeric(factor(ID)))
 
 after_nrow &lt;- nrow(df_treat)
@@ -3800,7 +3799,7 @@ attr(df_treat$false_click_through_rate, &quot;shortDescription&quot;) &lt;- &quo
 attr(df_treat$optimal0, &quot;shortDescription&quot;) &lt;- &quot;Original optimal assignment policy.&quot;</code></pre>
 <div id="attrition" class="section level2">
 <h2>Attrition</h2>
-<pre class="r"><code>df_treat &lt;- df_treat |&gt; 
+<pre class="r"><code>df_treat &lt;- df_treat %&gt;% 
   mutate(last_response = case_when(!(is.na(dv_send_post8) &amp; is.na(dv_timeline_post8)) ~ 8,
                                    !(is.na(dv_send_post7) &amp; is.na(dv_timeline_post7)) ~ 7,
                                    !(is.na(dv_send_post6) &amp; is.na(dv_timeline_post6)) ~ 6,
@@ -4079,14 +4078,13 @@ write_rds(cbind(df_treat[, c(&#39;ID&#39;,&#39;Y&#39;, &#39;W&#39;, &#39;optimal
 
 # save user count
 tmp &lt;- read_csv(&#39;../data/user_count.csv&#39;)</code></pre>
-<pre><code>## New names:
-## Rows: 2 Columns: 8
-## ── Column specification
-## ──────────────────────────────────────────────────────── Delimiter: &quot;,&quot; dbl
-## (8): round, users_engaged, users_consented, users_treated, final...5, fi...
-## ℹ Use `spec()` to retrieve the full column specification for this data. ℹ
-## Specify the column types or set `show_col_types = FALSE` to quiet this message.
-## • `final` -&gt; `final...8`</code></pre>
+<pre><code>## Rows: 2 Columns: 4
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## dbl (4): round, users_engaged, users_consented, users_treated
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>tmp &lt;- cbind(tmp, final = c( table(df_treat$batch==5)[[1]], table(df_treat$batch==5)[[2]]))
 write.csv(tmp, &#39;../data/user_count.csv&#39;, row.names = FALSE)</code></pre>
 <pre class="r"><code># Codebook: only need to do this once per cleaned dataset
@@ -4099,9 +4097,8 @@ makeCodebook(df_treat[, c(&#39;Y&#39;, &#39;W&#39;, context_cols)], replace = TR
 <h1>Extraneous</h1>
 <p>Save R script and check packages to ensure extraneous packages aren’t
 loaded.</p>
-<pre class="r"><code>library(NCmisc)
-knitr::purl(&#39;dataCleaning_evaluation.Rmd&#39;)
-list.functions.in.file(&#39;dataCleaning_evaluation.R&#39;)</code></pre>
+<pre class="r"><code>knitr::purl(&#39;dataCleaning_evaluation.Rmd&#39;)
+NCmisc::list.functions.in.file(&#39;dataCleaning_evaluation.R&#39;)</code></pre>
 </div>
 
 
