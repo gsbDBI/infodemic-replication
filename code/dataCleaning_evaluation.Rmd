@@ -764,22 +764,31 @@ WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
 # Identify treatment locations where each respective factor level is represented
 WH_idx <- lapply(WH_levels, function(x) grep(x, W_levels))
 
-# 2a. Predict m(x) = E[Y|X]
+# 1a. Predict m(x) = E[Y|X]
 Y_hat_test <- predict(Y_forest, xs_h_new[h2,])$predictions[,1]
-# 2b. Predict W.hat = E[W|X] 
+Y_hat_test_l <- predict(Y_forest, xs_h_new[-h2,])$predictions[,1]
+# 1b. Predict W.hat = E[W|X] 
 W_hat_test <- predict(W_forest, xs_h_new[h2,])$predictions
-# 2c. Predict baseline, E[Y(k) | X = x], and tau_k(X) = E[Y(k') - Y(k) | X = x]; 
+W_hat_test_l <- predict(W_forest, xs_h_new[-h2,])$predictions
+# 1c. Predict baseline, E[Y(k) | X = x], and tau_k(X) = E[Y(k') - Y(k) | X = x]; 
 # here accuracy is baseline, 
 tau_hat_test <- predict(multi_forest, xs_h_new[h2,])$predictions[,,]
+tau_hat_test_l <- predict(multi_forest, xs_h_new[-h2,])$predictions[,,]
 Y_hat_baseline_test <- Y_hat_test - rowSums(W_hat_test[, -1, drop = FALSE] * tau_hat_test)
+Y_hat_baseline_test_l <- Y_hat_test_l - rowSums(W_hat_test_l[, -1, drop = FALSE] * tau_hat_test_l)
 
-# 3. combine to get mu_k(X) on test data (and re-order)
+# 2. combine to get mu_k(X) on test data (and re-order cols)
 muk_test <- cbind(Y_hat_baseline_test, Y_hat_baseline_test + tau_hat_test)[,c(2, 1, 3:8)]
+muk_test_l <- cbind(Y_hat_baseline_test_l, Y_hat_baseline_test_l + tau_hat_test_l)[,c(2, 1, 3:8)]
 
 
 levels_implement <- c(2,4,7,8)
 wopt_multi_forest <- WH_idx[[1]][levels_implement[apply(
   muk_test[,levels_implement], 1, which.max
+)]]
+
+wopt_multi_forest_l <- WH_idx[[1]][levels_implement[apply(
+  muk_test_l[,levels_implement], 1, which.max
 )]]
 
 
@@ -788,13 +797,13 @@ df_holdout <- df_treat %>%
   filter(batch == 5 & probs_0 ==0.025)
 
 df_treat <- df_treat %>% 
-  mutate(optimal0 = c(rep(1, n()-length(h2)), wopt_multi_forest),
+  mutate(optimal0 = c(wopt_multi_forest_l, wopt_multi_forest),
          opt_col = paste0('probs_', optimal0-1)) %>%
   rowwise() %>%
   mutate(optimal_probs = get(opt_col)) %>%
   ungroup() %>%
-  mutate(optimal0 = case_when(batch !=5 ~ NA_real_,
-                              TRUE ~ optimal0)) %>%
+  # mutate(optimal0 = case_when(batch !=5 ~ NA_real_,
+  #                             TRUE ~ optimal0)) %>%
   filter(optimal_probs!=0) %>% 
   filter( (batch != 5) | ((probs_0 %in% c(0.1666666667))),
           Y >= -4 & Y <= 2,
