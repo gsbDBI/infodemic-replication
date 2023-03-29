@@ -879,7 +879,7 @@ aipw_te$term <-
 
 * Notes on analysis:
 + Outcomes:
-1. ) Sharing intentions as formalized in primary response function (Y =−Mb+0.5Tb, pre-analysis plan p. 17)
+1. ) Sharing intentions as formalized in primary response function (Y =-Mb+0.5Tb, pre-analysis plan p. 17)
 2. ) Sharing intentions for true/false stimuli separately (as proportion of stimuli of each type seen)
 3. ) Sharing intentions for true/false stimuli and by timeline/messenger channel separately (as proportion of stimuli of each type seen)
 4. ) Rates of clicking on *true* stories, combined pre- and post-treatment, i.e., the percent of true stimuli that the respondent said they wanted to share during the survey for which they later click the button to share on Facebook (described in pre-analysis plan section 3.4.2)
@@ -3070,8 +3070,8 @@ est_list <- list(
 
 
 
-false_weights <- seq(-1, -0.1, .01)
-true_weights <- seq(0.1, 1, .01)
+false_weights <- seq(-1, -0.1, .1)
+true_weights <- seq(0.1, 1, .1)
 
 xy <- expand.grid(false_weights, true_weights)
 
@@ -3117,13 +3117,13 @@ SIMPLIFY = FALSE
 # out_l <- lapply(1:6, function(s){
 #   mapply(function(x, y) {
 #     z <- x * est_list[[2]][,s] + y * est_list[[1]][,s]
-#     c(estimate = mean(z), 
+#     c(estimate = mean(z),
 #       std.error = sd(z)/sqrt(length(z)),
-#       false_w = x, 
+#       false_w = x,
 #       true_w = y,
 #       term = s)
 #   },
-#   xy[,1], 
+#   xy[,1],
 #   xy[,2]
 #   ) %>% t()
 # })
@@ -3140,15 +3140,17 @@ df$Condition <- factor(treatment_levels[-1][df$term],
                        ))
 
 df$`Logged negative ratio of false to true weights` <- log(-df$false_w/df$true_w)
-df$Statistic <- df$estimate/df$std.error
+df$Statistic <- abs(df$estimate/df$std.error)
 ggplot(df, aes(x = `Logged negative ratio of false to true weights`, y = `Statistic`, color = Condition)) + 
-  geom_point() + 
-  geom_line() +
+  geom_point(size = 0.5) +
+  geom_smooth(se = FALSE) + 
+  # geom_line() +
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white')) + 
-  scale_color_manual(values = cbPalette)
+  scale_color_manual(values = cbPalette) + 
+  geom_vline(xintercept = log(2), color ='grey60', linetype = 'dashed')
 
 ggsave('../figures/alternative_weighting.png', width = 8, height = 4)
 
