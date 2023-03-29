@@ -1,3 +1,10 @@
+#' ---
+#' title: "Missingness simulation"
+#' author: ""
+#' output:
+#'   pdf_document
+#' ---
+
 library(dplyr)
 library(grf)
 library(estimatr)
