@@ -1063,11 +1063,11 @@ gg2 <- ggplot(df_grid[which(df_grid$level != 'Interactions: Respondent x headlin
   coord_cartesian(xlim = c(-1.5, 1.4))
 
 
-gt <- cowplot::plot_grid(
-  cowplot::plot_grid(
+gt <- plot_grid(
+  plot_grid(
     gg1 + theme(legend.position="none"), 
     gg2), 
-  cowplot::plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
+  plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
   nrow = 2, rel_heights = c(10,1)
 )
 
