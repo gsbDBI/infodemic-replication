@@ -86,7 +86,7 @@ predv_cols <- c('strat_send_false0', 'strat_send_false1', 'strat_send_false2',
                 'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
 
 # names for treatment levels
-W_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles', 'Control', 'Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck Tips', 'Facebook Tips', 'Video training') 
+W_terms <- c('Fact check', 'More information', 'Real information', 'Related articles', 'Control', 'Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pledge', 'AfricaCheck Tips', 'Facebook Tips', 'Video training') 
 WC_terms <- c('Control', W_terms) # with control
 
 # names for respondent-level treatments
@@ -94,12 +94,12 @@ WR_terms <- c('Accuracy nudge', 'Deliberation nudge', 'Emotion suppression', 'Pl
 WCR_terms <- c('Control', WR_terms) # with control
 
 # names for headline-level treatments
-WH_terms <- c('Factcheck', 'More information', 'Real information', 'Related articles')
+WH_terms <- c('Fact check', 'More information', 'Real information', 'Related articles')
 WCH_terms <- c('Control', WH_terms) # with control
 
 # evaluation treatment levels
 treatment_levels <- c('Control', 
-                      'Headline\nFactcheck', 
+                      'Headline\nFact check', 
                       'Headline\nRelated articles', 
                       'Respondent\nAccuracy', 
                       'Respondent\nFacebook tips', 
@@ -128,7 +128,7 @@ uncens_prob <- probability_forest(X = as.matrix(df_eval[, c(context_cols, predv_
                                   Y = as.factor(1*(df_eval$attrited == 0)))$predictions[which(df_eval$attrited == 0),]
 
 ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
-                               as.numeric(df_eval$W) == 2 ~  2, # headline factcheck,
+                               as.numeric(df_eval$W) == 2 ~  2, # headline fact check,
                                as.numeric(df_eval$W) == 5 ~ 3, # headline related,
                                as.numeric(df_eval$W) == 6 ~ 4, # respondent accuracy
                                as.numeric(df_eval$W) == 11 ~ 5, # facebook tips,
@@ -171,7 +171,7 @@ ws_learn <- as.numeric(df_learn$W)
 xs_eval <- as.matrix(df_eval[, c(context_cols, predv_cols)])
 yobs_eval <- df_eval$Y
 ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
-                               as.numeric(df_eval$W) == 2 ~  2, # headline factcheck,
+                               as.numeric(df_eval$W) == 2 ~  2, # headline fact check,
                                as.numeric(df_eval$W) == 5 ~ 3, # headline related,
                                as.numeric(df_eval$W) == 6 ~ 4, # respondent accuracy
                                as.numeric(df_eval$W) == 11 ~ 5, # facebook tips,
@@ -214,7 +214,7 @@ Treatment is composed of a respondent-level treatment and a headline-level treat
 
 * Control
 * Related articles
-* Third-party factcheck
+* Third-party fact check
 * More information link
 * Real information statement
 
@@ -972,10 +972,6 @@ df_grid <- df_grid %>%
       colMeans(probs_learn[which(df_learn$batch == 4),]),
       colMeans(probs_ralt[which(df_learn$batch == 4),]),
       colMeans(probs_halt[which(df_learn$batch == 4),]))
-    # Assignments = c(
-    #   table(df_learn$W),
-    #   table(ws_r),
-    #   table(ws_h))
   )
 
 estimate_order <- c('Control',
@@ -1000,9 +996,10 @@ df_grid <- df_grid %>%
                               rep(0.25, 8 + 5)))
 
 
-gg <- ggplot(df_grid, aes(x = estimate, y = term, group = colors, color = colors,
-                          xmin = estimate - 1.96*std.error,
-                          xmax = estimate + 1.96*std.error)) +
+gg1 <- ggplot(df_grid[which(df_grid$level == 'Interactions: Respondent x headline'),], 
+              aes(x = estimate, y = term, group = colors, color = colors,
+                  xmin = estimate - 1.96*std.error,
+                  xmax = estimate + 1.96*std.error)) +
   stat_gradientinterval(
     aes(xdist = distributional::dist_normal(estimate, std.error), 
         color=colors, fill = colors), 
@@ -1014,36 +1011,128 @@ gg <- ggplot(df_grid, aes(x = estimate, y = term, group = colors, color = colors
   theme_bw() +   
   xlab('Estimate') +
   ylab('Policy') +
-  scale_color_manual(values = cbPalette[-1], breaks = estimate_order[c(1, 9:12)]) +
-  scale_fill_manual(values = cbPalette[-1], breaks = estimate_order[c(1, 9:12)]) +
+  scale_color_manual(values = cbPalette[c(1,3,4,2,6)], breaks = estimate_order[c(1, 9:12)]) +
+  scale_fill_manual(values = cbPalette[c(1,3,4,2,6)], breaks = estimate_order[c(1, 9:12)]) +
   ggforce::facet_col(vars(level), scales = 'free_y', space = 'free') +
-  # facet_grid(rows = vars(level), scales = 'free', space = 'free')+  
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white'),
         strip.background = element_blank(),
-        legend.justification = 'top') + 
-  guides(color=guide_legend(title='Headline level', reverse = TRUE), 
-         fill=guide_legend(title='Headline level', reverse = TRUE)) + 
+        legend.position = 'bottom') + 
+  guides(color=guide_legend(title='Headline level', reverse = TRUE, 
+                            title.position = 'top', title.hjust = 0.5), 
+         fill=guide_legend(title='Headline level', reverse = TRUE, 
+                           title.position = 'top', title.hjust = 0.5)) + 
   geom_text(aes(x = position_x, y = term, label = round(Probabilities,3)),
-            position=position_dodge(width=1.1), size = 2.75,
+            position=position_dodge(width=1.1), 
+            size = 2.75,
             hjust = 0) + 
   scale_x_continuous(sec.axis = sec_axis(~ .,
                                          breaks =c(0.75),
-                                         labels = c('Batch 4\nProbabilities')))
+                                         labels = c('Batch 4\nProbabilities'))) +
+  coord_cartesian(xlim = c(-1.5, 1.4))
+
+gg2 <- ggplot(df_grid[which(df_grid$level != 'Interactions: Respondent x headline'),], 
+              aes(x = estimate, y = term,
+                  xmin = estimate - 1.96*std.error,
+                  xmax = estimate + 1.96*std.error)) +
+  stat_gradientinterval(
+    aes(xdist = distributional::dist_normal(estimate, std.error)),
+    .width = 0, size = 0) + 
+  geom_point(size = 1, fill = 'white') + # change size, fill here
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5)) + 
+  theme_bw() +   
+  xlab('Estimate') +
+  ylab(NULL) +
+  ggforce::facet_col(vars(level), scales = 'free_y', space = 'free') +
+  geom_vline(data = df_grid[which(df_grid$level == 'Respondent: Headline equally weighted'),], aes(xintercept=df_grid[which(df_grid$level == 'Respondent: Headline equally weighted' & df_grid$Respondent == 'Control'),'estimate']), 
+             colour='grey60', linetype = 'dashed') +
+  geom_vline(data = df_grid[which(df_grid$level == 'Headline: Respondent equally weighted'),], aes(xintercept=df_grid[which(df_grid$level == 'Headline: Respondent equally weighted' & df_grid$Headline == 'Control'),'estimate']), 
+             colour='grey60', linetype = 'dashed') +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.background = element_blank()) + 
+  geom_text(aes(x = position_x, y = term, label = round(Probabilities,3)),
+            size = 2.75,
+            hjust = 0) + 
+  scale_x_continuous(sec.axis = sec_axis(~ .,
+                                         breaks =c(0.75),
+                                         labels = c('Batch 4\nProbabilities'))) +
+  coord_cartesian(xlim = c(-1.5, 1.4))
 
 
+gt <- cowplot::plot_grid(
+  cowplot::plot_grid(
+    gg1 + theme(legend.position="none"), 
+    gg2), 
+  cowplot::plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
+  nrow = 2, rel_heights = c(10,1)
+)
 
-gt <- ggplot_gtable(ggplot_build(gg))
-# gtable::gtable_show_layout(gt) # to check which heights to change
 
-gt$heights[13] = 0.35*gt$heights[13] 
-gt$heights[18] = 0.35*gt$heights[18] 
-
-grid.draw(gt)
 ggsave('../figures/joint_scores.png', plot = gt, height = 6, width = 8)
 
 ```
+
+```{r learning_grid_alt, cache = TRUE}
+df_grid_alt <- df_grid[which(df_grid$level != 'Interactions: Respondent x headline'),]
+
+df_grid_alt$best <- factor(case_when(
+  df_grid_alt$Respondent %in% c('Accuracy nudge',
+                                'Facebook tips') ~ 'Respondent', 
+  
+  df_grid_alt$Headline %in% c('Fact check',
+                                'Related articles') ~ 'Headline', 
+  TRUE ~ 'Neither'))
+
+gg2_alt <- ggplot(df_grid_alt, 
+                  aes(x = estimate, y = term,
+                      xmin = estimate - 1.96*std.error,
+                      xmax = estimate + 1.96*std.error, color = best)) +
+  stat_gradientinterval(
+    aes(xdist = distributional::dist_normal(estimate, std.error), color = best, fill = best),
+    .width = 0, size = 0) + 
+  geom_point(size = 1, fill = 'white') + # change size, fill here
+  geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
+                width = 0.05, position=position_dodge(width=0.5)) + 
+  theme_bw() +   
+  xlab('Estimate') +
+  ylab(NULL) +
+  ggforce::facet_col(vars(level), scales = 'free_y', space = 'free') +
+  geom_vline(data = df_grid[which(df_grid$level == 'Respondent: Headline equally weighted'),], aes(xintercept=df_grid[which(df_grid$level == 'Respondent: Headline equally weighted' & df_grid$Respondent == 'Control'),'estimate']), 
+             colour='grey60', linetype = 'dashed') +
+  geom_vline(data = df_grid[which(df_grid$level == 'Headline: Respondent equally weighted'),], aes(xintercept=df_grid[which(df_grid$level == 'Headline: Respondent equally weighted' & df_grid$Headline == 'Control'),'estimate']), 
+             colour='grey60', linetype = 'dashed') +
+    scale_color_manual(values = cbPalette[c(7,1,7)]) +
+  scale_fill_manual(values = cbPalette[c(7,1,7)]) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white', color = 'white'),
+        strip.background = element_blank(),
+        legend.position = 'none') + 
+  geom_text(aes(x = position_x, y = term, label = round(Probabilities,3)),
+            size = 2.75,
+            hjust = 0) + 
+  scale_x_continuous(sec.axis = sec_axis(~ .,
+                                         breaks =c(0.75),
+                                         labels = c('Batch 4\nProbabilities'))) +
+  coord_cartesian(xlim = c(-1.5, 1.4))
+
+
+gt <- cowplot::plot_grid(
+  cowplot::plot_grid(
+    gg1 + theme(legend.position="none"), 
+    gg2_alt), 
+  cowplot::plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
+  nrow = 2, rel_heights = c(10,1)
+)
+
+
+ggsave('../figures/joint_scores_alt.png', plot = gt, height = 6, width = 8)
+```
+
 
 
 # Table 1: Heterogeneity in response under control
@@ -1460,7 +1549,7 @@ all_scores <- bind_rows(list(
          term = factor(term, levels = c(
            'Control', 
            'Headline\nRelated articles', 
-           'Headline\nFactcheck',
+           'Headline\nFact check',
            'Respondent\nRestricted targeted',
            'Respondent\nLearned targeted',
            'Respondent\nFacebook tips',
@@ -1576,7 +1665,7 @@ xx <- modelsummary(models,
                    escape = FALSE,
                    col.names = NULL,
                    
-                   coef_rename = c('Headline\nFactcheck' = r'(\hspace{1em}Factcheck)',
+                   coef_rename = c('Headline\nFact check' = r'(\hspace{1em}Fact check)',
                                    'Headline\nRelated articles' = r'(\hspace{1em}Related articles)',
                                    'Respondent\nAccuracy' = r'(\hspace{1em}Accuracy)',
                                    'Respondent\nFacebook tips' = r'(\hspace{1em}Facebook tips)',
@@ -1616,54 +1705,6 @@ writeLines(xx, '../tables/main_results.tex')
 
 
 ```
-
-# Figure 3: RATE
-```{r RATE_accuracy_vs_facebook, cache=TRUE, warning=FALSE, message=FALSE}
-
-# Compute a prioritization based on estimated treatment effects.
-test_idx <- ws_eval %in%c(4,5)
-priority.cate <- predict(cf.priority, xs_eval[test_idx,])$predictions
-
-# Estimate AUTOC on held out data.
-cf.eval <- causal_forest(
-  X = xs_eval[test_idx,], 
-  Y = -df_eval$post_false_prop[test_idx], 
-  W = 1*(ws_eval[test_idx]==4), 
-  W.hat = rowSums(probs_eval[test_idx, c(6), drop = FALSE])/rowSums(probs_eval[test_idx, c(6, 11)]),
-  sample.weights = balwts_uncens[test_idx],
-)
-rate <- rank_average_treatment_effect(cf.eval, priority.cate, 
-                                      q = seq(0.01, 1, by = 0.01))
-rate
-
-ggplot(rate$TOC, aes(x = q, y = estimate)) + 
-  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") + 
-  geom_line() + 
-  geom_ribbon(aes(ymax =  estimate + 1.96 *std.err, 
-                  ymin =  estimate - 1.96 *std.err), alpha = .1, fill = cbPalette[7]) +
-  theme_minimal() + 
-  scale_x_continuous(limits = c(0.1, 1), breaks = seq(0.2, 1, 0.1)) + 
-  coord_cartesian(ylim = c(-0.1, 0.05)) + 
-  scale_y_continuous(breaks= seq(-0.1, 0.1, 0.05)) +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    panel.background = element_rect(fill = 'white'),
-    plot.background = element_rect(fill = 'white', color = 'white'),
-    axis.title.y = element_text(vjust = 0.65), 
-    panel.grid.minor.x = element_blank()) + 
-  labs(title = "Targeting Operator Characteristic,\nAccuracy nudge vs. Facebook tips", 
-       y = "Estimate", 
-       x = "Proportion of the population assigned accuracy nudge as compared to Facebook tips"
-       #, subtitle = "Shaded region shows 95% CI"
-  )
-
-ggsave('../figures/rate_accuracy_vs_facebook.png', height = 5, width = 8)
-
-# Benefit at 30%
-
-rate$TOC[which(rate$TOC$q == 0.3),]
-```
-
 
 # Table 3: Response under counterfactual uniform respondent treatment
 ```{r policy_heterogeneity_combined, cache = TRUE, warning=FALSE, message = FALSE}
@@ -1926,7 +1967,7 @@ writeLines(xx, '../tables/heterogeneity_policy.tex')
 
 
 
-# Figure 4: Selected covariate means by restricted optimal policy assignment
+# Figure 3: Selected covariate means by restricted optimal policy assignment
 ```{r covariates_in_optimal}
 
 .df <- df_eval %>% 
@@ -2193,7 +2234,7 @@ ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignm
                                                          color = `Factor level`)) + 
   geom_line() +
   ggtitle('Adaptive assignment, simple respondent treatments')  +
-  scale_colour_manual(values = cbPalette) +
+  scale_colour_manual(values = cbPalette[c(1:4, 6,5,7:8)]) +
   theme_minimal() +
   theme(panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white'))
@@ -2217,7 +2258,7 @@ ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignm
                                                          color = `Factor level`)) + 
   geom_line() +
   ggtitle('Adaptive assignment, simple headline treatments') +
-  scale_colour_manual(values = cbPalette) +
+  scale_colour_manual(values = cbPalette[c(1:4, 6,5,7:8)]) +
   theme_minimal() +
   theme(panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white'))
@@ -2293,7 +2334,7 @@ xx <- modelsummary(headline_comparisons,
                    output = 'latex_tabular')
 
 xx <- gsub('\\toprule', paste0(paste0(' & \\textbf{', WCH_terms, '}', collapse = ''), 
-           '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}'), xx[1], fixed = TRUE)
+                               '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}'), xx[1], fixed = TRUE)
 
 writeLines(xx, '../tables/learning_interactions_headline.tex')
 
@@ -2321,7 +2362,7 @@ xx <- modelsummary(respondent_comparisons,
                    output = 'latex_tabular')
 
 xx <- gsub('\\toprule', paste0(paste0(' & \\textbf{', WCR_terms, '}', collapse = ''), 
-           '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}\\cmidrule(lr){7-7}\\cmidrule(lr){8-8}\\cmidrule(lr){9-9}'), xx[1], fixed = TRUE)
+                               '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}\\cmidrule(lr){7-7}\\cmidrule(lr){8-8}\\cmidrule(lr){9-9}'), xx[1], fixed = TRUE)
 
 writeLines(xx, '../tables/learning_interactions_respondent.tex')
 
@@ -2351,6 +2392,55 @@ ggsave('../figures/covariate_optimal_original.png',
        width = 6.25, height = 4)
 
 ```
+
+
+# Figure S5: RATE
+```{r RATE_accuracy_vs_facebook, cache=TRUE, warning=FALSE, message=FALSE}
+
+# Compute a prioritization based on estimated treatment effects.
+test_idx <- ws_eval %in%c(4,5)
+priority.cate <- predict(cf.priority, xs_eval[test_idx,])$predictions
+
+# Estimate AUTOC on held out data.
+cf.eval <- causal_forest(
+  X = xs_eval[test_idx,], 
+  Y = -df_eval$post_false_prop[test_idx], 
+  W = 1*(ws_eval[test_idx]==4), 
+  W.hat = rowSums(probs_eval[test_idx, c(6), drop = FALSE])/rowSums(probs_eval[test_idx, c(6, 11)]),
+  sample.weights = balwts_uncens[test_idx],
+)
+rate <- rank_average_treatment_effect(cf.eval, priority.cate, 
+                                      q = seq(0.01, 1, by = 0.01))
+rate
+
+ggplot(rate$TOC, aes(x = q, y = estimate)) + 
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") + 
+  geom_line() + 
+  geom_ribbon(aes(ymax =  estimate + 1.96 *std.err, 
+                  ymin =  estimate - 1.96 *std.err), alpha = .1, fill = cbPalette[7]) +
+  theme_minimal() + 
+  scale_x_continuous(limits = c(0.1, 1), breaks = seq(0.2, 1, 0.1)) + 
+  coord_cartesian(ylim = c(-0.1, 0.05)) + 
+  scale_y_continuous(breaks= seq(-0.1, 0.1, 0.05)) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.background = element_rect(fill = 'white'),
+    plot.background = element_rect(fill = 'white', color = 'white'),
+    axis.title.y = element_text(vjust = 0.65), 
+    panel.grid.minor.x = element_blank()) + 
+  labs(title = "Targeting Operator Characteristic,\nAccuracy nudge vs. Facebook tips", 
+       y = "Estimate", 
+       x = "Proportion of the population assigned accuracy nudge as compared to Facebook tips"
+       #, subtitle = "Shaded region shows 95% CI"
+  )
+
+ggsave('../figures/rate_accuracy_vs_facebook.png', height = 5, width = 8)
+
+# Benefit at 30%
+
+rate$TOC[which(rate$TOC$q == 0.3),]
+```
+
 
 
 # Table S8: Alternative specifications
@@ -2407,7 +2497,7 @@ if(file.exists('objects/aipw_scores_imputed.RDS')){ # read in scores if already 
     xs = as.matrix(df_treat[which(df_treat$batch == 5), c(context_cols, predv_cols)]),
     yobs = df_treat[which(df_treat$batch == 5),'Y'],
     ws = as.factor(case_when(as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 1 ~ 1, # control
-                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 2 ~  2, # headline factcheck,
+                             as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 2 ~  2, # headline fact check,
                              as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 5 ~ 3, # headline related,
                              as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 6 ~ 4, # respondent accuracy
                              as.numeric(df_treat[which(df_treat$batch == 5),'W']) == 11 ~ 5, # facebook tips,
@@ -2677,7 +2767,7 @@ xx <- modelsummary(models,
                    escape = FALSE,
                    col.names = NULL,
                    
-                   coef_rename = c('Headline\nFactcheck' = r'(\hspace{1em}Factcheck)',
+                   coef_rename = c('Headline\nFact check' = r'(\hspace{1em}Fact check)',
                                    'Headline\nRelated articles' = r'(\hspace{1em}Related articles)',
                                    'Respondent\nAccuracy' = r'(\hspace{1em}Accuracy)',
                                    'Respondent\nFacebook tips' = r'(\hspace{1em}Facebook tips)',
@@ -2967,7 +3057,7 @@ writeLines(xx, '../tables/alternative_policy_results.tex')
 
 # Figure S5: Significance of treatment effects under alternative weighting schemes
 
-```{r post_truefalse_plots, cache = TRUE, eval = TRUE}
+```{r post_truefalse_plots, cache = TRUE, eval = FALSE}
 
 false_weights <- seq(-1, -0.1, .1)
 true_weights <- seq(0.1, 1, .1)
@@ -3030,7 +3120,7 @@ SIMPLIFY = FALSE
 df <- do.call(rbind.data.frame, out_l)
 df$Condition <- factor(treatment_levels[-1][df$term], 
                        levels = c(
-                         'Headline\nFactcheck',
+                         'Headline\nFact check',
                          'Headline\nRelated articles', 
                          'Respondent\nAccuracy',
                          'Respondent\nFacebook tips',
@@ -4258,6 +4348,10 @@ est <- output_estimates(policy0 = policy0,
 rbind(adaptive = c(mean(yobs_learn), sd(yobs_learn)/sqrt(length(yobs_learn))),
       uniform = est)
 
+round((mean(yobs_learn) - est[1])*length(yobs_learn)/
+        sum(df_learn$post_false_send +df_learn$post_false_timeline),3)*100
+
+
 write.csv(rbind(adaptive = c(mean(yobs_learn), sd(yobs_learn)/sqrt(length(yobs_learn))),
                 uniform = est),
           '../tables/benefits-adaptivity.csv')
@@ -4289,17 +4383,61 @@ sum(diag(prop.table(table(optimal_assignment_original, optimal_assignment))))
 x <- (aipw_scores_any_true[,1] - aipw_scores_any_false[,1])
 round(mean(x)*100,1)
 round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
 
 # Difference in TRUE sharing of timeline vs. messenger
 x <- (aipw_scores_timeline_true[,1] - aipw_scores_send_true[,1])
 round(mean(x)*100,1)
 round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_send_true[,1])
 
 # Difference in FALSE sharing of timeline vs. messenger
 x <- (aipw_scores_timeline_false[,1] - aipw_scores_send_false[,1])
 round(mean(x)*100,1)
 round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_send_false[,1])
 ```
+
+## Results: Main treatment effects
+
+```{r results_main}
+# Fact check main effects
+x <- (aipw_scores_any_false[,2])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
+
+
+# Related articles main effects
+x <- (aipw_scores_any_false[,3])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
+
+
+# Accuracy
+x <- (aipw_scores[,4])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+
+x <- (aipw_scores_any_false[,4])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
+
+
+# FB tips
+x <- (aipw_scores[,5])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+
+x <- (aipw_scores_any_false[,5])
+round(mean(x)*100,1)
+round(sd(x)/sqrt(length(x))*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
+
+```
+
 
 ## Results: Heterogeneity in best policy
 
@@ -4307,6 +4445,11 @@ round(sd(x)/sqrt(length(x))*100,1)
 
 # HETEROGENEITY IN BEST
 # we achieve larger magnitude treatment effects in decreasing false sharing intentions through our contextual policy as compared to either the accuracy nudge or the Facebook tips treatments assigned uniformly
+# policy on its own
+x <- (aipw_scores_any_false_restricted[,2])
+round(mean(x)*100,1)
+mean(x)/mean(aipw_scores_any_false[,1])
+mean(x)/mean(aipw_scores_any_false_restricted[,1])
 
 
 # accuracy
@@ -4356,6 +4499,11 @@ pt(mean(x)/(sd(x)/sqrt(length(x))), df = length(x)-1, lower = FALSE)
 ```
 
 ```{r het_treatment}
+# on average, participants assigned to receive the accuracy nudge intend to share false information at lower rates under the accuracy nudge as compared to Facebook tips
+1-  mean( (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(optimal_assignment == 4)])/mean( (aipw_scores_any_false[,5]+ aipw_scores_any_false[,1])[which(optimal_assignment == 4)] )
+# the reverse is true for participants assigned Facebook tips
+mean( (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(optimal_assignment == 5)])/mean( (aipw_scores_any_false[,5]+ aipw_scores_any_false[,1])[which(optimal_assignment == 5)] )
+
 # 
 fmla_het <- formula('any_false ~  factor(condition)*factor(optimal==5)')
 ols_het <- tidy(lm_robust(fmla_het, data=any_df))
@@ -4366,23 +4514,6 @@ ols_het[4,]
 ```{r results_channel}
 
 # CHANNEL SHARING
-# the accuracy nudge has larger effects on mitigating false sharing intentions relative to Facebook tips
-x <- (aipw_scores_any_false[,4] - aipw_scores_any_false[,5])
-round(mean(x)*100,1)
-round(sd(x)/sqrt(length(x))*100,1)
-mean(x)/(sd(x)/sqrt(length(x)))
-
-# and also true
-x <- (aipw_scores_any_true[,4] - aipw_scores_any_true[,5])
-round(mean(x)*100,1)
-round(sd(x)/sqrt(length(x))*100,1)
-mean(x)/(sd(x)/sqrt(length(x)))
-
-# combined
-x <- (aipw_scores[,4] - aipw_scores[,5])
-round(mean(x)*100,1)
-round(sd(x)/sqrt(length(x))*100,1)
-mean(x)/(sd(x)/sqrt(length(x)))
 
 # The Facebook tips treatment and the accuracy nudge are both effective at moving false sharing intentions on messenger
 # accuracy
@@ -4453,55 +4584,6 @@ prop.table(table(optimal_assignment_c_alt))
 sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment))))
 
 sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment_original))))
-```
-
-
-```{r results_heterogeneity_overall}
-
-# HETEROGENEITY OVERALL
-# The largest treatment effects on false sharing intentions were for users with below median digital literacy and below median scientific knowledge. For these users, the Facebook tips treatment was more effective than the accuracy nudge
-
-covariate <- 'dli'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-x <- aipw_scores_any_false[,5]-aipw_scores_any_false[,4]
-
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-covariate <- 'science'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-# For users with below median digital literacy and below median scientific knowledge, treatment effects under Facebook tips were driven by relatively larger effects on private sharing on Messenger as compared to public sharing on their timelines
-
-# for fb
-covariate <- 'dli'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-x <- aipw_scores_timeline_false[,5]-aipw_scores_send_false[,5]
-
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-covariate <- 'science'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-# whereas for the accuracy nudge, effects on timeline as compared to messenger sharing are comparable for these groups 
-covariate <- 'dli'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-x <- aipw_scores_timeline_false[,4]-aipw_scores_send_false[,4]
-
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-covariate <- 'science'
-adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-fmla0 <- formula(paste0('x ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-(ols0 <- tidy(lm_robust(fmla0, data=df_eval)))
-
-
 ```
 
 

@@ -596,7 +596,8 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
                                      cbPalette[2]), 
                          name = 'Standard deviation on\nnormalized distribution',
                          na.value = 'white',
-                         limits = c(-0.3, 0.3)) +
+                         limits = c(-0.3, 0.3), 
+                         oob = scales::squish) +
     # add numerics
     geom_text(aes(label = info), size=2.5) +
     # reformat
