@@ -1,16 +1,7 @@
-# Misinformation-replication
-Replication files for "Optimal Policies to Battle the Coronavirus 'Infodemic' Among Social Media Users in Sub-Saharan Africa."
+# Infodemic-replication
+Replication files for "Battling the Coronavirus 'Infodemic' Among Social Media Users in Africa"
 
-- Pre-registration [here](https://osf.io/ny2xc/). 
-
-**Files**
-+ `code/` folder
-  + Data cleaning script `dataCleaning_evaluation.Rmd`
-  + Analysis scripts
-    + `misinformation_replication.Rmd` (both learning and evaluation primary analysis)
-      - Depends on `utils.R`
-    + `misinformation_replication_secondary.Rmd`(both learning and evaluation secondary analysis)
-      - Depends on `utils.R`
+- Pre-registration [here](https://osf.io/wbvyk/?view_only=9db136c1387d4292abad22481e4935ae). 
   
 **Reproducing results**
 
@@ -28,7 +19,5 @@ R is required for primary analysis
 4. To replicate analysis, run
    + `code/misinformation_replication.Rmd` (primary analysis in paper)
       - Depends on `utils.R`
-   + `code/misinformation_replication_secondary.Rmd` (secondary analysis)
-      - Depends on `utils.R`
-5. Resulting html files (`misinformation_replication.html`, `misinformation_replication_secondary.html`) will be saved in the same folder.
+5. Resulting html files (`misinformation_replication.html`) will be saved in the same folder.
 6. Figures and latex tables will be saved in `figures/` and `tables/` folders respectively.

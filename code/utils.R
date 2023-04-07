@@ -1,25 +1,18 @@
-library(cowplot)
-library(data.table) #TODO: check if we actually use all of these
-library(dplyr)
-library(DT)
-library(estimatr)
-library(ggdist)
-library(ggplot2)
-library(grid)
-library(grf)
-library(kableExtra)
-library(lmtest)
-library(modelsummary)
-library(stringr)
-library(xtable)
+library(cowplot) # binding plots
 library(dataMaid) # write codebook
+library(data.table) # rbindlist
 library(dplyr) # data manipulation
-library(grf) # model prediction
-library(readr) # read in files
-library(stringr) # data cleaning
+library(estimatr) #estimation with robust SEs
 library(foreign) # read spss
+library(ggdist) # distributions
+library(ggplot2) # figures
 library(gtools) # for smartbind
-library(tidyr)
+library(grf) # model prediction
+library(kableExtra) # tables
+library(modelsummary) # models into tables
+library(readr) # reading data in cleaning
+library(stringr) # data cleaning
+library(tidyr) # gather
 
 # Formatting ####
 
@@ -549,11 +542,11 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
   
   table$p_val <- 2*(1-pnorm(abs(table$estimate)/table$se ))
   table$stars <- case_when(
-    table$leaf!= 'Difference' ~'',
-    table$p_val < 0.001 ~'***',
-    table$p_val < 0.01 ~'**',
-    table$p_val < 0.05 ~'*',
-    table$p_val < 0.1 ~'+',
+    # table$leaf!= 'Difference' ~'',
+    # table$p_val < 0.001 ~'***',
+    # table$p_val < 0.01 ~'**',
+    # table$p_val < 0.05 ~'*',
+    # table$p_val < 0.1 ~'+',
     TRUE ~''
   )
   

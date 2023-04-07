@@ -1,0 +1,55 @@
+
+\begin{tabular}[t]{lcccccccc}
+ & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8)\\& \multicolumn{5}{c}{Alternative covariate adjustment} & \multicolumn{3}{c}{Missing data/ reweighting}\\ 
+\cmidrule(lr){2-6} \cmidrule(lr){7-9} \multicolumn{4}{l}{\textbf{Headline treatment effects}} \rule{0pt}{1.2\normalbaselineskip}\\
+\hspace{1em}Fact check & \num{-0.010} & \num{-0.027} & \num{-0.019} & \num{-0.051} & \num{-0.019} & \num{-0.030} & \num{-0.025} & \num{-0.033}\\
+ & (\num{0.044}) & (\num{0.053}) & (\num{0.046}) & (\num{0.036}) & (\num{0.045}) & (\num{0.036}) & (\num{0.034}) & (\num{0.036})\\
+\hspace{1em}Related articles & \num{-0.029} & \num{-0.045} & \num{-0.034} & \num{-0.059} & \num{-0.033} & \num{-0.047} & \num{-0.045} & \num{-0.046}\\
+ & (\num{0.044}) & (\num{0.053}) & (\num{0.045}) & (\num{0.036}) & (\num{0.045}) & (\num{0.035}) & (\num{0.033}) & (\num{0.035})\\\multicolumn{4}{l}{\textbf{Respondent treatment effects}} \rule{0pt}{1.2\normalbaselineskip}\\
+\hspace{1em}Accuracy & \num{0.091} & \num{0.102} & \num{0.080} & \num{0.060} & \num{0.081} & \num{0.068} & \num{0.062} & \num{0.068}\\
+ & (\num{0.039}) & (\num{0.046}) & (\num{0.041}) & (\num{0.033}) & (\num{0.041}) & (\num{0.032}) & (\num{0.030}) & (\num{0.032})\\
+\hspace{1em}Facebook tips & \num{0.075} & \num{0.081} & \num{0.097} & \num{0.057} & \num{0.093} & \num{0.057} & \num{0.039} & \num{0.061}\\
+ & (\num{0.043}) & (\num{0.051}) & (\num{0.046}) & (\num{0.037}) & (\num{0.045}) & (\num{0.036}) & (\num{0.034}) & (\num{0.036})\\
+\hspace{1em}Learned Targeted Policy & \num{0.075} & \num{0.076} & \num{0.065} & \num{0.049} & \num{0.060} & \num{0.059} & \num{0.054} & \num{0.071}\\
+ \hspace{1.5em}(maximizing sharing discernment) & (\num{0.038}) & (\num{0.046}) & (\num{0.040}) & (\num{0.032}) & (\num{0.040}) & (\num{0.032}) & (\num{0.030}) & (\num{0.032})\\
+\hspace{1em}Restricted Targeted Policy & \num{0.132} & \num{0.138} & \num{0.117} & \num{0.110} & \num{0.117} & \num{0.101} & \num{0.094} & \num{0.101}\\
+ \hspace{1.5em}(minimizing any false sharing) & (\num{0.040}) & (\num{0.047}) & (\num{0.042}) & (\num{0.034}) & (\num{0.042}) & (\num{0.033}) & (\num{0.031}) & (\num{0.033})\\\hline
+\hspace{1em}Control mean & \num{-0.423} & \num{-0.455} & \num{-0.419} & \num{-0.395} & \num{-0.419} & \num{-0.406} & \num{-0.419} & \num{-0.404}\\
+ & (\num{0.031}) & (\num{0.037}) & (\num{0.032}) & (\num{0.026}) & (\num{0.032}) & (\num{0.027}) & (\num{0.025}) & (\num{0.027})\\\hline
+\hline
+
+{\textbf{Covariates}} \rule{0pt}{1.2\normalbaselineskip}\\
+
+\hspace{1em} All & $-$ & $-$ & $-$ &  $-$ &  $-$ & Yes & Yes & Yes \\
+
+\hspace{1em} Pre-test response only & $-$  & $-$& $-$ & Yes &  $-$ &  $-$ &  $-$ &  $-$ \\
+
+\hspace{1em} Learned policy strata only & $-$ & $-$ &  $-$ &  $-$ &  Yes &  $-$ &  $-$ & $-$  \\
+
+\hspace{1em} None & $-$ &Yes &  Yes &$-$ &   $-$ &  $-$ &  $-$ &  $-$ \\
+
+{\textbf{Missing data}} \rule{0pt}{1.2\normalbaselineskip}\\
+
+\hspace{1em} Imputing pre-test response & $-$ & $-$ &  $-$ &  $-$ &  $-$ &  $-$ & Yes &  $-$  \\
+
+{\textbf{Weights}} \rule{0pt}{1.2\normalbaselineskip}\\
+
+\hspace{1em} Treatment assignment probability &Yes &Yes  & Yes & Yes & Yes & Yes & Yes & Yes \\
+
+\hspace{1em} Learning stage covariate distribution & $-$ & $-$ &  $-$ &  $-$ & $-$ &  $-$ &  $-$ &  Yes \\
+
+\hspace{1em} Censoring &Yes &Yes &  $-$ &  $-$ &  $-$ &  $-$ &  $-$ &  $-$ 
+\\
+
+{\textbf{Estimator}} \rule{0pt}{1.2\normalbaselineskip}\\
+
+\hspace{1em} (A)IPW Scores & Yes & Yes &  $-$ &  $-$ &  $-$ & Yes & Yes & Yes\\
+
+\hspace{1em} Robust OLS &  $-$ &  $-$ & Yes &  $-$ &  $-$ &  $-$ & $-$ &  $-$ \\
+
+\hspace{1em} Lin Estimator &  $-$ &  $-$ &  $-$ & Yes & Yes &  $-$ & $-$ &  $-$ \\
+
+{\textbf{n}} & 10,531 & 10,531 & 10,531 & 10,531 & 10,531 & 10,531 &11,534  & 10,531 
+\rule{0pt}{1.2\normalbaselineskip}\\
+
+\end{tabular}
