@@ -1490,7 +1490,7 @@ xx <- gsub('\nrow40 &  &  &  &  &  &  & \\\\',
            row40, xx, fixed = TRUE)
 
 # ns for each subgroup
-ns <- gsub('^[[:alpha:] : /]*', '', models$Combined$tidy$term)
+ns <- gsub('^[[:alpha:] : /]*', '', models$`Sharing\nDiscernment`$tidy$term)
 
 for(i in 1:length(ns)){
   xx <- sub('\\\\\n & (', 
@@ -3644,7 +3644,7 @@ xx <- gsub('\nrow40 &  &  &  &  &  &  & \\\\',
            row40, xx, fixed = TRUE)
 
 # ns for each subgroup
-ns <- gsub('^[[:alpha:] : /]*', '', models$Combined$tidy$term)
+ns <- gsub('^[[:alpha:] : /]*', '', models$`Sharing\nDiscernment`$tidy$term)
 
 for(i in 1:length(ns)){
   xx <- sub('\\\\\n & (', 
@@ -4032,7 +4032,7 @@ xx <- gsub('\nrow40 &  &  &  &  &  &  & \\\\',
            row40, xx, fixed = TRUE)
 
 # ns for each subgroup
-ns <- gsub('^[[:alpha:] : /]*', '', models$Combined$tidy$term)
+ns <- gsub('^[[:alpha:] : /]*', '', models$`Sharing\nDiscernment`$tidy$term)
 
 for(i in 1:length(ns)){
   xx <- sub('\\\\\n & (', 
@@ -4418,7 +4418,7 @@ xx <- gsub('\nrow40 &  &  &  &  &  &  & \\\\',
            row40, xx, fixed = TRUE)
 
 # ns for each subgroup
-ns <- gsub('^[[:alpha:] : /]*', '', models$Combined$tidy$term)
+ns <- gsub('^[[:alpha:] : /]*', '', models$`Sharing\nDiscernment`$tidy$term)
 
 for(i in 1:length(ns)){
   xx <- sub('\\\\\n & (', 

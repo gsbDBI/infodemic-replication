@@ -1,0 +1,445 @@
+---
+title: 'Facebook Misinformation Study, additional simulations'
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_folding: show
+    number_sections: true
+---
+
+
+
+# Data reading
+```{r paths, message = FALSE}
+set.seed(60637)
+library(glmnet)
+library(grf)
+library(Matrix)
+library(MASS)
+
+dir.create(file.path('..', 'tables'), showWarnings = FALSE)
+dir.create(file.path('..', 'figures'), showWarnings = FALSE)
+dir.create(file.path('objects'), showWarnings = FALSE)
+```
+
+```{r functions}
+LinTSModel <- function(K, 
+                       p, 
+                       floor_start, 
+                       floor_decay, 
+                       num_mc=100, 
+                       is_contextual = TRUE
+) {
+  model <- list()
+  model$num_mc <- num_mc
+  model$K <- K
+  model$p <- p
+  model$floor_start <- floor_start
+  model$floor_decay <- floor_decay
+  model$y <- replicate(K, matrix(0, nrow=0, ncol=1))
+  model$ps <- replicate(K, matrix(0, nrow=0, ncol=1))
+  if (is_contextual) {
+    model$mu <- matrix(0, nrow=K, ncol=p+1)
+    model$V <- array(0, dim=c(K, p+1, p+1))
+    model$X <- replicate(K, matrix(0, nrow=0, ncol=p))
+  }
+  return(model)
+}
+
+update_thompson <- function(
+    ws, 
+    yobs, 
+    model, 
+    xs = NULL,
+    ps = NULL,
+    balanced = FALSE
+) {
+  for (w in 1:model$K) {
+    if (!is.null(xs)) {
+      model$X[[w]] <- rbind(model$X[[w]], cbind(xs[ws == w,,drop = FALSE]))
+      model$y[[w]] <- rbind(model$y[[w]], cbind(yobs[ws == w, drop = FALSE]))
+      model$ps[[w]] <- c(model$ps[[w]], ps[cbind(ws == w,w)])
+      regr <- cv.glmnet(model$X[[w]], model$y[[w]]) 
+      coef <- coef(regr, s = 'lambda.1se')
+      yhat <- predict(regr, s = 'lambda.1se', model$X[[w]])
+      model$mu[w,] <- coef[, drop = TRUE] # intercept and coefficients of predictors
+      X <- cbind(1, model$X[[w]])
+      if(balanced){
+        W <- 1/model$ps[[w]] # balancing weights
+        B <- t(X) %*% diag(W) %*% X + regr$lambda.1se * diag(model$p + 1)
+      } else {
+        B <- t(X) %*% X + regr$lambda.1se * diag(model$p + 1) 
+      }
+      model$V[w,,] <- array(mean((model$y[[w]] - yhat)^2) * solve(B))
+    } else {
+      model$y[[w]] <- rbind(model$y[[w]], cbind(yobs[ws == w, drop = FALSE]))
+    }
+  }
+  return(model)
+}
+
+draw_thompson <- function(
+    model, 
+    start, 
+    end, 
+    xs = NULL
+) {
+  floor <- model$floor_start / (model$floor_decay * start)
+  
+  if(!is.null(xs)){
+    # Draws arms with a LinTS agent for the observed covariates.
+    A <- dim(xs)[1]
+    p <- dim(xs)[2]
+    ps <- array(NA, dim=c(A, model$K))
+    
+    xt <- cbind(rep(1, A), xs)
+    coeff <- array(NA, dim=c(model$K, model$num_mc, p+1))
+    for (w in 1:model$K) {
+      coeff[w,,] <- mvrnorm(model$num_mc, model$mu[w,], model$V[w,,]) # random.multivariate_normal from different contexts
+    }
+    draws <- apply(coeff, c(1,2), function(x) {xt %*% x}) # double check this line
+    
+    for (s in 1:nrow(ps)) { # TODO and double check that draws is doing the right thing here
+      ps[s, ] <- table(factor(apply(draws[s, , ], 2, which.max), levels = 1:model$K) ) / model$num_mc
+      ps[s, ] <- impose_floor(ps[s, ], floor)
+    }
+    w <- sapply(1:(end - start + 1), function(t) sample(1:model$K, size=1, prob=ps[start + t - 1, ]))
+    
+  } else { 
+    # Draws arms with a non-contextual TS agent. 
+    if( all( unique(unlist(model$y)) %in% c(0,1)) ){ # bernoulli sampling
+      successes <- unlist(lapply(model$y, function(x) sum(x)))
+      failures <- unlist(lapply(model$y, function(x) length(x) - sum(x)))
+      draws <- replicate(model$num_mc, rbeta(model$K, successes + 1, failures + 1)) # + 1 is prior
+    } else { # normal approximation sampling
+      muhats <- unlist(lapply(model$y, mean))
+      sigmahats <- unlist(lapply(model$y, function(x) sd(x)/sqrt(length(x))))
+      draws <- replicate(model$num_mc, rnorm(model$K, mean = muhats, sd = sigmahats))
+    }
+    argmax <- apply(draws, 2, which.max)
+    ts_probs <- unname(table(factor(argmax, levels = 1:model$K)) / model$num_mc)
+    ps <- impose_floor(ts_probs, floor)
+    w <- sample(1:model$K, size = end - start + 1, prob = ps, replace = TRUE)
+  }
+  
+  return(list(w=w, ps=ps))
+}
+
+run_experiment <- function(
+    ys, 
+    floor_start, 
+    floor_decay, 
+    batch_sizes, 
+    xs = NULL,
+    balanced = FALSE
+) {
+  # Run bandit experiment
+  # INPUT:
+  # - xs: covariate X_t of shape [A, p]
+  # - ys: potential outcomes of shape [A, K]
+  # OUTPUT:
+  # - pulled arms, observed rewards, assignment probabilities
+  A <- dim(ys)[1] # A: the number of observations 
+  K <- dim(ys)[2] # K: the number of arms
+  ws <- numeric(A) # the index of the selected arm. The ws array is a 1-dimensional array.
+  yobs <- numeric(A)
+  
+  
+  probs <- array(0, dim = c(A, A, K))
+  Probs_t <- matrix(0, A, K)
+  p <- dim(xs)[2]
+  
+  bandit_model <- LinTSModel(p = p, 
+                             K = K, 
+                             floor_start = floor_start, 
+                             floor_decay = floor_decay, 
+                             is_contextual = !is.null(xs)
+  )
+  
+  # uniform sampling at the first batch
+  batch_size_cumsum <- cumsum(batch_sizes) # 
+  ws[1:batch_size_cumsum[1]] <- sample(1:K, batch_size_cumsum[1], replace = TRUE) # TODO: make complete RA
+  yobs[1:batch_size_cumsum[1]] <- ys[cbind(1:batch_size_cumsum[1], ws[1:batch_size_cumsum[1]])]
+  probs[1:batch_size_cumsum[1], , ] <- array(1/K, dim = c(batch_size_cumsum[1], A, K))
+  
+  if(!is.null(xs)){ # contextual case
+    bandit_model <- update_thompson(ws = ws[1:batch_size_cumsum[1]], 
+                                    yobs = yobs[1:batch_size_cumsum[1]], 
+                                    model = bandit_model,
+                                    xs = xs[1:batch_size_cumsum[1], ],
+                                    ps = matrix(1/K, nrow = A, ncol = K)[1:batch_size_cumsum[1], ],
+                                    balanced = balanced)
+  } else { # non-contextual case
+    bandit_model <- update_thompson(ws = ws[1:batch_size_cumsum[1]], 
+                                    yobs = yobs[1:batch_size_cumsum[1]], 
+                                    model = bandit_model)
+  }
+  
+  
+  # adaptive sampling at the subsequent batches
+  for (idx in 1:(length(batch_sizes)-1)) {
+    ff <- batch_size_cumsum[idx] + 1
+    l <- batch_size_cumsum[idx + 1] 
+    draw <- draw_thompson(model = bandit_model, start=ff, end=l, xs = xs)
+    w <- draw$w
+    ps <- draw$ps
+    yobs[ff:l] <- ys[cbind(ff:l, w)]
+    ws[ff:l] <- w
+    probs[ff:l, , ] <- aperm(sapply(ff:l, function(x) ps, simplify = "array"), c(3,1,2))
+    
+    if(!is.null(xs)){ # contextual case
+      bandit_model <- update_thompson(ws = ws[ff:l], 
+                                      yobs = yobs[ff:l], 
+                                      model = bandit_model,
+                                      xs = xs[ff:l,],
+                                      ps = ps[ff:l,],
+                                      balanced = balanced)
+    } else { # non-contextual case
+      bandit_model <- update_thompson(ws = ws[ff:l], 
+                                      yobs = yobs[ff:l], 
+                                      model = bandit_model)
+    }
+  }
+  # probs are assignment probabilities e_t(X_s, w) of shape [A, A, K]
+  if(is.null(xs)){ bandit_model <- NULL }
+  
+  data <- list(yobs = yobs, ws = ws, xs = xs, ys = ys, probs = probs, fitted_bandit_model = bandit_model)
+  
+  return(data)
+}
+
+impose_floor <- function(
+    a, 
+    amin
+) {
+  new <- pmax(a, amin)
+  total_slack <- sum(new) - 1
+  individual_slack <- new - amin
+  c <- total_slack / sum(individual_slack)
+  new <- new - c * individual_slack
+  return(new)
+}
+```
+
+
+
+## Load Data
+Load most recent download of data; the file name indicates the download date. 
+```{r data, cache = TRUE}
+files <- list.files('../data', 
+                    pattern = '^cleaned-data.*rds$', 
+                    full.names = TRUE)
+
+(INPUT_FILENAME <- files[which.max(file.info(files)$mtime)])
+df_treat <- readRDS(INPUT_FILENAME)
+
+predv_cols <- c('strat_send_false0', 'strat_send_false1', 'strat_send_false2', 
+                'strat_send_true0', 'strat_send_true1', 'strat_send_true2', 
+                'strat_timeline_false0', 'strat_timeline_false1', 'strat_timeline_false2', 
+                'strat_timeline_true0', 'strat_timeline_true1', 'strat_timeline_true2')
+
+```
+
+
+```{r datasets, cache = TRUE, cache.lazy=FALSE}
+# use first batch only
+df_working <- df_treat[which(df_treat$batch<2 & df_treat$attrited == 0),]
+
+W_levels <- levels(df_working$W)
+WR_levels <- unique(sub('H_[a-z]*_*[a-z]*_*', '', W_levels))
+```
+
+
+```{r dgp, cache = TRUE}
+# For learning split only
+df_working['treatment_r'] <- relevel(as.factor(gsub('H_.*_|R_', '', df_working$W)),
+                                     ref = 'control')
+
+ws_r <- as.numeric(df_working$treatment_r) # respondent-level treatment only
+
+# treatment matrix
+wmat <- model.matrix(lm(rep(1, nrow(df_working)) ~ treatment_r, df_working))[,-1]
+# covariate matrix
+xmat <- as.matrix(df_working[, predv_cols])
+# interactions
+wx <- apply(wmat, 2, function(x) { 
+  x * xmat
+}, simplify = FALSE)
+
+wxmat <- do.call(cbind, wx)
+
+XX <- cbind(wmat, xmat, wxmat)
+
+lmr <- cv.glmnet(x = XX, y = df_working$Y, 
+                 penalty.factor = c(rep(0, ncol(wmat)), 
+                                    rep(1, ncol(XX)-ncol(wmat))))
+
+# coef(lmr, s = lmr$lambda.min/2) # to check coefficients
+
+# counterfactuals
+# create list of counterfactual treatment matrices with interactions
+# predict outcomes
+
+ww <- wmat
+ww[] <- 0
+
+muxs_l <- lapply(0:ncol(wmat), function(x) {
+  ww[,x] <- 1
+  ww
+  
+  # interactions
+  wwx <- apply(ww, 2, function(x) { 
+    x * xmat
+  }, simplify = FALSE)
+  
+  wwxmat <- do.call(cbind, wwx)
+  
+  XX <- cbind(ww, xmat, wwxmat)
+  
+  predict(lmr, newx = XX, s = lmr$lambda.min*.85)
+})
+
+muXXs <- do.call(cbind, muxs_l)
+
+table(apply(muXXs, 1, which.max)) # check that there is heterogeneity
+prop.table(table(apply(muXXs, 1, which.max)))
+```
+
+
+```{r simulations, cache = TRUE}
+# Run Thompson Experiment
+
+# Set parameters
+floor_start <- 5
+floor_decay <- 0.9
+batch_sizes <- c(500, 100, 100, 100, 100, 100)
+
+A <- 1e3 # experiment size
+K <- ncol(muXXs) # number of arms
+# create large evaluation data
+shuffle <- sample(1:nrow(XX), 1e4, replace = TRUE)
+xs_eval <- XX[shuffle,]
+muxs_eval <- muXXs[shuffle,]
+
+niter <- 1e2 # number of iterations
+
+# Run contextual experiment
+
+# initialize results
+out_l <- replicate(3,  
+                   matrix(NA, nrow = niter, ncol = 3, 
+                          dimnames = list(NULL, c('on_oracle', 'policy_value', 'policy_value_last'))), 
+                   simplify = FALSE)
+
+for(i in 1:niter){
+  if(interactive()) cat('iteration: ', i, '...\n')
+  
+  # resample from data
+  shuffle <- sample(1:nrow(XX), A, replace = TRUE)
+  xs <- XX[shuffle,]
+  muxs <- muXXs[shuffle,]
+  ys <- muxs + matrix(runif(A*K, -3, 3), nrow = A, ncol = K)
+  
+  # uniform assignment experiment
+  ws_uniform <- c(rep(1:8, A %/% 8), sample(1:8, A %% 8))
+    
+  # on-policy assignment
+  out_l[[1]][i,1] <- mean(apply(muxs, 1, which.max) == ws_uniform)
+  
+  # policy value
+  cf.priority <- multi_arm_causal_forest(
+    X = xs,
+    Y = ys[cbind(1:A, ws_uniform)],
+    W = as.factor(ws_uniform),
+    W.hat = matrix(1/K, nrow = A, ncol = K))
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[1]][i,2] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+    # policy value last batch
+  cf.priority <- multi_arm_causal_forest(
+    X = xs[ (A-batch_sizes[length(batch_sizes)]):A ,],
+    Y = ys[cbind(1:A, ws_uniform)][ (A-batch_sizes[length(batch_sizes)]):A ],
+    W = as.factor(ws_uniform)[ (A-batch_sizes[length(batch_sizes)]):A ],
+    W.hat = matrix(1/K, nrow = A, ncol = K)[(A-batch_sizes[length(batch_sizes)]):A,])
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[1]][i,3] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+  
+  # linear TS
+  results <- run_experiment(ys, floor_start, floor_decay, batch_sizes, xs, balanced = FALSE)
+  
+  # on-policy assignment
+  out_l[[2]][i,1] <- mean(apply(muxs, 1, which.max) == results$ws)
+  
+  # policy value
+  probs_r <- t(sapply(1:A, function(x){
+    results$probs[x,x,]
+  }))
+  
+  cf.priority <- multi_arm_causal_forest(
+    X = xs,
+    Y = results$yobs,
+    W = as.factor(results$ws),
+    W.hat = probs_r)
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[2]][i,2] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+    # policy value last batch
+  
+  cf.priority <- multi_arm_causal_forest(
+    X = xs[ (A-batch_sizes[length(batch_sizes)]):A ,],
+    Y = results$yobs[ (A-batch_sizes[length(batch_sizes)]):A ],
+    W = as.factor(results$ws)[ (A-batch_sizes[length(batch_sizes)]):A ],
+    W.hat = probs_r[ (A-batch_sizes[length(batch_sizes)]):A ,])
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[2]][i,3] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+  # linear balanced TS
+  results <- run_experiment(ys, floor_start, floor_decay, batch_sizes, xs, balanced = TRUE)
+  
+    # on-policy assignment
+  out_l[[3]][i,1] <- mean(apply(muxs, 1, which.max) == results$ws)
+  
+  # policy value
+  probs_r <- t(sapply(1:A, function(x){
+    results$probs[x,x,]
+  }))
+  
+  cf.priority <- multi_arm_causal_forest(
+    X = xs,
+    Y = results$yobs,
+    W = as.factor(results$ws),
+    W.hat = probs_r)
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[3]][i,2] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+      # policy value last batch
+  
+  cf.priority <- multi_arm_causal_forest(
+    X = xs[ (A-batch_sizes[length(batch_sizes)]):A ,],
+    Y = results$yobs[ (A-batch_sizes[length(batch_sizes)]):A ],
+    W = as.factor(results$ws)[ (A-batch_sizes[length(batch_sizes)]):A ],
+    W.hat = probs_r[ (A-batch_sizes[length(batch_sizes)]):A ,])
+  
+  ws_opt <- apply(predict(cf.priority, xs_eval)$predictions, 1, which.max)
+  out_l[[3]][i,3] <- mean(muxs_eval[cbind(1:1e3, ws_opt)])
+  
+}
+
+# results
+result_l <- lapply(out_l, function(x) c(colMeans(x, na.rm = TRUE), policy_SE = sd(x[,2])/sqrt(length(x[,2]))))
+
+results_mat <- do.call(rbind, result_l)[,c(1,2,4,3)]
+rownames(results_mat) <- c('uniform', 'LinTS', 'BLTS')
+
+write.csv(results_mat, '../data/policy_value_simulations.csv')
+
+```
+
