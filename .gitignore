@@ -48,4 +48,3 @@ data/*.csv
 **/__pycache__
 **/figure-html
 **/contextual_probabilities.npy
-code/objects/.DS_Store
