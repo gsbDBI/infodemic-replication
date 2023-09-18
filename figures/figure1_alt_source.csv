@@ -1,0 +1,67 @@
+"estimate","std.error","Probabilities","Headline","Respondent","level"
+-0.796731877647612,0.226520642835765,0.00925274399079455,"Control","Control","Interactions: Respondent x headline"
+-0.503601011186608,0.175709999918134,0.00533903744068745,"Fact check","Control","Interactions: Respondent x headline"
+-0.466436962753342,0.187524044490921,0.00984880047916931,"More information","Control","Interactions: Respondent x headline"
+-0.316074472093968,0.1575188312202,0.0197522864898778,"Real information","Control","Interactions: Respondent x headline"
+-0.534150746419951,0.114163369354399,0.0970839478367602,"Related articles","Control","Interactions: Respondent x headline"
+-0.274438960459487,0.1935963151416,0.0979454298840388,"Control","Accuracy nudge","Interactions: Respondent x headline"
+-0.618444185333991,0.180811189505262,0.00791037757923034,"Control","Deliberation nudge","Interactions: Respondent x headline"
+-0.399975512010896,0.12880269111776,0.0105176025718461,"Control","Emotion suppression","Interactions: Respondent x headline"
+-0.39295537795547,0.176882600426601,0.0143674700507097,"Control","Pledge","Interactions: Respondent x headline"
+-0.0872313912194691,0.384681417767965,0.0157459886776779,"Control","AfricaCheck tips","Interactions: Respondent x headline"
+-0.536816897753449,0.114789873187078,0.0633037288196757,"Control","Facebook tips","Interactions: Respondent x headline"
+-0.717432794799918,0.129484868629331,0.00763863876268509,"Control","Video training","Interactions: Respondent x headline"
+-0.377714825657968,0.0800317481185932,0.0272661383788472,"Fact check","Accuracy nudge","Interactions: Respondent x headline"
+-0.71583794547439,0.133239117316919,0.0132689141899717,"Fact check","Deliberation nudge","Interactions: Respondent x headline"
+-0.531676991194117,0.12524811447967,0.0140007155299576,"Fact check","Emotion suppression","Interactions: Respondent x headline"
+-0.207692667543678,0.327939810362888,0.00597863820181318,"Fact check","Pledge","Interactions: Respondent x headline"
+-0.426711370083286,0.119211265795585,0.0114142558580952,"Fact check","AfricaCheck tips","Interactions: Respondent x headline"
+-0.325697569677227,0.154240438082869,0.0235922891218179,"Fact check","Facebook tips","Interactions: Respondent x headline"
+-0.339824724525307,0.129498557451942,0.010081947300738,"Fact check","Video training","Interactions: Respondent x headline"
+-0.440673610324996,0.152853454511918,0.0136092256095581,"More information","Accuracy nudge","Interactions: Respondent x headline"
+-0.974391533178134,0.250516001671586,0.00855926029229629,"More information","Deliberation nudge","Interactions: Respondent x headline"
+-0.314934394181812,0.107758510798296,0.0164015790307484,"More information","Emotion suppression","Interactions: Respondent x headline"
+-0.64429259149673,0.132333674273795,0.00742186144823043,"More information","Pledge","Interactions: Respondent x headline"
+-0.518911837017213,0.11883553553911,0.0454103440681786,"More information","AfricaCheck tips","Interactions: Respondent x headline"
+-0.638481153193387,0.214415442339141,0.0159026365229905,"More information","Facebook tips","Interactions: Respondent x headline"
+-0.421963979916277,0.159361077100201,0.0105829813158003,"More information","Video training","Interactions: Respondent x headline"
+-0.421186989692957,0.148684673033038,0.132290324292915,"Real information","Accuracy nudge","Interactions: Respondent x headline"
+-0.493741559201078,0.144589902542501,0.0160688325541304,"Real information","Deliberation nudge","Interactions: Respondent x headline"
+-0.582392141355522,0.134155535081421,0.027385613915899,"Real information","Emotion suppression","Interactions: Respondent x headline"
+-0.668610029454151,0.130399932824407,0.0298662297488955,"Real information","Pledge","Interactions: Respondent x headline"
+-0.640661805669673,0.123523739406489,0.0313910073434371,"Real information","AfricaCheck tips","Interactions: Respondent x headline"
+-0.320794106363742,0.229936212123189,0.0161976109550081,"Real information","Facebook tips","Interactions: Respondent x headline"
+-0.368246380014714,0.134179880890668,0.0590253546162009,"Real information","Video training","Interactions: Respondent x headline"
+-0.447486033774902,0.10712214713022,0.0202620733650858,"Related articles","Accuracy nudge","Interactions: Respondent x headline"
+-0.0800751072093436,0.16016941846289,0.0130224732955934,"Related articles","Deliberation nudge","Interactions: Respondent x headline"
+-0.402199126350966,0.163245305694727,0.0102101101645206,"Related articles","Emotion suppression","Interactions: Respondent x headline"
+-0.416124053589379,0.108754073835447,0.00955924168529501,"Related articles","Pledge","Interactions: Respondent x headline"
+-0.727148198486784,0.201263702413112,0.0164852358526439,"Related articles","AfricaCheck tips","Interactions: Respondent x headline"
+-0.307828731394002,0.216847376370709,0.0109542779846792,"Related articles","Facebook tips","Interactions: Respondent x headline"
+-0.514463669387978,0.131901748146065,0.0250847747678273,"Related articles","Video training","Interactions: Respondent x headline"
+-0.502795583585849,0.0704359711823955,0.141276816237289,"Equally
+weighted","Control","Respondent: Headline equally weighted"
+-0.339051901732777,0.0582741542323671,0.291373191530445,"Equally
+weighted","Accuracy nudge","Respondent: Headline equally weighted"
+-0.563628051921081,0.0725453913096496,0.0588298579112221,"Equally
+weighted","Deliberation nudge","Respondent: Headline equally weighted"
+-0.438187208428857,0.0542330618292446,0.0785156212129718,"Equally
+weighted","Emotion suppression","Respondent: Headline equally weighted"
+-0.475729346876363,0.0689439611635194,0.0671934411349436,"Equally
+weighted","Pledge","Respondent: Headline equally weighted"
+-0.478818158383939,0.0896372262111634,0.120446831800033,"Equally
+weighted","AfricaCheck tips","Respondent: Headline equally weighted"
+-0.378437354007248,0.0726212875018986,0.129950543404171,"Equally
+weighted","Facebook tips","Respondent: Headline equally weighted"
+-0.477074079886695,0.0587066901322697,0.112413696763251,"Equally
+weighted","Video training","Respondent: Headline equally weighted"
+-0.462974260349081,0.0653276942731848,0.226681980336658,"Control","Equally
+weighted","Headline: Respondent equally weighted"
+-0.421943040652758,0.0550346728901266,0.110941936021928,"Fact check","Equally
+weighted","Headline: Respondent equally weighted"
+-0.543213822322777,0.0527903668219087,0.127736688766972,"More information","Equally
+weighted","Headline: Respondent equally weighted"
+-0.443436727629664,0.0485249255505113,0.331977259916364,"Real information","Equally
+weighted","Headline: Respondent equally weighted"
+-0.415088739822271,0.051318307201387,0.202662134952405,"Related articles","Equally
+weighted","Headline: Respondent equally weighted"

@@ -19,8 +19,6 @@ library(tidyr) # gather
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
                "#D55E00", "#CC79A7")
 
-unicode_minus <- function(x){sub('^-', '\U2212', format(x))}
-
 
 # Estimation & Inference Functions ####
 
@@ -519,7 +517,7 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     covariate_name <- gsub('`', '', covariate_names[j])
     .mean <- mean(.df[, covariate_name], na.rm = TRUE)
     .sd <- sd(.df[, covariate_name], na.rm = TRUE)
-    m <- as.matrix(round(signif(cov_means[[j]], digits=4), 3))
+    m <- as.matrix(signif(cov_means[[j]]))
     .standardized <- (m["Estimate",1:length(unique(.df$leaf))] - .mean) / .sd
     .standardized
   })
@@ -549,9 +547,42 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     # table$p_val < 0.1 ~'+',
     TRUE ~''
   )
+  table$ci <- paste0('[',
+                     prettyNum(
+                       round(table$estimate -1.96*table$se,3),
+                               nsmall = 3),
+                     ', ',
+                     prettyNum(
+                       round(table$estimate + 1.96*table$se,3),
+                             nsmall = 3), 
+                     ']')
   
   table_dat <- table[covariate %in% head(gsub('`', '', covariate_labels)[ordering], n_top)] %>%
-    mutate(info = paste0(unicode_minus(estimate), stars, "\n(", se, ")"))
+    mutate(info = 
+             case_when(leaf == 'Difference' ~
+             paste0(prettyNum(
+               round(estimate,3),
+               nsmall =3), stars, 
+                         '\n(', prettyNum(
+                           round(se,3),
+                           nsmall =3), ')\nZ = ',
+                         prettyNum(
+                           round(estimate/se,3),
+                           nsmall =3),
+                         ', p = ',
+                         ifelse(p_val < 0.001, 
+                                '<0.001',
+                           prettyNum(
+                           round(p_val, 3),
+                           nsmall = 3)),
+                         '\n', ci),
+             TRUE ~ paste0(prettyNum(
+               round(estimate,3),
+               nsmall =3), stars, 
+                           '\n(', prettyNum(
+                             round(se,3),
+                             nsmall =3), ')')
+                         ))
 
   if(length(unique(.df$leaf))>2){
     table_dat <- table_dat[which(table_dat$leaf!='Difference'),]
@@ -572,19 +603,7 @@ plot_covariate_means_by_group <- function(.df = .df, n_top = 15,
     scale_fill_gradientn(colours = c(cbPalette[3],
                                      '#66bbeb',
                                      '#77c3ed',
-                                     # '#88caef',
-                                     # '#99d2f1',
-                                     # '#aad9f4',
-                                     # '#bbe1f6',
-                                     # '#cce8f8',
-                                     # '#ddf0fa',
                                      '#FFFFFFFF',
-                                     # '#faebcc',
-                                     # '#f7e2b2',
-                                     # '#f5d899',
-                                     # '#f2cf7f',
-                                     # '#f0c566',
-                                     # '#edbb4c',
                                      '#ebb232',
                                      '#e8a819',
                                      cbPalette[2]), 

@@ -9,9 +9,8 @@ output:
     number_sections: true
 ---
 
-
-
 # Data reading
+
 ```{r paths, message = FALSE}
 set.seed(60637)
 source('utils.R') 
@@ -21,11 +20,10 @@ dir.create(file.path('..', 'figures'), showWarnings = FALSE)
 dir.create(file.path('objects'), showWarnings = FALSE)
 ```
 
-
-
-
 ## Load Data
-Load most recent download of data; the file name indicates the download date. 
+
+Load most recent download of data; the file name indicates the download date.
+
 ```{r data, cache = TRUE}
 files <- list.files('../data', 
                     pattern = '^cleaned-data.*rds$', 
@@ -111,7 +109,6 @@ stimuli_types <- c('true', 'false')
 channel_types <- c('send', 'timeline')
 ```
 
-
 ```{r datasets, cache = TRUE, cache.lazy=FALSE}
 df_eval <- df_treat[which(df_treat$batch == 5),]
 df_learn <- df_treat[which(df_treat$batch<5 & df_treat$attrited == 0),]
@@ -149,7 +146,6 @@ df_eval <- df_eval[which(df_eval$attrited == 0),]
 ws_eval <- ws_eval[which(df_eval$attrited == 0)]
 ```
 
-
 ```{r hyperparameters, cache = TRUE}
 ## Hyperparameters
 num_batches <- 3
@@ -161,8 +157,6 @@ A <- update_times[4] # no. observations in learning split/ last model update
 N <- nrow(df_learn) + nrow(df_eval)
 K <- length(unique((df_learn$W)))
 ```
-
-
 
 ```{r data_components, cache = TRUE}
 xs_learn <- as.matrix(df_learn[, c(context_cols, predv_cols)])
@@ -182,46 +176,46 @@ ws_eval <- as.factor(case_when(as.numeric(df_eval$W) == 1 ~ 1, # control
 
 ```
 
-
 # Analysis Overview
 
 ## Response
+
 The response function is:
 
 $$Y_i = -M_i^{\text{post-treat}} + 0.5T_i^{\text{post-treat}}$$
 
-It is composed of $M_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *misinformation stimuli*, and $T_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *true stimuli*, both post-treatment. There are two types of each stimuli, and for each two questions about sharing: whether they would share directly on Messenger, and whether they woudld share on their timeline. 
+It is composed of $M_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *misinformation stimuli*, and $T_i^{\text{post-treat}}\in \{0,1,2,3,4 \}$, the sum of times the respondent said they would share *true stimuli*, both post-treatment. There are two types of each stimuli, and for each two questions about sharing: whether they would share directly on Messenger, and whether they woudld share on their timeline.
 
-We assign greater weight to the sharing of *misinformation* in our response function, because our primary objective is to curb the spread of misinformation, although we would like to do so at minimal cost to the sharing of true information. 
+We assign greater weight to the sharing of *misinformation* in our response function, because our primary objective is to curb the spread of misinformation, although we would like to do so at minimal cost to the sharing of true information.
 
-For example, response value of $Y_i = -1$ indicates that the respondent responded yes to two of the questions about sharing the misinformation stimuli and two of the questions about sharing true stimuli. 
+For example, response value of $Y_i = -1$ indicates that the respondent responded yes to two of the questions about sharing the misinformation stimuli and two of the questions about sharing true stimuli.
 
 ## Treatments
 
-Treatment is composed of a respondent-level treatment and a headline-level treatment. In the adaptive learning portion of the experiment, respondent-level treatments and headline-level treatments are implemented as separate factors, each of which has an empty baseline level that is the control. So respondents may be assigned the pure control condition, one of the respondent-level treatments but no headline-level treatment, one of the headline-level treatments but no respondent-level treatment, or one of the respondent-level treatments *and* one of the headline-level treatments. 
+Treatment is composed of a respondent-level treatment and a headline-level treatment. In the adaptive learning portion of the experiment, respondent-level treatments and headline-level treatments are implemented as separate factors, each of which has an empty baseline level that is the control. So respondents may be assigned the pure control condition, one of the respondent-level treatments but no headline-level treatment, one of the headline-level treatments but no respondent-level treatment, or one of the respondent-level treatments *and* one of the headline-level treatments.
 
 **Respondent-level treatments:**
 
-* Control
-* Facebook tips
-* AfricaCheck tips
-* Video training
-* Emotion suppression
-* Pledge
-* Accuracy nudge
-* Deliberation nudge
+-   Control
+-   Facebook tips
+-   AfricaCheck tips
+-   Video training
+-   Emotion suppression
+-   Pledge
+-   Accuracy nudge
+-   Deliberation nudge
 
 **Headline-level treatments**
 
-* Control
-* Related articles
-* Third-party fact check
-* More information link
-* Real information statement
+-   Control
+-   Related articles
+-   Third-party fact check
+-   More information link
+-   Real information statement
 
 ## Response under unique treatments
 
-For use in analysis of the adaptive design, we calculate doubly robust scores. Scores are composed of a conditional means model, which is estimated by fitting $K$ separate causal forests, and a weighting term, which here are inverse probability weights using known probability of treatment assignment. 
+For use in analysis of the adaptive design, we calculate doubly robust scores. Scores are composed of a conditional means model, which is estimated by fitting $K$ separate causal forests, and a weighting term, which here are inverse probability weights using known probability of treatment assignment.
 
 $$
 \Gamma_{i,w} = \mu_{w}(X_{i}) + 1 \{W_i = w \} \xi_w(X_i)(Y_{i} - \mu_w(X_i))
@@ -281,6 +275,7 @@ xs_r_new[, treat_cols] <- matrix(c(1, rep(0, sum(treat_cols) -1 )),
 ```
 
 ### Learning scores
+
 ```{r probs_learning, cache = TRUE}
 # For learning
 probs_learn <- as.matrix(df_learn[, paste0('probs_', 0:39)])
@@ -326,10 +321,10 @@ probs_h <- t(sapply(1:nrow(df_learn), function(x){
 } ))
 ```
 
-For scores in the learning split, we are interested in making comparisons across levels within the two types of factors: respondent-level treatments, and headline-level treatments. To share information across treatment conditions, for our conditional means model, we run separate multi-arm causal forests for each factor type. 
+For scores in the learning split, we are interested in making comparisons across levels within the two types of factors: respondent-level treatments, and headline-level treatments. To share information across treatment conditions, for our conditional means model, we run separate multi-arm causal forests for each factor type.
 
-- For the respondent type factor, in the multi-arm causal forest model each *respondent* treatment is an arm, with the reference condition set as control. Headline treatments are treated as contexts. There are `r sum((df_learn$treatment_r=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_r)[2:8])` and `r max(table(df_learn$treatment_r)[2:8])` in a given treatment group, respectively.
-- For the headline type factor, in the multi-arm causal forest model each *headline* treatment is an arm, with the reference condition set as control. Respondent treatments are treated as contexts. There are `r sum((df_learn$treatment_h=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_h)[2:5])` and `r max(table(df_learn$treatment_h)[2:5])` in a given treatment group, respectively.
+-   For the respondent type factor, in the multi-arm causal forest model each *respondent* treatment is an arm, with the reference condition set as control. Headline treatments are treated as contexts. There are `r sum((df_learn$treatment_r=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_r)[2:8])` and `r max(table(df_learn$treatment_r)[2:8])` in a given treatment group, respectively.
+-   For the headline type factor, in the multi-arm causal forest model each *headline* treatment is an arm, with the reference condition set as control. Respondent treatments are treated as contexts. There are `r sum((df_learn$treatment_h=='control'))` observations in the control group, and a minimum and maximum of `r min(table(df_learn$treatment_h)[2:5])` and `r max(table(df_learn$treatment_h)[2:5])` in a given treatment group, respectively.
 
 ```{r learn_scores, cache=TRUE}
 
@@ -371,18 +366,16 @@ if(file.exists('objects/aipw_scores_learn.RDS')){ # read in scores if already ge
 }
 ```
 
-
 For the evaluation scores, we consider only respondents who are assigned policies of interest:
 
-- control
-- headline: related articles
-- headline: fact check
-- respondent: accuracy nudge
-- respondent: Facebook tips
-- respondent: contextual policy, composed of accuracy nudge, Facebook tips, emotion nudge, and video treatment
+-   control
+-   headline: related articles
+-   headline: fact check
+-   respondent: accuracy nudge
+-   respondent: Facebook tips
+-   respondent: contextual policy, composed of accuracy nudge, Facebook tips, emotion nudge, and video treatment
 
-To calculate scores, our conditional means model is a multi-arm causal forest, with the reference condition set as the pure control. We include five arms for each of the non-contextual policies; because the contextual policy is composed of treatments that overlap with the non-contextual policies, we do not include a contextual policy condition, but rather a condition for the contextual assignments that are not accounted for in the non-contextual arms, the emotion nudge and video treatment. 
-
+To calculate scores, our conditional means model is a multi-arm causal forest, with the reference condition set as the pure control. We include five arms for each of the non-contextual policies; because the contextual policy is composed of treatments that overlap with the non-contextual policies, we do not include a contextual policy condition, but rather a condition for the contextual assignments that are not accounted for in the non-contextual arms, the emotion nudge and video treatment.
 
 ### Evalution Scores
 
@@ -409,7 +402,6 @@ optimal_assignment_original <- case_when(df_eval$optimal0 == 6 ~ 4,
                                          df_eval$optimal0 == 12 ~ 6)
 
 ```
-
 
 ```{r combined_eval_scores, cache=TRUE, warning=FALSE, message=FALSE}
 ## Combined response function scores 
@@ -746,6 +738,7 @@ if(file.exists('objects/aipw_scores_send_false_restricted.RDS')){ # read in scor
 ```
 
 ### Evalution Estimation
+
 ```{r response_eval_estimation, cache=TRUE}
 # Scores estimates
 # mean response
@@ -873,8 +866,7 @@ aipw_te$term <-
 
 ```
 
-
-# Figure 1: Learning stage estimates 
+# Figure 1: Learning stage estimates
 
 ```{r contextual_estimates, cache = TRUE, cache.lazy = FALSE}
 # Get estimates for all 40 counterfactual policies
@@ -917,7 +909,6 @@ out_R <- lapply(WR_idx, function(x) {
 })
 
 ```
-
 
 ```{r learning_grid, cache = TRUE}
 df_grid <- do.call(rbind.data.frame, c(out_full, 
@@ -980,11 +971,12 @@ gg1 <- ggplot(df_grid[which(df_grid$level == 'Interactions: Respondent x headlin
   stat_gradientinterval(
     aes(xdist = distributional::dist_normal(estimate, std.error), 
         color=colors, fill = colors), 
-    position = position_dodge(width=0.5), .width = 0, size = 0) + 
+    position = position_dodge(width=0.5), .width = 0, size = 0,
+    fill_type = 'segments') + 
   geom_point(position=position_dodge(width=0.5), 
              size = 1, fill = 'white') + # change size, fill here
   geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
-                width = 0.05, position=position_dodge(width=0.5)) + 
+                width = 0, position=position_dodge(width=0.5)) + 
   theme_bw() +   
   xlab('Estimate') +
   ylab('Policy') +
@@ -1000,7 +992,8 @@ gg1 <- ggplot(df_grid[which(df_grid$level == 'Interactions: Respondent x headlin
                             title.position = 'top', title.hjust = 0.5), 
          fill=guide_legend(title='Headline level', reverse = TRUE, 
                            title.position = 'top', title.hjust = 0.5)) + 
-  geom_text(aes(x = position_x, y = term, label = round(Probabilities,3)),
+  geom_text(aes(x = position_x, y = term, 
+                label = round(Probabilities,3)),
             position=position_dodge(width=1.1), 
             size = 2.75,
             hjust = 0) + 
@@ -1015,10 +1008,11 @@ gg2 <- ggplot(df_grid[which(df_grid$level != 'Interactions: Respondent x headlin
                   xmax = estimate + 1.96*std.error)) +
   stat_gradientinterval(
     aes(xdist = distributional::dist_normal(estimate, std.error)),
-    .width = 0, size = 0) + 
+    .width = 0, size = 0,
+    fill_type = 'segments') + 
   geom_point(size = 1, fill = 'white') + # change size, fill here
   geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
-                width = 0.05, position=position_dodge(width=0.5)) + 
+                width = 0, position=position_dodge(width=0.5)) + 
   theme_bw() +   
   xlab('Estimate') +
   ylab(NULL) +
@@ -1040,17 +1034,19 @@ gg2 <- ggplot(df_grid[which(df_grid$level != 'Interactions: Respondent x headlin
   coord_cartesian(xlim = c(-1.5, 1.4))
 
 
-gt <- plot_grid(
+plot_grid(
   plot_grid(
     gg1 + theme(legend.position="none"), 
     gg2), 
   plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
   nrow = 2, rel_heights = c(10,1)
 )
+ggsave('../figures/figure1.pdf', height = 6, width = 8)
 
-
-ggsave('../figures/joint_scores.png', plot = gt, height = 6, width = 8)
-
+write.csv(x = df_grid[,c('estimate', 'std.error', 'Probabilities', 'Headline', 'Respondent', 'level')],
+          file = '../figures/figure1_source.csv', 
+          row.names = FALSE
+)
 ```
 
 ```{r learning_grid_alt, cache = TRUE}
@@ -1070,10 +1066,11 @@ gg2_alt <- ggplot(df_grid_alt,
                       xmax = estimate + 1.96*std.error, color = best)) +
   stat_gradientinterval(
     aes(xdist = distributional::dist_normal(estimate, std.error), color = best, fill = best),
-    .width = 0, size = 0) + 
+    .width = 0, size = 0,
+    fill_type = 'segments') + 
   geom_point(size = 1, fill = 'white') + # change size, fill here
   geom_errorbar(aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
-                width = 0.05, position=position_dodge(width=0.5)) + 
+                width = 0, position=position_dodge(width=0.5)) + 
   theme_bw() +   
   xlab('Estimate') +
   ylab(NULL) +
@@ -1098,19 +1095,21 @@ gg2_alt <- ggplot(df_grid_alt,
   coord_cartesian(xlim = c(-1.5, 1.4))
 
 
-gt <- cowplot::plot_grid(
-  cowplot::plot_grid(
+plot_grid(
+  plot_grid(
     gg1 + theme(legend.position="none"), 
     gg2_alt), 
-  cowplot::plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
+  plot_grid(get_legend(gg1), NULL, nrow = 1, rel_widths = c(2.4,1)),
   nrow = 2, rel_heights = c(10,1)
 )
 
+ggsave('../figures/figure1_alt.pdf', height = 6, width = 8)
 
-ggsave('../figures/joint_scores_alt.png', plot = gt, height = 6, width = 8)
+write.csv(x = df_grid[,c('estimate', 'std.error', 'Probabilities', 'Headline', 'Respondent', 'level')],
+          file = '../figures/figure1_alt_source.csv', 
+          row.names = FALSE
+)
 ```
-
-
 
 # Table 1: Heterogeneity in response under control
 
@@ -1411,6 +1410,10 @@ models <- list(
 )
 
 models <- lapply(models, function(x){
+  
+  x$tidy$conf.low = x$tidy$estimate - 1.96*x$tidy$std.error
+  x$tidy$conf.high = x$tidy$estimate + 1.96*x$tidy$std.error
+  x$tidy[x$tidy$Type != 2, c('p.value', 'conf.low', 'conf.high')] <- NA
   class(x) <- "modelsummary_list"
   x
 })
@@ -1418,36 +1421,39 @@ models <- lapply(models, function(x){
 rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
                                '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                                'row3', rep('', 7),
-                               'row8', rep('', 7),
-                               'row11', rep('', 7),
-                               'row16', rep('', 7),
-                               'row19', rep('', 7),
-                               'row24', rep('', 7),
+                               'row9', rep('', 7),
+                               'row15', rep('', 7),
+                               'row21', rep('', 7),
                                'row27', rep('', 7),
-                               'row32', rep('', 7),
-                               'row35', rep('', 7),
-                               'row40', rep('', 7)),
+                               'row33', rep('', 7),
+                               'row39', rep('', 7),
+                               'row45', rep('', 7),
+                               'row51', rep('', 7),
+                               'row57', rep('', 7)),
                              byrow = TRUE, ncol = 8
 ))
 
 row3 <- '\\cmidrule(lr){2-2} \\cmidrule(lr){3-5} \\cmidrule(lr){6-8} \\multicolumn{4}{l}{\\textbf{Age}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row8 <- '\\cmidrule(lr){2-8}'
-row11 <- '\\multicolumn{4}{l}{\\textbf{Gender}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row16 <- '\\cmidrule(lr){2-8}'
-row19 <- '\\multicolumn{4}{l}{\\textbf{Supports governing party}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row24 <- '\\cmidrule(lr){2-8}'
-row27 <- '\\multicolumn{4}{l}{\\textbf{Digital literacy index}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row32 <- '\\cmidrule(lr){2-8}'
-row35 <- '\\multicolumn{4}{l}{\\textbf{Scientific knowledge index}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row40 <- '\\cmidrule(lr){2-8}'
+row9 <- '\\cmidrule(lr){2-8}'
+row15 <- '\\multicolumn{4}{l}{\\textbf{Gender}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row21 <- '\\cmidrule(lr){2-8}'
+row27 <- '\\multicolumn{4}{l}{\\textbf{Supports governing party}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row33 <- '\\cmidrule(lr){2-8}'
+row39 <- '\\multicolumn{4}{l}{\\textbf{Digital literacy index}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row45 <- '\\cmidrule(lr){2-8}'
+row51 <- '\\multicolumn{4}{l}{\\textbf{Scientific knowledge index}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row57 <- '\\cmidrule(lr){2-8}'
 
-attr(rows, 'position') <- c(1,2,3,8,11,16,19,24,27,32,35,40)
+attr(rows, 'position') <- c(1,2,3,9,15,21,27,33,39,45,51,57)
+
 
 xx <- modelsummary(models, 
                    # # stars = TRUE,  
                    add_rows = rows,
                    escape = FALSE,
                    col.names = NULL,
+                   # fmt = NULL,
+                   statistic = c('({std.error})', '$p =$ {p.value}', '[{conf.low}, {conf.high}]'),
                    coef_rename = c('Age: Below median (n = 5,300)' = r'(\hspace{1em} Below median)',
                                    'Age: Above median (n = 5,231)' = r'(\hspace{1em} Above median)',
                                    'Age: Difference' = r'(\hspace{1em} Difference)',
@@ -1465,29 +1471,33 @@ xx <- modelsummary(models,
                                    'Scientific knowledge index: Difference' = r'(\hspace{1em} Difference   )'),
                    output = 'latex_tabular')
 
+# drop CIs and p-values for all but differences
 xx <- gsub('\n\\toprule', '', xx[1], fixed = TRUE)
 xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 
 xx <- gsub('\nrow3 &  &  &  &  &  &  & \\\\', 
            row3, xx, fixed = TRUE)
-xx <- gsub('\nrow8 &  &  &  &  &  &  & \\\\', 
-           row8, xx, fixed = TRUE)
-xx <- gsub('\nrow11 &  &  &  &  &  &  & \\\\', 
-           row11, xx, fixed = TRUE)
-xx <- gsub('\nrow16 &  &  &  &  &  &  & \\\\', 
-           row16, xx, fixed = TRUE)
-xx <- gsub('\nrow19 &  &  &  &  &  &  & \\\\', 
-           row19, xx, fixed = TRUE)
-xx <- gsub('\nrow24 &  &  &  &  &  &  & \\\\', 
-           row24, xx, fixed = TRUE)
+xx <- gsub('\nrow9 &  &  &  &  &  &  & \\\\', 
+           row9, xx, fixed = TRUE)
+xx <- gsub('\nrow15 &  &  &  &  &  &  & \\\\', 
+           row15, xx, fixed = TRUE)
+xx <- gsub('\nrow21 &  &  &  &  &  &  & \\\\', 
+           row21, xx, fixed = TRUE)
 xx <- gsub('\nrow27 &  &  &  &  &  &  & \\\\', 
            row27, xx, fixed = TRUE)
-xx <- gsub('\nrow32 &  &  &  &  &  &  & \\\\', 
-           row32, xx, fixed = TRUE)
-xx <- gsub('\nrow35 &  &  &  &  &  &  & \\\\', 
-           row35, xx, fixed = TRUE)
-xx <- gsub('\nrow40 &  &  &  &  &  &  & \\\\', 
-           row40, xx, fixed = TRUE)
+xx <- gsub('\nrow33 &  &  &  &  &  &  & \\\\', 
+           row33, xx, fixed = TRUE)
+xx <- gsub('\nrow39 &  &  &  &  &  &  & \\\\', 
+           row39, xx, fixed = TRUE)
+xx <- gsub('\nrow45 &  &  &  &  &  &  & \\\\', 
+           row45, xx, fixed = TRUE)
+xx <- gsub('\nrow51 &  &  &  &  &  &  & \\\\', 
+           row51, xx, fixed = TRUE)
+xx <- gsub('\nrow57 &  &  &  &  &  &  & \\\\', 
+           row57, xx, fixed = TRUE)
+
+
+xx <- gsub("( & \\$p =\\$ \\\\num\\{NA\\})+(\\\\\\\\\\n)*", '', xx[1], perl = TRUE)
 
 # ns for each subgroup
 ns <- gsub('^[[:alpha:] : /]*', '', models$`Sharing\nDiscernment`$tidy$term)
@@ -1498,12 +1508,13 @@ for(i in 1:length(ns)){
 }
 
 
-writeLines(xx, '../tables/heterogeneity_control.tex')
+writeLines(xx, '../tables/table1.tex')
 
 ```
-# Figure 2: Response estimates
-```{r unified_eval_scoresplot, echo = FALSE, message = FALSE, cache=TRUE, warning=FALSE, message=FALSE}
 
+# Figure 2: Response estimates
+
+```{r unified_eval_scoresplot, echo = FALSE, message = FALSE, cache=TRUE, warning=FALSE, message=FALSE}
 
 
 all_scores <- bind_rows(list(
@@ -1543,21 +1554,23 @@ ggplot(all_scores, aes(x = estimate, y =term, color=`Response measure`,
     aes(y = term, 
         xdist = distributional::dist_normal(estimate, std.error), 
         color=`Response measure`, fill = `Response measure`), 
-    position = position_dodge(width=0.5), .width = 0, size = 0) +
+    position = position_dodge(width=0.5), .width = 0, size = 0,
+    fill_type = 'segments') +
   stat_gradientinterval(
     data = all_scores %>% filter(Channel == 'Any'),
     aes(y = term, 
         xdist = distributional::dist_normal(estimate, std.error), 
         color=`Response measure`, fill = `Response measure`), 
-    .width = 0, size = 0, height = 0.2)  +
+    .width = 0, size = 0, height = 0.2,
+    fill_type = 'segments')  +
   geom_point(data = all_scores %>% filter(Channel != 'Any'),
              position=position_dodge(width=0.5), 
-             size = 4, fill = 'white') + # change size, fill here
+             size = 2, fill = 'white') + # change size, fill here
   geom_point(data = all_scores %>% filter(Channel == 'Any'), 
-             size = 4, fill = 'white') + # change size, fill here
+             size = 2, fill = 'white') + # change size, fill here
   geom_errorbar(data = all_scores %>% filter(Channel != 'Any'),
                 aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
-                width = 0.05, position=position_dodge(width=0.5)) + 
+                width = 0, position=position_dodge(width=0.5)) + 
   geom_errorbar(data = all_scores %>% filter(Channel == 'Any'),
                 aes(xmin = estimate - 1.96*std.error, xmax = estimate + 1.96*std.error), 
                 width = 0) + 
@@ -1576,9 +1589,20 @@ ggplot(all_scores, aes(x = estimate, y =term, color=`Response measure`,
         strip.text.y = element_blank(),
         strip.text.x = element_blank())
 
-ggsave('../figures/evaluated_scores_all.png', width = 8, height = 4)
-```
+ggsave('../figures/figure2.pdf', width = 8, height = 4)
 
+xx <- as.matrix(apply(all_scores[,
+                         c('estimate', 'std.error', 'Channel', 'term', 
+                           'Response measure')], 
+            2, function(x) gsub('\n', ' ', 
+                    x,
+                     perl = TRUE,
+                     )))
+write.csv(x = xx,
+          file = '../figures/figure2_source.csv', 
+          row.names = FALSE
+)
+```
 
 # Table 2: Control response and treatment effect estimates
 
@@ -1588,60 +1612,63 @@ models <- list(
   `Sharing\nDiscernment` = list(
     tidy = bind_rows(aipw_te[1:6,],
                      aipw_est[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `False: Any sharing` = list(
     tidy = bind_rows(aipw_f_te[1:6,],
                      aipw_f_est[1,]),
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `False: Messenger` = list(
     tidy = bind_rows(aipw_sf_te[1:6,],
                      aipw_sf_est[1,]),
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `False: Timeline` = list(
     tidy = bind_rows(aipw_tf_te[1:6,],
                      aipw_tf_est[1,]),
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `True: Any sharing` = list(
     tidy = bind_rows(aipw_t_te[1:6,],
                      aipw_t_est[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `True: Messenger` = list(
     tidy = bind_rows(aipw_st_te[1:6,],
                      aipw_st_est[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `True: Timeline` = list(
     tidy = bind_rows(aipw_tt_te[1:6,],
                      aipw_tt_est[1,]),
-    pval = 'p.value.upper'
+    pval = 'p.value.twosided'
   )
 )
 
 
 models <- lapply(models, function(x){
   class(x) <- "modelsummary_list"
-  pvals <- x$tidy[,x$pval]
-  pvals[length(pvals)] <- NA
-  x$tidy$p.value <- pvals
+  x$tidy$p.value <- x$tidy[,x$pval]
+  x$tidy$conf.low = x$tidy$estimate - 1.96*x$tidy$std.error
+  x$tidy$conf.high = x$tidy$estimate + 1.96*x$tidy$std.error
+  x$tidy[x$tidy$term == 'Control',
+         c('p.value', 'conf.low', 'conf.high')] <- NA
   x
 })
 
 rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
                                '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                                'row3', rep('', 7),
-                               'row8', rep('', 7),
-                               'row17', rep('', 7)),
+                               'row12', rep('', 7),
+                               'row29', rep('', 7)),
                              byrow = TRUE, ncol = 8
 ))
 row3 <- '\\cmidrule(lr){2-2} \\cmidrule(lr){3-5} \\cmidrule(lr){6-8} \\multicolumn{4}{l}{\\textbf{Headline treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row8 <- '\\multicolumn{4}{l}{\\textbf{Respondent treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
-row17 <- '\\hline'
+row12 <- '\\multicolumn{4}{l}{\\textbf{Respondent treatment effects}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\'
+row29 <- '\\hline'
 
-attr(rows, 'position') <- c(1,2,3,8,17)
+attr(rows, 'position') <- c(1,2,3,12,29)
 
 xx <- modelsummary(models, 
                    # # stars = TRUE,  
                    add_rows = rows,
                    escape = FALSE,
+                   statistic = c('({std.error})', '$p =$ {p.value}', '[{conf.low}, {conf.high}]'),
                    col.names = NULL,
                    
                    coef_rename = c('Headline\nFact check' = r'(\hspace{1em}Fact check)',
@@ -1657,11 +1684,12 @@ xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 
 xx <- gsub('\nrow3 &  &  &  &  &  &  & \\\\', 
            row3, xx, fixed = TRUE)
-xx <- gsub('\nrow8 &  &  &  &  &  &  & \\\\', 
-           row8, xx, fixed = TRUE)
-xx <- gsub('\nrow17 &  &  &  &  &  &  & \\\\', 
-           row17, xx, fixed = TRUE)
+xx <- gsub('\nrow12 &  &  &  &  &  &  & \\\\', 
+           row12, xx, fixed = TRUE)
+xx <- gsub('\nrow29 &  &  &  &  &  &  & \\\\', 
+           row29, xx, fixed = TRUE)
 
+xx <- gsub("( & \\$p =\\$ \\\\num\\{NA\\})+(\\\\\\\\\\n)*", '', xx[1], perl = TRUE)
 
 yy <- gregexec('Learned Targeted Policy[& -\\{num}{0-9.*}]*', xx)
 
@@ -1680,12 +1708,13 @@ xx <- gsub(xx_substr,
            xx, fixed = TRUE)
 
 
-writeLines(xx, '../tables/main_results.tex')
+writeLines(xx, '../tables/table2.tex')
 
 
 ```
 
 # Table 3: Response under counterfactual uniform respondent treatment
+
 ```{r policy_heterogeneity_combined, cache = TRUE, warning=FALSE, message = FALSE}
 
 combined_df <- data.frame(
@@ -1804,9 +1833,6 @@ table_any <- table %>%
 
 ```
 
-
-
-
 ```{r policy_heterogeneity_channel, cache = TRUE, warning=FALSE, message=FALSE}
 apply_mat <- expand.grid(stimuli_types, channel_types)
 
@@ -1892,6 +1918,10 @@ models <- list(
 )
 
 models <- lapply(models, function(x){
+  
+  x$tidy$conf.low = x$tidy$estimate - 1.96*x$tidy$std.error
+  x$tidy$conf.high = x$tidy$estimate + 1.96*x$tidy$std.error
+  x$tidy[x$tidy$Type != 2, c('p.value', 'conf.low', 'conf.high')] <- NA
   class(x) <- "modelsummary_list"
   x
 })
@@ -1900,26 +1930,27 @@ models <- lapply(models, function(x){
 rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
                                '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
                                'row3', rep('', 7),
-                               'row8', rep('', 7),
-                               'row11', rep('', 7),
-                               'row16', rep('', 7)),
+                               'row10', rep('', 7),
+                               'row15', rep('', 7),
+                               'row22', rep('', 7)),
                              byrow = TRUE, ncol = 8
 ))
 
 row3 <- paste0('\\cmidrule(lr){2-2} \\cmidrule(lr){3-5} \\cmidrule(lr){6-8} \\multicolumn{4}{l}{\\textbf{Optimal assignment == Accuracy nudge (n = ', prettyNum(table(optimal_assignment)[1], big.mark = ","),
                ')}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\')
-row8 <- '\\cmidrule(lr){2-8}'
-row11 <- paste0('\\multicolumn{4}{l}{\\textbf{Optimal assignment == Facebook tips (n = ', prettyNum(table(optimal_assignment)[2], big.mark = ","),
+row10 <- '\\cmidrule(lr){2-8}'
+row15 <- paste0('\\multicolumn{4}{l}{\\textbf{Optimal assignment == Facebook tips (n = ', prettyNum(table(optimal_assignment)[2], big.mark = ","),
                 ')}} \\rule{0pt}{1.2\\normalbaselineskip}\\\\')
-row16 <- '\\cmidrule(lr){2-8}'
+row22 <- '\\cmidrule(lr){2-8}'
 
-attr(rows, 'position') <- c(1,2,3,8,11,16)
+attr(rows, 'position') <- c(1,2,3,10,15,21)
 
 xx <- modelsummary(models, 
                    # stars = TRUE,  
                    add_rows = rows,
                    escape = FALSE,
                    col.names = NULL,
+                   statistic = c('({std.error})', '$p =$ {p.value}', '[{conf.low}, {conf.high}]'),
                    coef_rename = c('Accuracy nudge: Accuracy nudge' = r'(\hspace{1em}Accuracy)',
                                    'Accuracy nudge: Facebook tips' = r'(\hspace{1em}Facebook Tips)',
                                    'Accuracy nudge: Difference' = r'(\hspace{1em}Difference)',
@@ -1933,20 +1964,21 @@ xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 
 xx <- gsub('\nrow3 &  &  &  &  &  &  & \\\\', 
            row3, xx, fixed = TRUE)
-xx <- gsub('\nrow8 &  &  &  &  &  &  & \\\\', 
-           row8, xx, fixed = TRUE)
-xx <- gsub('\nrow11 &  &  &  &  &  &  & \\\\', 
-           row11, xx, fixed = TRUE)
-xx <- gsub('\nrow16 &  &  &  &  &  &  & \\\\', 
-           row16, xx, fixed = TRUE)
+xx <- gsub('\\\\\nrow10 &  &  &  &  &  &  & \\\\',
+           row10, xx, fixed = TRUE)
+xx <- gsub('\nrow15 &  &  &  &  &  &  & \\\\', 
+           row15, xx, fixed = TRUE)
+xx <- gsub('\nrow22 &  &  &  &  &  &  & \\\\', 
+           row22, xx, fixed = TRUE)
 
-writeLines(xx, '../tables/heterogeneity_policy.tex')
+xx <- gsub("( & \\$p =\\$ \\\\num\\{NA\\})+(\\\\\\\\\\n)*", '', xx[1], perl = TRUE)
+
+writeLines(xx, '../tables/table3.tex')
 
 ```
 
-
-
 # Figure 3: Selected covariate means by restricted optimal policy assignment
+
 ```{r covariates_in_optimal}
 
 .df <- df_eval %>% 
@@ -1956,13 +1988,27 @@ writeLines(xx, '../tables/heterogeneity_policy.tex')
   as.data.frame() 
 
 covs_of_interest <- c('age', 'dli', 'male', 'pol', 'science')
-plot_covariate_means_by_group(
+gt <- plot_covariate_means_by_group(
   .df,
   .title = NULL,
-  rowvars = covs_of_interest)
+  rowvars = covs_of_interest) + 
+  theme(legend.key.width= unit(30, 'pt'))
 
-ggsave('../figures/covariate_optimal.png', 
-       width = 6.25, height = 4)
+gt
+
+ggsave('../figures/figure3.pdf', 
+       width = 6.64, height = 4.25)
+
+xx <- as.matrix(apply(gt$data[,
+                              c('estimate', 'se', 'covariate', 'leaf')], 
+            2, function(x) gsub('\n', ' ', 
+                    x,
+                     perl = TRUE,
+                     )))
+write.csv(x = xx,
+          file = '../figures/figure3_source.csv', 
+          row.names = FALSE
+)
 
 ```
 
@@ -2195,6 +2241,7 @@ cbind(0:4, matrix(prop.table(table(df_treat$pre_true, df_treat$batch), margin = 
   writeLines('../tables/true_shares_batchwise.tex')
 
 ```
+
 # Figure S3: Cumulative treatment assignment in learning phase
 
 ```{r assignment_on_time_simple, cache=TRUE}
@@ -2217,7 +2264,7 @@ ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignm
   theme_minimal() +
   theme(panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white'))
-ggsave('../figures/respondent_base_assignment_on_time.png', width = 6, height = 4.5)
+ggsave('../figures/respondent_base_assignment_on_time.pdf', width = 6, height = 4.5)
 
 
 
@@ -2241,14 +2288,13 @@ ggplot(data = xx[which(xx$`Total observations`<A),], aes(y = `Cumulative assignm
   theme_minimal() +
   theme(panel.background = element_rect(fill = 'white'),
         plot.background = element_rect(fill = 'white', color = 'white'))
-ggsave('../figures/headline_base_assignment_on_time.png', width = 6, height = 4.5)
+ggsave('../figures/headline_base_assignment_on_time.pdf', width = 6, height = 4.5)
 
 
 ```
 
+# Table S6: Evolution of on-policy probabilities during learning stage
 
-
-# Table S6:  Evolution of on-policy probabilities during learning stage
 ```{r arm_assignment, warning=FALSE, message=FALSE}
 
 gg_df <- tibble(batch = df_learn$batch,
@@ -2280,6 +2326,7 @@ xx <- modelsummary(new_gg,
                    gof_omit = '.*',
                    output = 'latex_tabular')
 
+xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 xx <- gsub('\\toprule', ' & \\textbf{Learned}& \\textbf{Restricted} \\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}', xx[1], fixed = TRUE)
 
 writeLines(xx, '../tables/on_policy.tex')
@@ -2312,6 +2359,7 @@ xx <- modelsummary(headline_comparisons,
                    gof_omit = '.*',
                    output = 'latex_tabular')
 
+xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 xx <- gsub('\\toprule', paste0(paste0(' & \\textbf{', WCH_terms, '}', collapse = ''), 
                                '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}'), xx[1], fixed = TRUE)
 
@@ -2340,6 +2388,7 @@ xx <- modelsummary(respondent_comparisons,
                    gof_omit = '.*',
                    output = 'latex_tabular')
 
+xx <- gsub('\n\\bottomrule', '', xx[1], fixed = TRUE)
 xx <- gsub('\\toprule', paste0(paste0(' & \\textbf{', WCR_terms, '}', collapse = ''), 
                                '\\\\ \n \\cmidrule(lr){2-2} \\cmidrule(lr){3-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-5}\\cmidrule(lr){6-6}\\cmidrule(lr){7-7}\\cmidrule(lr){8-8}\\cmidrule(lr){9-9}'), xx[1], fixed = TRUE)
 
@@ -2347,11 +2396,10 @@ writeLines(xx, '../tables/learning_interactions_respondent.tex')
 
 ```
 
-
-
 # Figure S4: Selected covariate means by learned optimal policy assignment
-```{r covariates_in_optimal_learned, cache = TRUE}
 
+```{r covariates_in_optimal_learned, cache = TRUE}
+ 
 .df <- df_eval %>% 
   mutate(leaf = factor(optimal_assignment_original,
                        labels = c('Optimal policy == accuracy',
@@ -2365,15 +2413,16 @@ covs_of_interest <- c('age', 'dli', 'male', 'pol', 'science')
 plot_covariate_means_by_group(
   .df,
   .title = NULL,
-  rowvars = covs_of_interest)
+  rowvars = covs_of_interest) + 
+  theme(legend.key.width= unit(30, 'pt'))
 
-ggsave('../figures/covariate_optimal_original.png', 
+ggsave('../figures/covariate_optimal_original.pdf', 
        width = 6.25, height = 4)
 
 ```
 
-
 # Figure S5: RATE
+
 ```{r RATE_accuracy_vs_facebook, cache=TRUE, warning=FALSE, message=FALSE}
 
 # Compute a prioritization based on estimated treatment effects.
@@ -2391,6 +2440,18 @@ cf.eval <- causal_forest(
 rate <- rank_average_treatment_effect(cf.eval, priority.cate, 
                                       q = seq(0.01, 1, by = 0.01))
 rate
+
+x_est <- rate$estimate*100
+x_se <- rate$std.err*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
 
 ggplot(rate$TOC, aes(x = q, y = estimate)) + 
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") + 
@@ -2413,16 +2474,28 @@ ggplot(rate$TOC, aes(x = q, y = estimate)) +
        #, subtitle = "Shaded region shows 95% CI"
   )
 
-ggsave('../figures/rate_accuracy_vs_facebook.png', height = 5, width = 8)
+ggsave('../figures/rate_accuracy_vs_facebook.pdf', height = 5, width = 8)
 
 # Benefit at 30%
 
 rate$TOC[which(rate$TOC$q == 0.3),]
+
+x_est <- rate$TOC[which(rate$TOC$q == 0.3),'estimate']*100
+x_se <- rate$TOC[which(rate$TOC$q == 0.3),'std.err']*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
 ```
 
-
-
 # Table S9: Alternative specifications
+
 ```{r additional_scores, cache = TRUE}
 # shorthand for treatments
 ws_original <- as.factor(case_when(ws_eval == 1 ~ 1,
@@ -2436,12 +2509,12 @@ ws_restricted <- as.factor(case_when(ws_eval == 1 ~ 1,
 df_eval0 <- df_treat[which(df_treat$batch == 5),]
 
 ws_eval0 <- as.factor(case_when(as.numeric(df_eval0$W) == 1 ~ 1, # control
-                                     as.numeric(df_eval0$W) == 2 ~  2, # headline fact check,
-                                     as.numeric(df_eval0$W) == 5 ~ 3, # headline related,
-                                     as.numeric(df_eval0$W) == 6 ~ 4, # respondent accuracy
-                                     as.numeric(df_eval0$W) == 11 ~ 5, # facebook tips,
-                                     # combine optimal with small groups
-                                     TRUE ~ 6 # other optimal respondent (8/12)
+                                as.numeric(df_eval0$W) == 2 ~  2, # headline fact check,
+                                as.numeric(df_eval0$W) == 5 ~ 3, # headline related,
+                                as.numeric(df_eval0$W) == 6 ~ 4, # respondent accuracy
+                                as.numeric(df_eval0$W) == 11 ~ 5, # facebook tips,
+                                # combine optimal with small groups
+                                TRUE ~ 6 # other optimal respondent (8/12)
 )) 
 
 # get appropriate balwts
@@ -2472,9 +2545,9 @@ balwts_treat_uncens_learned[which(balwts_treat_uncens_learned>quantile(balwts_tr
 treat_uncens_restricted <- factor(
   case_when(
     df_eval0$attrited == 0 ~ as.numeric(case_when(ws_eval0 == 1 ~ 1,
-                                                                                         ws_eval0 == ifelse(predict(cf.priority, df_eval0[, c(context_cols, predv_cols)])$predictions<0,4,5) ~ 2,
-                                                                                         TRUE ~ 3)),
-                                            TRUE ~ 4))
+                                                  ws_eval0 == ifelse(predict(cf.priority, df_eval0[, c(context_cols, predv_cols)])$predictions<0,4,5) ~ 2,
+                                                  TRUE ~ 3)),
+    TRUE ~ 4))
 # probability of getting assignment AND responding
 treat_uncens_prob_restricted <- probability_forest(X = as.matrix(df_eval0[, c(context_cols, predv_cols)]),
                                                    Y = treat_uncens_restricted)$predictions[which(df_eval0$attrited == 0),]
@@ -2487,7 +2560,7 @@ balwts_treat_uncens_restricted[which(balwts_treat_uncens_restricted>quantile(bal
 
 # with no pre-test
 if(file.exists('objects/aipw_scores_nopretest.RDS')){ # read in scores if already generated
-  aipw_scores_nopretest.RDS <- readRDS('objects/aipw_scores_nopretest.RDS')
+  aipw_scores_nopretest <- readRDS('objects/aipw_scores_nopretest.RDS')
   
 }else{
   aipw_scores_nopretest <- aw_scores_eval(xs = xs_eval[,-which(grepl('strat', colnames(xs_eval)))],
@@ -2528,49 +2601,49 @@ if(file.exists('objects/aipw_scores_restricted_nopretest.RDS')){ # read in score
 
 # with no covariates
 if(file.exists('objects/aipw_scores_nocovariates.RDS')){ # read in scores if already generated
-  aipw_scores_nocovariates.RDS <- readRDS('objects/aipw_scores_nocovariates.RDS')
-
+  aipw_scores_nocovariates <- readRDS('objects/aipw_scores_nocovariates.RDS')
+  
 }else{
   aipw_scores_nocovariates <- aw_scores(yobs = yobs_eval,
                                         ws = ws_eval,
                                         balwts = balwts_treat_uncens,
                                         K = length(unique(ws_eval)))
   aipw_scores_nocovariates <- cbind(aipw_scores_nocovariates[,1], aipw_scores_nocovariates[,-1]-aipw_scores_nocovariates[,1])
-
+  
   saveRDS(aipw_scores_nocovariates, 'objects/aipw_scores_nocovariates.RDS')
-
+  
 }
 
 # learned optimal policy
 if(file.exists('objects/aipw_scores_learned_nocovariates.RDS')){ # read in scores if already generated
   aipw_scores_learned_nocovariates <- readRDS('objects/aipw_scores_learned_nocovariates.RDS')
-
+  
 }else{
   aipw_scores_learned_nocovariates <- aw_scores(yobs = yobs_eval,
                                                 ws = ws_original,
                                                 balwts = balwts_treat_uncens_learned,
                                                 K = length(unique(ws_original)))
-
+  
   aipw_scores_learned_nocovariates <- cbind(aipw_scores_learned_nocovariates[,1], aipw_scores_learned_nocovariates[,-1]-aipw_scores_learned_nocovariates[,1])
-
+  
   saveRDS(aipw_scores_learned_nocovariates, 'objects/aipw_scores_learned_nocovariates.RDS')
-
+  
 }
 
 # restricted optimal policy
 if(file.exists('objects/aipw_scores_restricted_nocovariates.RDS')){ # read in scores if already generated
   aipw_scores_restricted_nocovariates <- readRDS('objects/aipw_scores_restricted_nocovariates.RDS')
-
+  
 }else{
-
-
+  
+  
   aipw_scores_restricted_nocovariates <- aw_scores(yobs = yobs_eval,
                                                    ws = ws_restricted,
                                                    balwts = balwts_treat_uncens_restricted,
                                                    K = length(unique(ws_restricted)))
-
+  
   aipw_scores_restricted_nocovariates <- cbind(aipw_scores_restricted_nocovariates[,1], aipw_scores_restricted_nocovariates[,-1]-aipw_scores_restricted_nocovariates[,1])
-
+  
   saveRDS(aipw_scores_restricted_nocovariates, 'objects/aipw_scores_restricted_nocovariates.RDS')
 }
 
@@ -2739,8 +2812,6 @@ if(file.exists('objects/aipw_scores_restricted_adjusted.RDS')){ # read in scores
 
 ```
 
-
-
 ```{r alternative_estimates, cache = TRUE}
 balwts_eval <- (1/probs_eval)[cbind(1:nrow(df_eval), df_eval$W)]
 
@@ -2751,8 +2822,8 @@ aipw_te_restricted_nopretest <- find_te(aipw_scores_restricted_nopretest)
 
 aipw_est_nopretest <- find_est(aipw_scores_nopretest)
 aipw_te_nopretest <- bind_rows(aipw_te_nopretest[1:4,],
-                                aipw_te_learned_nopretest[1,],
-                                aipw_te_restricted_nopretest[1,])
+                               aipw_te_learned_nopretest[1,],
+                               aipw_te_restricted_nopretest[1,])
 
 
 aipw_te_nocovariates <- find_te(aipw_scores_nocovariates)
@@ -2761,8 +2832,8 @@ aipw_te_restricted_nocovariates <- find_te(aipw_scores_restricted_nocovariates)
 
 aipw_est_nocovariates <- find_est(aipw_scores_nocovariates)
 aipw_te_nocovariates <- bind_rows(aipw_te_nocovariates[1:4,],
-                                aipw_te_learned_nocovariates[1,],
-                                aipw_te_restricted_nocovariates[1,])
+                                  aipw_te_learned_nocovariates[1,],
+                                  aipw_te_restricted_nocovariates[1,])
 
 
 aipw_te_unbalanced <- find_te(aipw_scores_unbalanced)
@@ -2802,7 +2873,8 @@ l0l <- lm_robust(Y~ws_original, data = df_eval,
 l0a <- lm_robust(Y~ws_restricted, data = df_eval,
                  weights = balwts_eval)
 
-l0 <- bind_rows(tidy(l0)[2:4,], tidy(l0)[6,], tidy(l0l)[2,], tidy(l0a)[2,], tidy(l0)[1,])
+l0 <- bind_rows(tidy(l0)[2:4,], tidy(l0)[6,], tidy(l0l)[2,], tidy(l0a)[2,], 
+                tidy(l0)[1,])
 l0$p.value.upper <- pt(l0$estimate/l0$std.error, df = l0$df, lower = FALSE)
 
 
@@ -2820,7 +2892,8 @@ l1a <- lm_lin(Y~ws_restricted, data = df_eval,
               covariates = formula(' ~ pre_false + pre_true'))
 
 
-l1 <- bind_rows(tidy(l1)[2:4,], tidy(l1)[6,], tidy(l1l)[2,], tidy(l1a)[2,], tidy(l1)[1,])
+l1 <- bind_rows(tidy(l1)[2:4,], tidy(l1)[6,], tidy(l1l)[2,], tidy(l1a)[2,], 
+                tidy(l1)[1,])
 l1$p.value.upper <- pt(l1$estimate/l1$std.error, df = l1$df, lower = FALSE)
 
 # 
@@ -2837,14 +2910,17 @@ l2a <- lm_lin(Y~ws_restricted, data = df_eval,
               weights = balwts_eval, 
               covariates = formula(' ~ as.factor(optimal0)'))
 
-l2 <- bind_rows(tidy(l2)[2:4,], tidy(l2)[6,], tidy(l2l)[2,], tidy(l2a)[2,], tidy(l2)[1,])
+l2 <- bind_rows(tidy(l2)[2:4,], tidy(l2)[6,], tidy(l2l)[2,], tidy(l2a)[2,], 
+                tidy(l2)[1,])
 l2$p.value.upper <- pt(l2$estimate/l2$std.error, df = l2$df, lower = FALSE)
 
 l0$term <- l1$term <- l2$term <- c(treatment_levels[-1], treatment_levels[1])
-aipw_te_nopretest$term <- aipw_te_nocovariates$term <- aipw_te_unbalanced$term <- aipw_te_imputed$term <- aipw_te_adjusted$term <-
+aipw_te_nopretest$term <- aipw_te_nocovariates$term <- 
+  aipw_te_unbalanced$term <- aipw_te_imputed$term <- aipw_te_adjusted$term <-
   treatment_levels[-1]
 
-aipw_est_nopretest$term <- aipw_est_nocovariates$term <- aipw_est_unbalanced$term <- aipw_est_imputed$term <- aipw_est_adjusted$term <-
+aipw_est_nopretest$term <- aipw_est_nocovariates$term <- 
+  aipw_est_unbalanced$term <- aipw_est_imputed$term <- aipw_est_adjusted$term <-
   treatment_levels[1]
 
 # Mean response estimates
@@ -2852,12 +2928,12 @@ models <- list(
   `No pretest` = list(
     tidy = bind_rows(aipw_te_nopretest[1:6,],
                      aipw_est_nopretest[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `No covariates` = list(
     tidy = bind_rows(aipw_te_nocovariates[1:6,],
                      aipw_est_nocovariates[1,]),
     pval = 'p.value.upper'),
-    `No covariate adjustment` = list(
+  `No covariate adjustment` = list(
     tidy = l0,
     pval = 'p.value'),
   `Pre-test response adjusted` = list(
@@ -2870,15 +2946,15 @@ models <- list(
   `Unweighted` = list(
     tidy = bind_rows(aipw_te_unbalanced[1:6,],
                      aipw_est_unbalanced[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `Imputed` = list(
     tidy = bind_rows(aipw_te_imputed[1:6,],
                      aipw_est_imputed[1,]),
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `Weighted to learning` = list(
     tidy = bind_rows(aipw_te_adjusted[1:6,],
                      aipw_est_adjusted[1,]),
-    pval = 'p.value.upper')
+    pval = 'p.value.twosided')
 )
 
 
@@ -2890,7 +2966,8 @@ models <- lapply(models, function(x){
   x
 })
 
-rows <- as.data.frame(matrix(c('', '(1)', '(2)', '(3)', '(4)', '(5)', '(6)', '(7)', '(8)',
+rows <- as.data.frame(matrix(c('', '(1)', '(2)', '(3)', '(4)', '(5)', '(6)', 
+                               '(7)', '(8)',
                                'row2', rep('', 8),
                                'row7', rep('', 8),
                                'row16', rep('', 8)),
@@ -2953,7 +3030,8 @@ yy <- gregexec('Learned Targeted Policy[& -\\{num}{0-9.*}]*', xx)
 xx_substr <- substr(xx, yy[[1]][,1], yy[[1]][,1]+attr(yy[[1]], "match.length"))
 
 xx <- gsub(xx_substr,
-           paste0(xx_substr, ' \\hspace{1.5em}(maximizing sharing discernment)'),
+           paste0(xx_substr, 
+                  ' \\hspace{1.5em}(maximizing sharing discernment)'),
            xx, fixed = TRUE)
 
 yy <- gregexec('Restricted Targeted Policy[& -\\{num}{0-9.*}]*', xx)
@@ -2970,9 +3048,8 @@ writeLines(xx, '../tables/alternative_results.tex')
 
 ```
 
-
-
 # Table S10: Control response and treatment effect estimates, secondary targeted policy
+
 ```{r learning_policy_combined_restricted, cache = TRUE}
 
 cf.priority_c_alt <- causal_forest(
@@ -2982,7 +3059,8 @@ cf.priority_c_alt <- causal_forest(
   W.hat = probs_r[train_idx, 2]/(rowSums(probs_r[train_idx, c(2,7)])),
   seed = 60637)
 
-optimal_assignment_c_alt <- ifelse(predict(cf.priority_c_alt, xs_eval)$predictions>0, 4, 5)
+optimal_assignment_c_alt <- ifelse(
+  predict(cf.priority_c_alt, xs_eval)$predictions>0, 4, 5)
 
 ```
 
@@ -2992,12 +3070,13 @@ if(file.exists('objects/aipw_scores_c_alt.RDS')){ # read in scores if already ge
   aipw_scores_c_alt <- readRDS('objects/aipw_scores_c_alt.RDS')
   
 }else{
-  aipw_scores_c_alt <- aw_scores_eval(xs = xs_eval,
-                                      yobs = yobs_eval, 
-                                      ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                               ws_eval == optimal_assignment_c_alt ~ 2,
-                                                               TRUE ~ 3)), 
-                                      sample.weights = balwts_uncens)
+  aipw_scores_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = yobs_eval, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_c_alt, 'objects/aipw_scores_c_alt.RDS')
   
@@ -3006,16 +3085,18 @@ if(file.exists('objects/aipw_scores_c_alt.RDS')){ # read in scores if already ge
 # any true
 
 if(file.exists('objects/aipw_scores_any_true_c_alt.RDS')){ # read in scores if already generated
-  aipw_scores_any_true_c_alt <- readRDS('objects/aipw_scores_any_true_c_alt.RDS')
+  aipw_scores_any_true_c_alt <- readRDS(
+    'objects/aipw_scores_any_true_c_alt.RDS')
   
 }else{
   
-  aipw_scores_any_true_c_alt <- aw_scores_eval(xs = xs_eval,
-                                               yobs = any_true, 
-                                               ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                        ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                        TRUE ~ 3)), 
-                                               sample.weights = balwts_uncens)
+  aipw_scores_any_true_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = any_true, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_any_true_c_alt, 'objects/aipw_scores_any_true_c_alt.RDS')
   
@@ -3024,18 +3105,21 @@ if(file.exists('objects/aipw_scores_any_true_c_alt.RDS')){ # read in scores if a
 # any false
 
 if(file.exists('objects/aipw_scores_any_false_c_alt.RDS')){ # read in scores if already generated
-  aipw_scores_any_false_c_alt <- readRDS('objects/aipw_scores_any_false_c_alt.RDS')
+  aipw_scores_any_false_c_alt <- readRDS(
+    'objects/aipw_scores_any_false_c_alt.RDS')
   
 }else{
   
-  aipw_scores_any_false_c_alt <- aw_scores_eval(xs = xs_eval,
-                                                yobs = any_false, 
-                                                ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                         ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                         TRUE ~ 3)), 
-                                                sample.weights = balwts_uncens)
+  aipw_scores_any_false_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = any_false, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
-  saveRDS(aipw_scores_any_false_c_alt, 'objects/aipw_scores_any_false_c_alt.RDS')
+  saveRDS(aipw_scores_any_false_c_alt, 
+          'objects/aipw_scores_any_false_c_alt.RDS')
   
 }
 
@@ -3043,32 +3127,36 @@ if(file.exists('objects/aipw_scores_any_false_c_alt.RDS')){ # read in scores if 
 # timeline true/false
 
 if(file.exists('objects/aipw_scores_timeline_true_c_alt.RDS')){ # read in scores if already generated
-  aipw_scores_timeline_true_c_alt <- readRDS('objects/aipw_scores_timeline_true_c_alt.RDS')
+  aipw_scores_timeline_true_c_alt <- readRDS(
+    'objects/aipw_scores_timeline_true_c_alt.RDS')
   
 }else{
   
-  aipw_scores_timeline_true_c_alt <- aw_scores_eval(xs = xs_eval,
-                                                    yobs = timeline_true, 
-                                                    ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                             ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                             TRUE ~ 3)), 
-                                                    sample.weights = balwts_uncens)
+  aipw_scores_timeline_true_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = timeline_true, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_timeline_true_c_alt, 'objects/aipw_scores_timeline_true_c_alt.RDS')
   
 }
 
 if(file.exists('objects/aipw_scores_timeline_false_c_alt.RDS')){ # read in scores if already generated
-  aipw_scores_timeline_false_c_alt <- readRDS('objects/aipw_scores_timeline_false_c_alt.RDS')
+  aipw_scores_timeline_false_c_alt <- readRDS(
+    'objects/aipw_scores_timeline_false_c_alt.RDS')
   
 }else{
   
-  aipw_scores_timeline_false_c_alt <- aw_scores_eval(xs = xs_eval,
-                                                     yobs = timeline_false, 
-                                                     ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                              ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                              TRUE ~ 3)), 
-                                                     sample.weights = balwts_uncens)
+  aipw_scores_timeline_false_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = timeline_false, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
   saveRDS(aipw_scores_timeline_false_c_alt, 'objects/aipw_scores_timeline_false_c_alt.RDS')
   
@@ -3080,30 +3168,35 @@ if(file.exists('objects/aipw_scores_send_true_c_alt.RDS')){ # read in scores if 
   
 }else{
   
-  aipw_scores_send_true_c_alt <- aw_scores_eval(xs = xs_eval,
-                                                yobs = send_true, 
-                                                ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                         ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                         TRUE ~ 3)), 
-                                                sample.weights = balwts_uncens)
+  aipw_scores_send_true_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = send_true, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
-  saveRDS(aipw_scores_send_true_c_alt, 'objects/aipw_scores_send_true_c_alt.RDS')
+  saveRDS(aipw_scores_send_true_c_alt, 
+          'objects/aipw_scores_send_true_c_alt.RDS')
   
 }
 
 if(file.exists('objects/aipw_scores_send_false_c_alt.RDS')){ # read in scores if already generated
-  aipw_scores_send_false_c_alt <- readRDS('objects/aipw_scores_send_false_c_alt.RDS')
+  aipw_scores_send_false_c_alt <- readRDS(
+    'objects/aipw_scores_send_false_c_alt.RDS')
   
 }else{
   
-  aipw_scores_send_false_c_alt <- aw_scores_eval(xs = xs_eval,
-                                                 yobs = send_false, 
-                                                 ws = as.factor(case_when(ws_eval == 1 ~ 1,
-                                                                          ws_eval == optimal_assignment_c_alt ~ 2,
-                                                                          TRUE ~ 3)), 
-                                                 sample.weights = balwts_uncens)
+  aipw_scores_send_false_c_alt <- aw_scores_eval(
+    xs = xs_eval,
+    yobs = send_false, 
+    ws = as.factor(case_when(ws_eval == 1 ~ 1,
+                             ws_eval == optimal_assignment_c_alt ~ 2,
+                             TRUE ~ 3)), 
+    sample.weights = balwts_uncens)
   
-  saveRDS(aipw_scores_send_false_c_alt, 'objects/aipw_scores_send_false_c_alt.RDS')
+  saveRDS(aipw_scores_send_false_c_alt, 
+          'objects/aipw_scores_send_false_c_alt.RDS')
   
 }
 
@@ -3114,25 +3207,25 @@ if(file.exists('objects/aipw_scores_send_false_c_alt.RDS')){ # read in scores if
 models <- list(
   `Sharing\nDiscernment` = list(
     tidy = find_te(aipw_scores_c_alt)[1,],
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `False: Any sharing` = list(
     tidy = find_te(aipw_scores_any_false_c_alt)[1,],
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `False: Messenger` = list(
     tidy = find_te(aipw_scores_send_false_c_alt)[1,],
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `False: Timeline` = list(
     tidy = find_te(aipw_scores_timeline_false_c_alt)[1,],
-    pval = 'p.value.lower'),
+    pval = 'p.value.twosided'),
   `True: Any sharing` = list(
     tidy = find_te(aipw_scores_any_true_c_alt)[1,],
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `True: Messenger` = list(
     tidy = find_te(aipw_scores_send_true_c_alt)[1,],
-    pval = 'p.value.upper'),
+    pval = 'p.value.twosided'),
   `True: Timeline` = list(
     tidy = find_te(aipw_scores_timeline_true_c_alt)[1,],
-    pval = 'p.value.upper'
+    pval = 'p.value.twosided'
   )
 )
 
@@ -3145,8 +3238,11 @@ models <- lapply(models, function(x){
 })
 
 
-rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
-                               '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', 
+                               '', '', '\\textbf{True}', '',
+                               '', '\\textbf{Discernment}', 'Any sharing', 
+                               'Messenger', 'Timeline', 'Any sharing', 
+                               'Messenger', 'Timeline',
                                'row3', rep('', 7)),
                              byrow = TRUE, ncol = 8
 ))
@@ -3171,7 +3267,8 @@ yy <- gregexec('Secondary targeted policy[& -\\{num}{0-9.*}]*', xx)
 xx_substr <- substr(xx, yy[[1]][,1], yy[[1]][,1]+attr(yy[[1]], "match.length"))
 
 xx <- gsub(xx_substr,
-           paste0(xx_substr, ' \\hspace{1.5em}(maximizing sharing discernment)'),
+           paste0(xx_substr, 
+                  ' \\hspace{1.5em}(maximizing sharing discernment)'),
            xx, fixed = TRUE)
 
 
@@ -3241,9 +3338,11 @@ df$Condition <- factor(treatment_levels[-1][df$term],
                          'Respondent\nRestricted targeted'
                        ))
 
-df$`Logged negative ratio of false to true weights` <- log(-df$false_w/df$true_w)
+df$`Logged negative ratio of false to true weights` <- log(-df$false_w/
+                                                             df$true_w)
 df$Statistic <- df$estimate/df$std.error
-ggplot(df, aes(x = `Logged negative ratio of false to true weights`, y = `Statistic`, color = Condition)) + 
+ggplot(df, aes(x = `Logged negative ratio of false to true weights`, 
+               y = `Statistic`, color = Condition)) + 
   geom_point(size = 0.5) +
   geom_smooth(se = FALSE) + 
   # geom_line() +
@@ -3254,13 +3353,11 @@ ggplot(df, aes(x = `Logged negative ratio of false to true weights`, y = `Statis
   scale_color_manual(values = cbPalette) + 
   geom_vline(xintercept = log(2), color ='grey60', linetype = 'dashed')
 
-ggsave('../figures/alternative_weighting.png', width = 8, height = 4)
+ggsave('../figures/alternative_weighting.pdf', width = 8, height = 4)
 ```
 
-
-
-
 # Table S11: Heterogeneity, averaged respondent
+
 ```{r treatment_heterogeneity_primary, cache = TRUE}
 # set outcomes
 df_eval$pooled_respondent <- rowMeans(aipw_scores[, 4:5])
@@ -3271,8 +3368,10 @@ df_eval$pooled_respondent_any_true <- rowMeans(aipw_scores_any_true[, 4:5])
 df_eval$pooled_respondent_send_false <- rowMeans(aipw_scores_send_false[, 4:5])
 df_eval$pooled_respondent_send_true <- rowMeans(aipw_scores_send_true[, 4:5])
 
-df_eval$pooled_respondent_timeline_false <- rowMeans(aipw_scores_timeline_false[, 4:5])
-df_eval$pooled_respondent_timeline_true <- rowMeans(aipw_scores_timeline_true[, 4:5])
+df_eval$pooled_respondent_timeline_false <- rowMeans(
+  aipw_scores_timeline_false[, 4:5])
+df_eval$pooled_respondent_timeline_true <- rowMeans(
+  aipw_scores_timeline_true[, 4:5])
 
 table <- sapply(covariate_list, function(x) {
   covariate <- x
@@ -3285,9 +3384,14 @@ table <- sapply(covariate_list, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ') -1'))
+    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3357,7 +3461,6 @@ table_combined <- table %>%
 
 ```
 
-
 ```{r treatment_heterogeneity_any, cache = TRUE}
 apply_mat <- expand.grid(stimuli_types, covariate_list)
 table <- apply(apply_mat, 1, function(x) {
@@ -3372,9 +3475,14 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0(outcome, ' ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ') -1'))
+    fmla1 <- formula(paste0(outcome, ' ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3464,11 +3572,14 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
     fmla0 <- formula(paste0(outcome,
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,') -1'))
     fmla1 <- formula(paste0(outcome,
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3547,21 +3658,26 @@ table_channel <- table %>%
 
 ```
 
-
 ```{r treatment_heterogeneity_combined, cache = TRUE}
 # Mean response estimates
 models <- list(
   `Sharing\nDiscernment` = list(tidy = table_combined),
-  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
-  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                         table_channel$Channel == 'send'),]),
-  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                        table_channel$Channel == 'timeline'),]),
-  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
-  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                        table_channel$Channel == 'send'),]),
-  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                       table_channel$Channel == 'timeline'),])
+  `False: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
+  `False: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'send'),]),
+  `False: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'timeline'),]),
+  `True: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
+  `True: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'send'),]),
+  `True: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'timeline'),])
 )
 
 models <- lapply(models, function(x){
@@ -3569,8 +3685,11 @@ models <- lapply(models, function(x){
   x
 })
 
-rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
-                               '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', 
+                               '', '', '\\textbf{True}', '',
+                               '', '\\textbf{Discernment}', 'Any sharing', 
+                               'Messenger', 'Timeline', 'Any sharing', 
+                               'Messenger', 'Timeline',
                                'row3', rep('', 7),
                                'row8', rep('', 7),
                                'row11', rep('', 7),
@@ -3655,8 +3774,8 @@ for(i in 1:length(ns)){
 writeLines(xx, '../tables/heterogeneity_treatment.tex')
 ```
 
-
 # Table S12: Heterogeneity, accuracy
+
 ```{r accuracy_heterogeneity_primary, cache = TRUE}
 
 table <- sapply(covariate_list, function(x) {
@@ -3669,9 +3788,14 @@ table <- sapply(covariate_list, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-    fmla1 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,4] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3758,12 +3882,15 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
     fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, 
                             '[,4] ~  factor(',covariate, 
-                            '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+                            '> median(df_eval$', covariate, ') +', adjustment,
+                            ') -1'))
     fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, 
-                            '[,4] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+                            '[,4] ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3853,11 +3980,14 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
     fmla0 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '[,4]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,') -1'))
     fmla1 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '[,4]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -3939,17 +4069,24 @@ table_channel <- table %>%
 ```{r accuracy_combined_heterogeneity, cache = TRUE}
 # Mean response estimates
 models <- list(
-  `Sharing\nDiscernment` = list(tidy = table_combined),
-  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
-  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                         table_channel$Channel == 'send'),]),
-  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                        table_channel$Channel == 'timeline'),]),
-  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
-  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                        table_channel$Channel == 'send'),]),
-  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                       table_channel$Channel == 'timeline'),])
+  `Sharing\nDiscernment` = list(
+    tidy = table_combined),
+  `False: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
+  `False: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'send'),]),
+  `False: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'timeline'),]),
+  `True: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
+  `True: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'send'),]),
+  `True: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'timeline'),])
 )
 
 models <- lapply(models, function(x){
@@ -3957,8 +4094,11 @@ models <- lapply(models, function(x){
   x
 })
 
-rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
-                               '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', 
+                               '', '', '\\textbf{True}', '',
+                               '', '\\textbf{Discernment}', 'Any sharing', 
+                               'Messenger', 'Timeline', 'Any sharing', 
+                               'Messenger', 'Timeline',
                                'row3', rep('', 7),
                                'row8', rep('', 7),
                                'row11', rep('', 7),
@@ -4043,6 +4183,7 @@ writeLines(xx, '../tables/heterogeneity_accuracy.tex')
 ```
 
 # Table S13: Heterogeneity, Facebook
+
 ```{r facebook_heterogeneity_primary, cache = TRUE}
 
 table <- sapply(covariate_list, function(x) {
@@ -4055,9 +4196,14 @@ table <- sapply(covariate_list, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
-    fmla0 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
-    fmla1 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
+    fmla0 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', 
+                            adjustment,') -1'))
+    fmla1 <- formula(paste0('aipw_scores[,5] ~  factor(',covariate, 
+                            '> median(df_eval$', covariate, ') +', 
+                            adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -4144,12 +4290,15 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
     fmla0 <- formula(paste0('aipw_scores_any_',stimuli_type, 
                             '[,5] ~  factor(',covariate, 
-                            '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+                            '> median(df_eval$', covariate, ') +', 
+                            adjustment,') -1'))
     fmla1 <- formula(paste0('aipw_scores_any_',stimuli_type, 
-                            '[,5] ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+                            '[,5] ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -4239,11 +4388,14 @@ table <- apply(apply_mat, 1, function(x) {
     ns <- table(df_eval[,covariate])
   }else{
     # continuous covariates
-    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==quantile(df_eval[,covariate], 1))-1)
+    adjustment <--1e-5*c(2*(median(df_eval[,covariate])==
+                              quantile(df_eval[,covariate], 1))-1)
     fmla0 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '[,5]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,') -1'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,') -1'))
     fmla1 <- formula(paste0('aipw_scores_', channel, '_',stimuli_type, '[,5]',
-                            ' ~  factor(',covariate, '> median(df_eval$', covariate, ') +', adjustment,')'))
+                            ' ~  factor(',covariate, '> median(df_eval$', 
+                            covariate, ') +', adjustment,')'))
     ns <- table(df_eval[,covariate] > median(df_eval[,covariate]) + adjustment)
   }
   ols0 <- tidy(lm_robust(fmla0, data=df_eval))
@@ -4326,16 +4478,22 @@ table_channel <- table %>%
 # Mean response estimates
 models <- list(
   `Sharing\nDiscernment` = list(tidy = table_combined),
-  `False: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
-  `False: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                         table_channel$Channel == 'send'),]),
-  `False: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
-                                                        table_channel$Channel == 'timeline'),]),
-  `True: Any sharing` = list(tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
-  `True: Messenger` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                        table_channel$Channel == 'send'),]),
-  `True: Timeline` = list(tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
-                                                       table_channel$Channel == 'timeline'),])
+  `False: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'False'),]),
+  `False: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'send'),]),
+  `False: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'False' &
+                                 table_channel$Channel == 'timeline'),]),
+  `True: Any sharing` = list(
+    tidy = table_any[which(table_any$`Stimuli type` == 'True'),]),
+  `True: Messenger` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'send'),]),
+  `True: Timeline` = list(
+    tidy = table_channel[which(table_channel$`Stimuli type` == 'True' &
+                                 table_channel$Channel == 'timeline'),])
 )
 
 models <- lapply(models, function(x){
@@ -4343,8 +4501,11 @@ models <- lapply(models, function(x){
   x
 })
 
-rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', '', '', '\\textbf{True}', '',
-                               '', '\\textbf{Discernment}', 'Any sharing', 'Messenger', 'Timeline', 'Any sharing', 'Messenger', 'Timeline',
+rows <- as.data.frame(matrix(c('', '\\textbf{Sharing}', '', '\\textbf{False}', 
+                               '', '', '\\textbf{True}', '',
+                               '', '\\textbf{Discernment}', 'Any sharing', 
+                               'Messenger', 'Timeline', 'Any sharing', 
+                               'Messenger', 'Timeline',
                                'row3', rep('', 7),
                                'row8', rep('', 7),
                                'row11', rep('', 7),
@@ -4429,25 +4590,49 @@ for(i in 1:length(ns)){
 writeLines(xx, '../tables/heterogeneity_facebook.tex')
 ```
 
-
-
-
-
-
 # Additional in-text results
 
 ## Abstract
-```{r abstract_values}
-# Users share more discerningly when they are given tips for spotting misinformation or are nudged to consider information’s accuracy, reducing misinformation sharing by
-round(colMeans(aipw_scores_any_false)[5]/colMeans(aipw_scores_any_false)[1],3)*100
 
-round(colMeans(aipw_scores_any_false)[4]/colMeans(aipw_scores_any_false)[1],3)*100
+```{r abstract_values}
+# respective sample sizes
+table(df_learn$nigeria) + table(df_eval$nigeria)
+
+# Users share more discerningly when they are nudged to consider information’s 
+# accuracy, reducing misinformation sharing by
+
+# Accuracy
+# pp improvement
+round(mean(aipw_scores_any_false[,4])/mean(aipw_scores_any_false[,1])*100, 1)
+
+# confidence interval
+x <- (aipw_scores_any_false[,4])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', 
+                       paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', 
+         paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
 ```
 
+## Results: Study sample
+
+```{r sample, cache = TRUE, warning=FALSE, message=FALSE}
+table(df_learn$nigeria)
+table(df_eval$nigeria)
+```
 
 ## Results: Learning and evaluation stages
 
 ### Benefits from adaptivity
+
 ```{r adaptive_vs_uniform, cache = TRUE, warning=FALSE, message=FALSE}
 gammahat <- aipw_scoresR_learn
 policy0 <- policy1 <- matrix(0, nrow = A, ncol = ncol(gammahat))
@@ -4472,25 +4657,29 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', 
+                       paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', 
+         paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 
 
 
-write.csv(rbind(adaptive = c(mean(yobs_learn), sd(yobs_learn)/sqrt(length(yobs_learn))),
+write.csv(rbind(adaptive = c(mean(yobs_learn), 
+                             sd(yobs_learn)/sqrt(length(yobs_learn))),
                 uniform = est),
           '../tables/benefits-adaptivity.csv')
 ```
 
 ### Interaction sample size
+
 ```{r interaction}
 # Smallest number of observations per arm
 min(table(df_learn$W))
 ```
 
-
 ### Overlap
+
 ```{r overlap_policy}
 # proportion of respondents in each condition in learned policy
 round(prop.table(table(optimal_assignment_original))*100,1)
@@ -4501,7 +4690,6 @@ sum(diag(prop.table(table(optimal_assignment_original, optimal_assignment))))
 ```
 
 ## Results: Discernment under control
-
 
 ```{r discernment_control}
 # UNDER CONTROL
@@ -4515,8 +4703,10 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', 
+                       paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', 
+         paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 # ratio
 round(mean(aipw_scores_any_true[,1])/mean(aipw_scores_any_false[,1]),3)
@@ -4534,8 +4724,10 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', 
+                       paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', 
+         paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # ratio
@@ -4552,24 +4744,97 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', 
+                       paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', 
+         paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # ratio
-1-round(mean(aipw_scores_timeline_false[,1])/mean(aipw_scores_send_false[,1]),3)
+1-round(mean(aipw_scores_timeline_false[,1])/mean(aipw_scores_send_false[,1]),
+        3)
 
 
-# men are more likely to share false posts than women, while low digital literacy are more likely to share false posts
-x <- table_any_control[which(table_any_control$`Covariate type` == 'Male' & 
-                          table_any_control$`Stimuli type` == 'False'), 'estimate']
+# men are more likely to share false posts than women, while low digital 
+# literacy are more likely to share false posts
+# Men
+x_male <- table_any_control[which(table_any_control$`Covariate type` == 
+                                    'Male' & 
+                                    table_any_control$`Stimuli type` == 
+                                    'False' & 
+                                    grepl('Male', table_any_control$label)), ]
 
-round(1- x[2]/x[1],3)*100
+x_notmale <- table_any_control[which(table_any_control$`Covariate type` == 
+                                       'Male' & 
+                                       table_any_control$`Stimuli type` == 
+                                       'False' & 
+                                       grepl('Not male', 
+                                             table_any_control$label)), ]
 
-x <- table_any_control[which(table_any_control$`Covariate type` == 'Digital literacy index' & 
-                          table_any_control$`Stimuli type` == 'False'), 'estimate']
+x_male_diff <- table_any_control[which(table_any_control$`Covariate type` == 
+                                         'Male' & 
+                                         table_any_control$`Stimuli type` == 
+                                         'False' & 
+                                         grepl('Difference', 
+                                               table_any_control$label)), ]
 
-round(1- x[1]/x[2],3)*100
+# ratio
+round( (1-x_male[,'estimate']/x_notmale[,'estimate'])* 100, 1)
+
+# confidence intervals, difference estimate
+cat(
+  paste0('estimate = $', round(x_male_diff[,'estimate']*100,1), '$~pp, ',
+         's.e. = $', round(x_male_diff[,'std.error']*100,1), '$, ',
+         '$Z = ', round(x_male_diff[,'estimate']/x_male_diff[,'std.error'],2), 
+         '$, ',
+         '$p ', ifelse(
+           round(
+             2*(1-pnorm(abs(x_male_diff[,'estimate']/
+                              x_male_diff[,'std.error']))),2)< 0.001, '< 0.001', 
+           paste0('= ', 
+                  round(
+                    2*(1-pnorm(abs(x_male_diff[,'estimate']/
+                                     x_male_diff[,'std.error']))),2) )) ,
+         '$, ',
+         '95\\% CI = ', 
+         '[$', 
+         paste(
+           round(
+             x_male_diff[,'estimate']*100 +
+               x_male_diff[,'std.error']*100*1.96*c(-1,1),2), 
+           collapse = '$, $'), '$]' )
+)
+
+# DLI
+x_highdli <- table_any_control[which(table_any_control$`Covariate type` == 
+                                       'Digital literacy index' & 
+                                       table_any_control$`Stimuli type` == 'False' & 
+                                       grepl('Above', table_any_control$label)), ]
+
+x_lowdli <- table_any_control[which(table_any_control$`Covariate type` == 
+                                      'Digital literacy index' & 
+                                      table_any_control$`Stimuli type` == 'False' & 
+                                      grepl('Below', table_any_control$label)), ]
+
+x_dli_diff <- table_any_control[which(table_any_control$`Covariate type` == 
+                                        'Digital literacy index' & 
+                                        table_any_control$`Stimuli type` == 'False' & 
+                                        grepl('Difference', table_any_control$label)), ]
+
+# ratio
+round( (1-x_lowdli[,'estimate']/x_highdli[,'estimate'])* 100, 1)
+
+# confidence intervals, difference estimate
+cat(
+  paste0('estimate = $', round(x_dli_diff[,'estimate']*100,1), '$~pp, ',
+         's.e. = $', round(x_dli_diff[,'std.error']*100,1), '$, ',
+         '$Z = ', round(x_dli_diff[,'estimate']/x_dli_diff[,'std.error'],2), '$, ',
+         '$p ', ifelse(round(2*(1-pnorm(abs(x_dli_diff[,'estimate']/x_dli_diff[,'std.error']))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_dli_diff[,'estimate']/x_dli_diff[,'std.error']))),2) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_dli_diff[,'estimate']*100 + x_dli_diff[,'std.error']*100*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
+
+
 ```
 
 ## Results: Main treatment effects
@@ -4585,8 +4850,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 
@@ -4600,8 +4865,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 
@@ -4615,8 +4880,8 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 
 # FB tips
@@ -4629,8 +4894,8 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 
 
@@ -4644,10 +4909,9 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
-
 
 # FB tips
 x <- (aipw_scores_any_false[,5])
@@ -4659,12 +4923,41 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
+
+
+# Accuracy
+x <- (aipw_scores_any_true[,4])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
+# FB tips
+x <- (aipw_scores_any_true[,5])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 ```
-
 
 ## Results: Heterogeneity in best policy
 
@@ -4682,8 +4975,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # ratio
@@ -4700,8 +4993,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # fb
@@ -4714,8 +5007,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # vs. learned targeted
@@ -4728,8 +5021,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # 
@@ -4745,8 +5038,8 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 
 # fb
@@ -4759,8 +5052,8 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 
 # vs. learned targeted
@@ -4773,8 +5066,8 @@ cat(
   paste0('estimate = $', round(x_est,3), '$, ',
          's.e. = $', round(x_se,3), '$, ',
          '$Z = ', round(x_stat,3), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),3), collapse = '$, $'), '$]' )
 )
 ```
 
@@ -4785,15 +5078,15 @@ round(1-  mean( (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(opt
 x_1 <- (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(optimal_assignment == 4)]
 x_2 <- (aipw_scores_any_false[,5]+ aipw_scores_any_false[,1])[which(optimal_assignment == 4)]
 x_est <- (mean(x_1) - mean(x_2))*100
-x_se <- sqrt(sd(x_1)/length(x_1) + var(x_2)/length(x_2))*100
+x_se <- sqrt(var(x_1)/length(x_1) + var(x_2)/length(x_2))*100
 x_stat <- x_est/x_se
 
 cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # the reverse is true for participants assigned Facebook tips
@@ -4802,15 +5095,15 @@ round(mean( (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(optimal
 x_1 <- (aipw_scores_any_false[,4]+ aipw_scores_any_false[,1])[which(optimal_assignment == 5)]
 x_2 <- (aipw_scores_any_false[,5]+ aipw_scores_any_false[,1])[which(optimal_assignment == 5)]
 x_est <- (mean(x_1) - mean(x_2))*100
-x_se <- sqrt(sd(x_1)/length(x_1) + var(x_2)/length(x_2))*100
+x_se <- sqrt(var(x_1)/length(x_1) + var(x_2)/length(x_2))*100
 x_stat <- x_est/x_se
 
 cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 # 
 fmla_het <- formula('any_false ~  factor(condition)*factor(optimal==5)')
@@ -4820,6 +5113,7 @@ round(ols_het[4,2:7], 3)
 ```
 
 ## Results: Sharing channel
+
 ```{r results_channel}
 
 # CHANNEL SHARING
@@ -4835,8 +5129,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # fb
@@ -4849,8 +5143,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 
@@ -4865,8 +5159,8 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 # fb
@@ -4879,13 +5173,12 @@ cat(
   paste0('estimate = $', round(x_est,1), '$~pp, ',
          's.e. = $', round(x_se,1), '$, ',
          '$Z = ', round(x_stat,2), '$, ',
-         '$p ', ifelse(round(2*(1-pnorm(abs(x_stat))),2)< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),2) )) ,'$, ',
-         '95\\% Confidence Interval = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
 )
 
 
 ```
-
 
 ## Appendix: Evaluation stage
 
@@ -4894,7 +5187,7 @@ cat(
 # We note here the benefits to controlling for pre-rest response; comparing columns 3 and 4,
 # for example, the standard error on the control mean is reduced:
 1- (sd(aipw_scores[,1])/sqrt(length(aipw_scores[,1])))/
- (sd(aipw_scores_nopretest[,1])/sqrt(length(aipw_scores_nopretest[,1])))
+  (sd(aipw_scores_nopretest[,1])/sqrt(length(aipw_scores_nopretest[,1])))
 
 1- l1[l1$term == 'Control','std.error']/l0[l0$term == 'Control','std.error']
 
@@ -4911,9 +5204,53 @@ sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment))))
 sum(diag(prop.table(table(optimal_assignment_c_alt, optimal_assignment_original))))
 ```
 
+```{r pooled_respondent}
+# men
+x <- rowMeans(aipw_scores_any_false[(df_eval$male==1), 4:5])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
+# low dli
+x <- rowMeans(aipw_scores_any_false[(df_eval$dli<=median(df_eval$dli)), 4:5])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+
+# low scientific knowledge
+x <- rowMeans(aipw_scores_any_false[(df_eval$science<=median(df_eval$science)), 4:5])
+x_est <- mean(x)*100
+x_se <- sd(x)/sqrt(length(x))*100
+x_stat <- x_est/x_se
+
+cat(
+  paste0('estimate = $', round(x_est,1), '$~pp, ',
+         's.e. = $', round(x_se,1), '$, ',
+         '$Z = ', round(x_stat,2), '$, ',
+         '$p ', ifelse(2*(1-pnorm(abs(x_stat)))< 0.001, '< 0.001', paste0('= ', round(2*(1-pnorm(abs(x_stat))),3) )) ,'$, ',
+         '95\\% CI = ', '[$', paste(round(x_est + x_se*1.96*c(-1,1),2), collapse = '$, $'), '$]' )
+)
+```
+
+
 
 ```{r load_cached, eval = FALSE}
 qwraps2::lazyload_cache_dir(path = "misinformation_replication_cache/html")
 source('utils.R')
 ```
-

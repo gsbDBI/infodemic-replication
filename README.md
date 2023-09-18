@@ -1,5 +1,5 @@
 # Infodemic-replication
-Replication files for "Battling the Coronavirus 'Infodemic' Among Social Media Users in Africa"
+Replication files for "Battling the Coronavirus 'Infodemic' Among Social Media Users in Kenya and Nigeria"
 
 - Pre-registration [here](https://osf.io/wbvyk/?view_only=9db136c1387d4292abad22481e4935ae). 
   
