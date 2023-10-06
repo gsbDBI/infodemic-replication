@@ -1,10 +1,9 @@
 import glob
 import os
+
 print(os.getcwd())
 
 from utils import *
-
-
 
 random.seed(60637)
 np.random.seed(60637)
@@ -80,7 +79,6 @@ for s in sorted(full_data['batch'].unique())[:-1]:  # loop through batches, excl
         cc = draw_weighted_ridge_thompson(xs_full.iloc[c], model, config, cache, intercept=False)
         # store those probabilities for all of a given context within a given batch
         probs[idnext, c, :] = np.stack([cc[1]] * idnext.sum())
-
 
 print('Saving probabilities')
 np.save("../../data/contextual_probabilities.npy", probs)
