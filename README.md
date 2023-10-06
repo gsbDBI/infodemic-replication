@@ -18,6 +18,11 @@ R is required for primary analysis
 3. Install R packages:
   - Run `Rscript --verbose r_packages.R`
 4. Generate contextual probabilities for adaptive weights for inference:
+    ```
+    cd code/contextual_probabilities
+    Python gen_probabilities.py
+    Rscript convert_contextual_probs.R
+    ```
   - Run `Python code/contextual_probabilities/gen_probabilities.py`
     - Depends on `code/contextual_probabilities/utils.py`
     - Generates `data/contextual_probabilities.npy`
