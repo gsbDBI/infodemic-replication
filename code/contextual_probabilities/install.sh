@@ -9,7 +9,6 @@ conda install -c r r-glmnet
 conda install -c conda-forge r-reticulate
 
 conda install -c conda-forge r-cowplot
-conda install -c conda-forge r-dataMaid
 conda install -c conda-forge r-data.table
 conda install -c conda-forge r-dplyr
 conda install -c conda-forge r-estimatr

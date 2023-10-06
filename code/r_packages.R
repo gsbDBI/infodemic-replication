@@ -4,7 +4,6 @@ options(repos = r)
 
 packages <- c(
   "cowplot",
-  "dataMaid",
   "data.table",
   "dplyr",
   "estimatr",
@@ -17,7 +16,6 @@ packages <- c(
   "modelsummary",
   "readr",
   "reshape2",
-  "reticulate",
   "stringr",
   "tidyr",
   "xtable")

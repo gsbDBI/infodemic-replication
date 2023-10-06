@@ -16,7 +16,7 @@ R is required for primary analysis
     conda activate contextual_probs
     source code/contextual_probabilities/install.sh    
     ```
-   + Then, re-generage contextual probabilities for adaptive weights for inference:
+   + Then, re-generate contextual probabilities for adaptive weights for inference:
     ```
     cd code/contextual_probabilities
     Python gen_probabilities.py
