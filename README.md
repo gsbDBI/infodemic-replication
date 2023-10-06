@@ -8,9 +8,16 @@ Replication files for "Battling the Coronavirus 'Infodemic' Among Social Media U
 Python is required to generate the contextual probabilities, but a copy of the probabilities is saved in this replication repository. 
 R is required for primary analysis
 
-1. Save most recent data in the `data/` folder. 
-2. Generate contextual probabilities for adaptive weights for inference:
-  - You may wish to create a conda environment: `code/installations.md`
+1. Save most recent data in the `data/` folder.
+2. Install R packages:
+  - Run `Rscript --verbose r_packages.R`
+4. Generate contextual probabilities for adaptive weights for inference:
+  - You may wish to create a conda environment.
+    ```
+    conda create --name contextual_probs python=3.7
+    conda activate contextual_probs
+    source install.sh    
+    ```
   - Run `code/contextual_probabilities/gen_probabilities.py`
     - Depends on `code/contextual_probabilities/utils.py`
     - Generates `data/contextual_probabilities.npy`
