@@ -27,7 +27,7 @@ R is required for primary analysis
       - Generates `data/contextual_probabilities.npy`
    + Run `Rscript code/contextual_probabilities/convert_contextual_probs.R` to convert numpy object to rds
       - Generates `code/objects/contextual_probabilities.RDS`
-4. If you are NOT using a conda environment, install R packages:
+4. If you are NOT using a conda environment, install R packages outside of conda:
    + Run `Rscript --verbose r_packages.R`
 5. To replicate analysis, run
    + `code/misinformation_replication.Rmd` (primary analysis in paper)
