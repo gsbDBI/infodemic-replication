@@ -22,15 +22,22 @@ R is required for primary analysis
     Python gen_probabilities.py
     Rscript convert_contextual_probs.R
     ```
-   + `code/contextual_probabilities/gen_probabilities.py`
-      - Depends on `code/contextual_probabilities/utils.py`
+   + File `code/contextual_probabilities/gen_probabilities.py` creates an object that records treatment assignment probabilities for every observation at every point in time, conditional on an algorithm and observed data. 
+      - Depends on: 
+        - `code/contextual_probabilities/utils.py` 
+        - `data/cleaned-data_*.csv`
       - Generates `data/contextual_probabilities.npy`
-   + Run `Rscript code/contextual_probabilities/convert_contextual_probs.R` to convert numpy object to rds
+   + File `code/contextual_probabilities/convert_contextual_probs.R` converts numpy probability object to rds
+      - Depends on `data/contextual_probabilities.npy`
       - Generates `code/objects/contextual_probabilities.RDS`
 4. If you are NOT using a conda environment, install R packages outside of conda:
-   + Run `Rscript --verbose r_packages.R`
-5. To replicate analysis, run
+   + Start in the `infodemic_replication` directory
+   + Run `Rscript --verbose code/r_packages.R`
+5. To replicate analysis, compile
    + `code/misinformation_replication.Rmd` (primary analysis in paper)
-      - Depends on `utils.R`
-5. Resulting html files (`misinformation_replication.html`) will be saved in the same folder.
-6. Figures and latex tables will be saved in `figures/` and `tables/` folders respectively.
+      - Depends on:
+         - `code/utils.R`
+         - `data/cleaned-data_*.RDS`
+      - Generates:
+         + Resulting html file (`misinformation_replication.html`) will be saved in the same folder.
+         + Figures and latex tables will be saved in `figures/` and `tables/` folders respectively.

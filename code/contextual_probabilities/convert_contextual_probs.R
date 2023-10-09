@@ -1,8 +1,8 @@
 
-
+dir.create(file.path('../objects'), showWarnings = FALSE)
 library(reticulate)
 # install_miniconda() may need to install miniconda, or otherwise set python version
-options(reticulate.conda_binary = miniconda_path())
+# options(reticulate.conda_binary = miniconda_path())
 
 np <- import('numpy')
 probs_array <- np$load('../../data/contextual_probabilities.npy')
