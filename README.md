@@ -1,7 +1,10 @@
 # Infodemic-replication
 Replication files for "Battling the Coronavirus 'Infodemic' Among Social Media Users in Kenya and Nigeria"
 
-- Pre-registration [here](https://osf.io/wbvyk/?view_only=9db136c1387d4292abad22481e4935ae). 
+- arXived [here](https://osf.io/59sn2)
+- Pre-registration [here](https://osf.io/59sn2).
+
+Note: The analysis reported in the paper is implemented using macOS, platform: aarch64-apple-darwin20. Due to differences in compilers across platforms, if this code is run on a Windows machine, the random forests used for policy learning and evaluation may have slightly different splits, even using the same random seed. This behavior is noted in the `grf` package documentation [here](https://grf-labs.github.io/grf/REFERENCE.html#forests-predict-different-values-depending-on-the-platform-even-though-the-seed-is-the-same). As a consequence, point estimates may vary slightly from those reported, and the restricted policy learned may have slightly different assignment rules; our replications suggest that these variations do not change the substantive findings reported in the paper. 
   
 **Reproducing results**
 
